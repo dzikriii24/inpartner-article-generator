@@ -1,0 +1,25 @@
+# Environment & secrets
+.env
+.env.local
+*.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+ENV/
+
+# Generated files & data
+*.pdf
+punkt.zip
+scratch_art11.html
+scratch_art11_full.html
+
+# Operating System & IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

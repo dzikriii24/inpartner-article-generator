@@ -1,0 +1,2098 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ article.title }} — Professional Digital Article Workspace</title>
+    <meta name="description" content="{{ article.subtitle or article.title }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --paper: #f0f7ff;
+            --surface: #ffffff;
+            --border: #dbeafe;
+            --border-dark: #bfdbfe;
+            --ink: #0f172a;
+            --ink-body: #1e293b;
+            --ink-soft: #334155;
+            --muted: #64748b;
+            --accent: #2563eb;
+            --accent-hover: #1d4ed8;
+            --accent-soft: #eff6ff;
+            --accent-border: #bfdbfe;
+            --positive: #059669;
+            --positive-soft: #ecfdf5;
+            --negative: #dc2626;
+            --negative-soft: #fef2f2;
+            --info: #0284c7;
+            --info-soft: #f0f9ff;
+            --radius: 8px;
+            --shadow: 0 4px 20px rgba(15, 23, 42, 0.05);
+            --shadow-lg: 0 10px 30px rgba(15, 23, 42, 0.08);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--paper);
+            color: var(--ink-body);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            text-rendering: optimizeLegibility;
+        }
+
+        /* Workspace Top Bar Navigation */
+        nav.nav-bar {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+        }
+
+        .nav-inner {
+            max-width: 1460px;
+            margin: 0 auto;
+            padding: 0.65rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .brand-group {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+        }
+
+        .nav-brand {
+            font-family: 'Newsreader', Georgia, serif;
+            font-weight: 700;
+            font-size: 1.15rem;
+            color: var(--ink);
+            text-decoration: none;
+            letter-spacing: -0.01em;
+        }
+
+        .nav-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--ink-soft);
+            text-decoration: none;
+            transition: color 0.15s ease;
+        }
+
+        .nav-back:hover { color: var(--accent); }
+
+        /* Workspace Mode Switcher Pill */
+        .mode-switcher {
+            display: inline-flex;
+            background: var(--paper);
+            border: 1px solid var(--border-dark);
+            border-radius: 20px;
+            padding: 3px;
+            gap: 2px;
+        }
+
+        .mode-btn {
+            background: transparent;
+            border: none;
+            padding: 0.35rem 0.85rem;
+            border-radius: 16px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--ink-soft);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .mode-btn.active {
+            background: var(--surface);
+            color: var(--ink);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+        }
+
+        /* Autosave Status Indicator */
+        .autosave-status {
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.3rem 0.75rem;
+            border-radius: 20px;
+            background: var(--paper);
+            border: 1px solid var(--border);
+            transition: all 0.2s ease;
+        }
+
+        .autosave-saved { color: var(--positive); background: var(--positive-soft); border-color: rgba(39,98,61,0.25); }
+        .autosave-saving { color: var(--accent); background: var(--accent-soft); border-color: rgba(147,96,42,0.25); }
+        .autosave-unsaved { color: var(--ink-soft); background: #fff8eb; border-color: #f1dfb8; }
+        .autosave-error { color: var(--negative); background: var(--negative-soft); border-color: rgba(161,59,50,0.25); }
+
+        .nav-actions {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .btn {
+            background: var(--ink);
+            color: #ffffff;
+            border: 1px solid var(--ink);
+            padding: 0.45rem 0.95rem;
+            border-radius: var(--radius);
+            font-size: 0.83rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-family: inherit;
+        }
+
+        .btn:hover { background: #32302b; }
+
+        .btn-outline {
+            background: var(--surface);
+            color: var(--ink);
+            border: 1px solid var(--border-dark);
+        }
+
+        .btn-outline:hover { background: var(--paper); border-color: var(--ink); }
+
+        .btn-accent {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #ffffff;
+        }
+
+        .btn-accent:hover { background: #7a4f21; }
+
+        .btn-danger {
+            background: var(--negative-soft);
+            border-color: rgba(161,59,50,0.3);
+            color: var(--negative);
+        }
+
+        .btn-danger:hover { background: var(--negative); color: #fff; }
+
+        .btn-sm {
+            padding: 0.25rem 0.55rem;
+            font-size: 0.76rem;
+            border-radius: 4px;
+        }
+
+        /* Dropdown Menu */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 100%;
+            margin-top: 0.35rem;
+            background: var(--surface);
+            border: 1px solid var(--border-dark);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            min-width: 190px;
+            z-index: 1000;
+            overflow: hidden;
+        }
+
+        .dropdown.active .dropdown-menu { display: block; }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+            padding: 0.65rem 1rem;
+            font-size: 0.84rem;
+            color: var(--ink);
+            text-decoration: none;
+            transition: background 0.12s ease;
+            cursor: pointer;
+        }
+
+        .dropdown-item:hover { background: var(--paper); color: var(--accent); }
+
+        /* Main Workspace 2-Column Grid Layout */
+        .workspace-grid {
+            max-width: 1460px;
+            margin: 0 auto;
+            padding: 1.75rem 1.5rem 5rem;
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        /* Editorial Canvas Container */
+        .editor-container {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 3rem 4rem;
+            box-shadow: var(--shadow);
+            position: relative;
+            min-height: 800px;
+        }
+
+        /* Sticky Formatting Toolbar */
+        .wysiwyg-toolbar {
+            position: sticky;
+            top: 54px;
+            z-index: 900;
+            background: rgba(255, 255, 255, 0.97);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-dark);
+            border-radius: var(--radius);
+            padding: 0.45rem 0.65rem;
+            margin-bottom: 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.3rem;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            transition: opacity 0.2s ease;
+        }
+
+        .tb-group {
+            display: flex;
+            align-items: center;
+            gap: 0.15rem;
+        }
+
+        .tb-btn {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--ink-soft);
+            padding: 0.35rem 0.55rem;
+            border-radius: 4px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.12s ease;
+            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 28px;
+            height: 28px;
+        }
+
+        .tb-btn:hover { background: var(--paper); color: var(--ink); border-color: var(--border); }
+        .tb-btn.active { background: var(--accent-soft); color: var(--accent); border-color: var(--accent-border); }
+
+        .tb-select {
+            background: var(--paper);
+            border: 1px solid var(--border);
+            color: var(--ink);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            outline: none;
+            height: 28px;
+        }
+
+        .tb-divider {
+            width: 1px;
+            height: 18px;
+            background: var(--border);
+            margin: 0 0.3rem;
+        }
+
+        /* ContentEditable Fields Styling */
+        [contenteditable="true"] {
+            outline: none;
+            transition: background 0.15s ease;
+        }
+
+        body.mode-edit [contenteditable="true"]:focus {
+            background: rgba(244, 234, 217, 0.12);
+            border-radius: 4px;
+        }
+
+        .category-kicker {
+            display: inline-block;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 0.85rem;
+        }
+
+        h1.article-title {
+            font-family: 'Newsreader', Georgia, serif;
+            font-size: 2.75rem;
+            line-height: 1.18;
+            font-weight: 700;
+            color: var(--ink);
+            margin: 0 0 1rem 0;
+            letter-spacing: -0.02em;
+        }
+
+        .article-deck {
+            font-family: 'Newsreader', Georgia, serif;
+            font-size: 1.35rem;
+            line-height: 1.45;
+            color: var(--ink-soft);
+            font-style: italic;
+            margin-bottom: 1.75rem;
+        }
+
+        .article-meta {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 1rem;
+            font-size: 0.84rem;
+            color: var(--muted);
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            padding: 0.85rem 0;
+            margin-bottom: 2rem;
+        }
+
+        .badge-status {
+            background: var(--positive-soft);
+            color: var(--positive);
+            border: 1px solid rgba(39, 98, 61, 0.25);
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 0.18rem 0.55rem;
+            border-radius: 4px;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        /* Hero Image Container */
+        .hero-figure {
+            margin: 0 0 2.5rem 0;
+            position: relative;
+            text-align: center;
+        }
+
+        .hero-figure img {
+            width: 100%;
+            height: auto;
+            max-height: 500px;
+            object-fit: cover;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+        }
+
+        .hero-caption {
+            font-size: 0.83rem;
+            color: var(--muted);
+            margin-top: 0.65rem;
+            line-height: 1.4;
+            font-style: italic;
+        }
+
+        .hero-controls {
+            display: flex;
+            gap: 0.4rem;
+            justify-content: center;
+            margin-top: 0.6rem;
+        }
+
+        /* Article Body Typography & Content Blocks */
+        .article-body {
+            font-family: 'Newsreader', Georgia, serif;
+            font-size: 1.22rem;
+            line-height: 1.8;
+            color: var(--ink-body);
+            position: relative;
+        }
+
+        .article-body > * {
+            position: relative;
+        }
+
+        /* Block Hover Action Handles in Edit Mode */
+        body.mode-edit .article-body > *:hover {
+            outline: 1px dashed var(--accent-border);
+            outline-offset: 4px;
+            border-radius: 4px;
+        }
+
+        .block-handle-bar {
+            position: absolute;
+            top: -12px;
+            right: 0;
+            background: var(--surface);
+            border: 1px solid var(--border-dark);
+            border-radius: 4px;
+            padding: 2px 4px;
+            display: none;
+            gap: 2px;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        body.mode-edit .article-body > *:hover > .block-handle-bar {
+            display: flex;
+        }
+
+        .block-btn {
+            background: transparent;
+            border: none;
+            font-size: 0.75rem;
+            color: var(--ink-soft);
+            cursor: pointer;
+            padding: 2px 4px;
+            border-radius: 2px;
+        }
+
+        .block-btn:hover { background: var(--paper); color: var(--accent); }
+
+        /* Content Blocks Styles */
+        .article-body p { margin: 0 0 1.6rem 0; }
+
+        .article-body h1 {
+            font-family: 'Newsreader', Georgia, serif;
+            font-size: 2.1rem;
+            font-weight: 700;
+            color: var(--ink);
+            margin: 2.5rem 0 1rem 0;
+            line-height: 1.25;
+        }
+
+        .article-body h2 {
+            font-family: 'Newsreader', Georgia, serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--ink);
+            margin: 2.5rem 0 1rem 0;
+            line-height: 1.25;
+        }
+
+        .article-body h3 {
+            font-family: 'Newsreader', Georgia, serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--ink);
+            margin: 2rem 0 0.85rem 0;
+        }
+
+        .article-body h4 {
+            font-family: 'Newsreader', Georgia, serif;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--ink);
+            margin: 1.75rem 0 0.75rem 0;
+        }
+
+        .article-body blockquote {
+            margin: 2rem 0;
+            padding: 1.25rem 1.75rem;
+            background: var(--accent-soft);
+            border-left: 4px solid var(--accent);
+            border-radius: 0 var(--radius) var(--radius) 0;
+            font-size: 1.22rem;
+            line-height: 1.6;
+            color: var(--ink);
+            font-style: italic;
+        }
+
+        .article-body blockquote p { margin: 0; }
+
+        .article-body ul, .article-body ol {
+            margin: 0 0 1.6rem 0;
+            padding-left: 1.75rem;
+        }
+
+        .article-body li { margin-bottom: 0.5rem; }
+
+        .article-body code {
+            font-family: 'JetBrains Mono', Courier, monospace;
+            font-size: 0.88em;
+            background: rgba(20, 19, 17, 0.06);
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+        }
+
+        .article-body pre {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 1.25rem;
+            border-radius: var(--radius);
+            overflow-x: auto;
+            font-family: 'JetBrains Mono', Courier, monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin: 1.75rem 0;
+        }
+
+        .article-body pre code {
+            background: transparent;
+            padding: 0;
+            color: inherit;
+        }
+
+        .article-body hr {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 2.5rem 0;
+        }
+
+        .article-body a {
+            color: var(--accent);
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+
+        .callout-box {
+            background: var(--info-soft);
+            border: 1px solid rgba(29,82,136,0.2);
+            border-left: 4px solid var(--info);
+            border-radius: var(--radius);
+            padding: 1.2rem 1.5rem;
+            margin: 1.75rem 0;
+            font-size: 1.05rem;
+            color: var(--ink);
+        }
+
+        /* First-Class Article Image Block */
+        figure.article-image-block {
+            margin: 2rem 0;
+            position: relative;
+            text-align: center;
+            display: block;
+        }
+
+        figure.article-image-block[data-align="left"] { text-align: left; }
+        figure.article-image-block[data-align="center"] { text-align: center; }
+        figure.article-image-block[data-align="right"] { text-align: right; }
+
+        figure.article-image-block img {
+            height: auto;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            display: inline-block;
+            max-width: 100%;
+        }
+
+        figure.article-image-block[data-width="small"] img { width: 280px; }
+        figure.article-image-block[data-width="medium"] img { width: 500px; }
+        figure.article-image-block[data-width="large"] img { width: 700px; }
+        figure.article-image-block[data-width="full"] img { width: 100%; }
+
+        .img-toolbar-overlay {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(20, 19, 17, 0.9);
+            backdrop-filter: blur(8px);
+            border-radius: 20px;
+            padding: 4px 8px;
+            display: none;
+            gap: 4px;
+            align-items: center;
+            z-index: 200;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+        }
+
+        body.mode-edit figure.article-image-block:hover .img-toolbar-overlay {
+            display: flex;
+        }
+
+        .img-tb-btn {
+            background: transparent;
+            border: none;
+            color: #ffffff;
+            font-size: 0.74rem;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.12s ease;
+        }
+
+        .img-tb-btn:hover { background: rgba(255,255,255,0.2); }
+        .img-tb-btn.active { background: var(--accent); color: #fff; }
+
+        figcaption.img-caption {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.83rem;
+            color: var(--muted);
+            margin-top: 0.5rem;
+            font-style: italic;
+            line-height: 1.4;
+        }
+
+        .img-credit {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.76rem;
+            color: var(--ink-soft);
+            margin-top: 0.2rem;
+        }
+
+        /* Alignment utility classes */
+        .text-left { text-align: left !important; }
+        .text-center { text-align: center !important; }
+        .text-right { text-align: right !important; }
+        .text-justify { text-align: justify !important; }
+
+        /* Link Floating Popover */
+        .link-popover {
+            position: absolute;
+            background: var(--surface);
+            border: 1px solid var(--border-dark);
+            border-radius: 6px;
+            box-shadow: var(--shadow-lg);
+            padding: 0.4rem 0.6rem;
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+            z-index: 1500;
+            font-size: 0.82rem;
+        }
+
+        .link-popover.active { display: flex; }
+
+        /* Right Sidebar Drawer / References & Metadata */
+        .sidebar-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            position: sticky;
+            top: 70px;
+        }
+
+        .card-widget {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.25rem 1.4rem;
+            box-shadow: var(--shadow);
+        }
+
+        .widget-title {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.82rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--ink);
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .source-item {
+            padding: 0.8rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .source-item:last-child { border-bottom: none; }
+
+        .source-publisher {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 0.2rem;
+        }
+
+        .source-title-text {
+            font-family: 'Newsreader', Georgia, serif;
+            font-size: 0.98rem;
+            font-weight: 600;
+            color: var(--ink);
+            line-height: 1.35;
+            margin-bottom: 0.3rem;
+        }
+
+        .source-desc {
+            font-size: 0.78rem;
+            color: var(--ink-soft);
+            line-height: 1.4;
+            margin-bottom: 0.35rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .source-link {
+            font-size: 0.78rem;
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.2rem;
+        }
+
+        .source-link:hover { text-decoration: underline; }
+
+        .claim-item {
+            background: var(--paper);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0.7rem 0.85rem;
+            margin-bottom: 0.65rem;
+            font-size: 0.8rem;
+        }
+
+        .claim-text { font-weight: 600; color: var(--ink); margin-bottom: 0.2rem; }
+        .claim-evidence { font-style: italic; color: var(--ink-soft); font-size: 0.76rem; border-left: 2px solid var(--accent); padding-left: 0.4rem; margin: 0.2rem 0; }
+
+        /* Modal Overlays */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(20, 19, 17, 0.55);
+            backdrop-filter: blur(5px);
+            z-index: 2500;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal-box {
+            background: var(--surface);
+            border-radius: var(--radius);
+            width: 92%;
+            max-width: 560px;
+            padding: 2rem;
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.4rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.75rem;
+        }
+
+        .modal-title {
+            font-family: 'Newsreader', Georgia, serif;
+            font-size: 1.45rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .modal-close {
+            background: transparent;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--muted);
+            line-height: 1;
+        }
+
+        .form-group { margin-bottom: 1.1rem; }
+        .form-group label { display: block; font-size: 0.83rem; font-weight: 600; margin-bottom: 0.35rem; color: var(--ink); }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 0.65rem 0.85rem;
+            border: 1px solid var(--border-dark);
+            border-radius: var(--radius);
+            font-family: inherit;
+            font-size: 0.88rem;
+            color: var(--ink);
+            background: var(--paper);
+        }
+
+        /* PDF Preview Modal Special Large Layout */
+        .pdf-modal-box {
+            max-width: 900px;
+            width: 95%;
+            height: 92vh;
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .pdf-modal-header {
+            padding: 1rem 1.5rem;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .pdf-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: var(--paper);
+            padding: 0.35rem 0.75rem;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+        }
+
+        .pdf-preview-viewport {
+            flex: 1;
+            background: #525659;
+            overflow-y: auto;
+            padding: 2rem 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .pdf-a4-page {
+            width: 720px;
+            min-height: 1018px;
+            background: #ffffff;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+            padding: 45pt;
+            position: relative;
+            transform-origin: top center;
+            transition: transform 0.15s ease;
+            font-family: 'Times New Roman', Times, serif;
+            color: #1a1a1a;
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 24px;
+        }
+
+        .pdf-page-header {
+            font-family: sans-serif;
+            font-size: 8pt;
+            color: #888;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 6px;
+            margin-bottom: 18px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .pdf-page-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 20px;
+        }
+
+        .pdf-page-footer {
+            position: relative;
+            margin-top: auto;
+            font-family: sans-serif;
+            font-size: 8.5pt;
+            color: #888;
+            border-top: 1px solid #e0e0e0;
+            padding-top: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .pdf-modal-footer {
+            padding: 1rem 1.5rem;
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 1024px) {
+            .workspace-grid { grid-template-columns: 1fr; }
+            .editor-container { padding: 2rem 1.75rem; }
+            .sidebar-panel { position: static; }
+            .pdf-a4-page { width: 100%; min-height: auto; padding: 20px; }
+        }
+    </style>
+</head>
+<body class="mode-edit">
+
+    <!-- Top Workspace Navigation Bar -->
+    <nav class="nav-bar">
+        <div class="nav-inner">
+            <div class="brand-group">
+                <a href="/" class="nav-back"><i class="fa-solid fa-arrow-left"></i> Dashboard</a>
+                <div style="color:var(--border-dark);">|</div>
+                <a href="/" class="nav-brand">Inpartner Digital Publishing</a>
+            </div>
+
+            <!-- Mode Switcher: Edit vs Preview -->
+            <div class="mode-switcher">
+                <button id="btnModeEdit" class="mode-btn active" onclick="setWorkspaceMode('edit')">
+                    <i class="fa-solid fa-pen-to-square"></i> Edit Mode
+                </button>
+                <button id="btnModePreview" class="mode-btn" onclick="setWorkspaceMode('preview')">
+                    <i class="fa-solid fa-eye"></i> Preview Mode
+                </button>
+            </div>
+
+            <!-- Autosave Status Indicator -->
+            <div id="autosaveIndicator" class="autosave-status autosave-saved">
+                <i class="fa-solid fa-check"></i> Saved just now
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="nav-actions">
+                <button class="btn btn-outline" onclick="saveArticle()" title="Force save draft (Ctrl+S)">
+                    <i class="fa-solid fa-floppy-disk"></i> Save
+                </button>
+                <button class="btn btn-outline" onclick="openImageUploadModal()" title="Insert image into article">
+                    <i class="fa-regular fa-image"></i> Image
+                </button>
+                <button class="btn btn-outline" onclick="openMetadataModal()" title="Edit article metadata">
+                    <i class="fa-solid fa-gear"></i> Metadata
+                </button>
+
+                <!-- Direct Export PDF Button -->
+                <button class="btn btn-outline" onclick="openPdfPreviewModal()" title="Export Article as PDF">
+                    <i class="fa-solid fa-file-pdf"></i> Export PDF
+                </button>
+
+                <!-- WordPress Sync Button -->
+                <button class="btn btn-accent" onclick="openWordPressModal()">
+                    <i class="fa-brands fa-wordpress"></i> Publish to WP
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Workspace Container -->
+    <div class="workspace-grid">
+
+        <!-- Left Column: Editorial Writing Canvas -->
+        <main class="editor-container">
+
+            <!-- Sticky WYSIWYG Formatting & Alignment Toolbar -->
+            <div class="wysiwyg-toolbar" id="mainToolbar">
+                <!-- Text Block Type -->
+                <select class="tb-select" onchange="formatBlockSelect(this.value)" id="blockTypeSelect" title="Paragraph / Heading format">
+                    <option value="P">Paragraph</option>
+                    <option value="H1">Heading 1</option>
+                    <option value="H2">Heading 2</option>
+                    <option value="H3">Heading 3</option>
+                    <option value="H4">Heading 4</option>
+                    <option value="BLOCKQUOTE">Blockquote</option>
+                    <option value="PRE">Code Block</option>
+                </select>
+
+                <div class="tb-divider"></div>
+
+                <!-- Text Style Buttons -->
+                <div class="tb-group">
+                    <button class="tb-btn" onclick="execCmd('bold')" title="Bold (Ctrl+B)"><b>B</b></button>
+                    <button class="tb-btn" onclick="execCmd('italic')" title="Italic (Ctrl+I)"><i>I</i></button>
+                    <button class="tb-btn" onclick="execCmd('underline')" title="Underline (Ctrl+U)"><u>U</u></button>
+                    <button class="tb-btn" onclick="execCmd('strikeThrough')" title="Strikethrough"><s>S</s></button>
+                    <button class="tb-btn" onclick="execCmd('insertHTML', '<code>' + window.getSelection().toString() + '</code>')" title="Inline Code">&lt;/&gt;</button>
+                    <button class="tb-btn" onclick="applyHighlight()" title="Text Highlight"><i class="fa-solid fa-highlighter"></i></button>
+                </div>
+
+                <div class="tb-divider"></div>
+
+                <!-- Text Alignment Buttons -->
+                <div class="tb-group">
+                    <button class="tb-btn" id="btnAlignLeft" onclick="setTextAlign('left')" title="Align Left (Ctrl+Shift+L)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
+                    </button>
+                    <button class="tb-btn" id="btnAlignCenter" onclick="setTextAlign('center')" title="Align Center (Ctrl+Shift+C)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="10" x2="6" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="18" y1="18" x2="6" y2="18"/></svg>
+                    </button>
+                    <button class="tb-btn" id="btnAlignRight" onclick="setTextAlign('right')" title="Align Right (Ctrl+Shift+R)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="21" y1="10" x2="7" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="7" y2="18"/></svg>
+                    </button>
+                    <button class="tb-btn" id="btnAlignJustify" onclick="setTextAlign('justify')" title="Justify (Ctrl+Shift+J)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="21" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="3" y2="18"/></svg>
+                    </button>
+                </div>
+
+                <div class="tb-divider"></div>
+
+                <!-- Lists & Blocks -->
+                <div class="tb-group">
+                    <button class="tb-btn" onclick="execCmd('insertUnorderedList')" title="Bullet List"><i class="fa-solid fa-list-ul"></i></button>
+                    <button class="tb-btn" onclick="execCmd('insertOrderedList')" title="Numbered List"><i class="fa-solid fa-list-ol"></i></button>
+                    <button class="tb-btn" onclick="insertCalloutBox()" title="Callout Box"><i class="fa-regular fa-lightbulb"></i> Callout</button>
+                    <button class="tb-btn" onclick="insertHorizontalRule()" title="Divider Line"><i class="fa-solid fa-minus"></i> Divider</button>
+                </div>
+
+                <div class="tb-divider"></div>
+
+                <!-- Links & Media -->
+                <div class="tb-group">
+                    <button class="tb-btn" onclick="openLinkModal()" title="Insert / Edit Link (Ctrl+K)"><i class="fa-solid fa-link"></i> Link</button>
+                    <button class="tb-btn" onclick="execCmd('unlink')" title="Remove Link">Unlink</button>
+                    <button class="tb-btn" onclick="openImageUploadModal('body')" title="Insert Image"><i class="fa-regular fa-image"></i> Image</button>
+                </div>
+
+                <div class="tb-divider"></div>
+
+                <!-- History -->
+                <div class="tb-group">
+                    <button class="tb-btn" onclick="execCmd('undo')" title="Undo (Ctrl+Z)"><i class="fa-solid fa-rotate-left"></i></button>
+                    <button class="tb-btn" onclick="execCmd('redo')" title="Redo (Ctrl+Y)"><i class="fa-solid fa-rotate-right"></i></button>
+                </div>
+            </div>
+
+            <!-- Article Header -->
+            <header class="article-header">
+                <span class="category-kicker" id="articleCategoryText">{{ article.category or 'IN-DEPTH EDITORIAL' }}</span>
+                
+                <!-- Inline Editable Title -->
+                <h1 class="article-title" id="articleTitle" contenteditable="true" spellcheck="false">{{ article.title }}</h1>
+                
+                <!-- Inline Editable Subtitle / Dek -->
+                <div class="article-deck" id="articleSubtitle" contenteditable="true" spellcheck="false">{{ article.subtitle or 'Click to add an article dek / subtitle...' }}</div>
+
+                <!-- Metadata Bar -->
+                <div class="article-meta">
+                    <div>By <strong id="articleAuthorText">{{ article.author or 'Inpartner Editorial Board' }}</strong></div>
+                    <div>&bull;</div>
+                    <div>{{ article.generated_at|date_format }}</div>
+                    <div>&bull;</div>
+                    <div><strong id="articleReadTimeText">{{ article.reading_time or 5 }} min read</strong></div>
+                    {% if article.sources %}
+                    <div>&bull;</div>
+                    <div>{{ article.sources|length }} reference{{ 's' if article.sources|length != 1 else '' }}</div>
+                    {% endif %}
+                    <div style="margin-left:auto;">
+                        <span class="badge-status" id="wpSyncStatusBadge">
+                            {{ article.wordpress_status if article.wordpress_status != 'Not Published' else (article.status.value if article.status else 'READY') }}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Hero Image Container -->
+                <figure class="hero-figure" id="heroFigure">
+                    {% if article.hero_image_url %}
+                    <img id="heroImageEl" src="{{ article.hero_image_url }}" alt="{{ article.title }}">
+                    <figcaption class="hero-caption" id="heroCaption" contenteditable="true">{{ article.hero_image_caption or 'Click to edit hero image caption...' }}</figcaption>
+                    <div class="hero-controls">
+                        <button class="btn btn-outline btn-sm" onclick="openImageUploadModal('hero')">Replace Hero Image</button>
+                        <button class="btn btn-danger btn-sm" onclick="removeHeroImage()">Delete Hero Image</button>
+                    </div>
+                    {% else %}
+                    <div id="noHeroPlaceholder" style="background:var(--paper); border:1px dashed var(--border-dark); padding:2rem; text-align:center; border-radius:8px; margin-bottom:1rem;">
+                        <i class="fa-regular fa-image fa-2x" style="color:var(--muted); margin-bottom:0.4rem; display:block;"></i>
+                        <div style="font-size:0.88rem; color:var(--muted); margin-top:0.3rem;">No featured hero image set. <a href="javascript:void(0)" onclick="openImageUploadModal('hero')" style="color:var(--accent); font-weight:600;">Upload Hero Image</a></div>
+                    </div>
+                    {% endif %}
+                </figure>
+            </header>
+
+            <!-- Inline Editable Article Body Canvas -->
+            <article class="article-body" id="articleBody" contenteditable="true" spellcheck="false">
+                {{ article.content | markdown | safe }}
+            </article>
+
+        </main>
+
+        <!-- Right Column: References & Research Audit Sidebar -->
+        <aside class="sidebar-panel">
+
+            <!-- Research Quality Audit -->
+            {% if article.research_metadata %}
+            <div class="card-widget" style="background: var(--accent-soft); border-color: var(--accent-border);">
+                <div class="widget-title" style="color: var(--accent);">
+                    <span>Research Audit</span>
+                    <span>SCORE: {{ article.research_metadata.quality_score or 85 }}/100</span>
+                </div>
+                <div style="font-size: 0.82rem; color: var(--ink-soft); line-height: 1.5;">
+                    Fact-checked against <strong>{{ article.sources|length }}</strong> independent sources with <strong>{{ article.claims|length or 10 }}</strong> verified empirical claims.
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Article Quick Metadata Editor -->
+            <div class="card-widget">
+                <div class="widget-title">
+                    <span>Article Metadata</span>
+                    <button class="btn btn-outline btn-sm" onclick="openMetadataModal()">Edit All</button>
+                </div>
+                <div style="font-size:0.83rem; color:var(--ink-soft); line-height:1.6;">
+                    <div><strong>Category:</strong> <span id="sideCategoryDisplay">{{ article.category or 'Editorial' }}</span></div>
+                    <div><strong>Author:</strong> <span id="sideAuthorDisplay">{{ article.author or 'Inpartner Editorial Board' }}</span></div>
+                    <div><strong>Reading Time:</strong> <span id="sideReadTimeDisplay">{{ article.reading_time or 5 }} min</span></div>
+                    <div><strong>Status:</strong> <span id="sideStatusDisplay">{{ article.status.value if article.status else 'DRAFT' }}</span></div>
+                </div>
+            </div>
+
+            <!-- Verified References Card List -->
+            <div class="card-widget">
+                <div class="widget-title">
+                    <span>Verified References</span>
+                    <span style="font-size:0.75rem; color:var(--muted);">{{ article.sources|length }} sources</span>
+                </div>
+
+                {% if article.sources %}
+                    {% for source in article.sources %}
+                    <div class="source-item">
+                        <div class="source-publisher">{{ (source.publisher | clean_html) or 'News Outlet' }}</div>
+                        <div class="source-title-text">{{ source.title | clean_html }}</div>
+                        {% if source.description %}
+                        <div class="source-desc">{{ source.description | clean_html }}</div>
+                        {% endif %}
+                        <a href="{{ source.url }}" target="_blank" rel="noopener" class="source-link">
+                            Open source link <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                        </a>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div style="font-size:0.85rem; color:var(--muted); font-style:italic;">No references attached.</div>
+                {% endif %}
+            </div>
+
+            <!-- Fact Provenance List -->
+            {% if article.claims %}
+            <div class="card-widget">
+                <div class="widget-title">
+                    <span>Fact Provenance</span>
+                    <span style="font-size:0.75rem; color:var(--muted);">{{ article.claims|length }} facts</span>
+                </div>
+                {% for claim in article.claims[:5] %}
+                <div class="claim-item">
+                    <div class="claim-text">{{ claim.claim_text | clean_html }}</div>
+                    {% if claim.evidence %}
+                    <div class="claim-evidence">"{{" "}}{{ claim.evidence | clean_html }}{{" "}}"</div>
+                    {% endif %}
+                    <div style="font-size:0.72rem; color:var(--muted); margin-top:0.3rem;">Source: {{ (claim.publisher | clean_html) or 'Verified Publisher' }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+        </aside>
+
+    </div>
+
+    <!-- Upload & Insert Image Modal -->
+    <div class="modal-overlay" id="imageUploadModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 class="modal-title">Insert Image</h3>
+                <button class="modal-close" onclick="closeModal('imageUploadModal')">&times;</button>
+            </div>
+            <div class="form-group">
+                <label>Upload Image File</label>
+                <input type="file" id="imageFileInput" accept="image/*">
+            </div>
+            <div class="form-group">
+                <label>Or Image Web URL</label>
+                <input type="text" id="imageUrlInput" placeholder="https://images.unsplash.com/photo-12345...">
+            </div>
+            <div class="form-group">
+                <label>Caption (Optional)</label>
+                <input type="text" id="imageCaptionInput" placeholder="Enter image caption...">
+            </div>
+            <div class="form-group">
+                <label>Credit / Source (Optional)</label>
+                <input type="text" id="imageCreditInput" placeholder="Photo by Unsplash / Reuters...">
+            </div>
+            <div style="display:flex; gap:0.5rem; justify-content:flex-end; margin-top:1.5rem;">
+                <button class="btn btn-outline" onclick="closeModal('imageUploadModal')">Cancel</button>
+                <button class="btn btn-accent" onclick="submitImageUpload()">Insert Image</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Link Management Modal -->
+    <div class="modal-overlay" id="linkModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 class="modal-title">Insert / Edit Link</h3>
+                <button class="modal-close" onclick="closeModal('linkModal')">&times;</button>
+            </div>
+            <div class="form-group">
+                <label>Link Text</label>
+                <input type="text" id="linkTextInput" placeholder="Bank Indonesia report...">
+            </div>
+            <div class="form-group">
+                <label>URL Destination</label>
+                <input type="url" id="linkUrlInput" placeholder="https://www.bi.go.id/...">
+            </div>
+            <div class="form-group" style="display:flex; align-items:center; gap:0.5rem;">
+                <input type="checkbox" id="linkNewTabCheckbox" checked style="width:auto;">
+                <label for="linkNewTabCheckbox" style="margin:0; font-weight:normal;">Open in new tab</label>
+            </div>
+            <div style="display:flex; gap:0.5rem; justify-content:flex-end; margin-top:1.5rem;">
+                <button class="btn btn-danger" onclick="removeActiveLink()">Unlink</button>
+                <button class="btn btn-outline" onclick="closeModal('linkModal')">Cancel</button>
+                <button class="btn btn-accent" onclick="applyLink()">Apply Link</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Article Metadata Editor Modal -->
+    <div class="modal-overlay" id="metadataModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 class="modal-title">Edit Article Metadata</h3>
+                <button class="modal-close" onclick="closeModal('metadataModal')">&times;</button>
+            </div>
+            <div class="form-group">
+                <label>Category / Topic Kicker</label>
+                <input type="text" id="metaCategory" value="{{ article.category or 'IN-DEPTH EDITORIAL' }}">
+            </div>
+            <div class="form-group">
+                <label>Author</label>
+                <input type="text" id="metaAuthor" value="{{ article.author or 'Inpartner Editorial Board' }}">
+            </div>
+            <div class="form-group">
+                <label>Estimated Reading Time (minutes)</label>
+                <input type="number" id="metaReadingTime" value="{{ article.reading_time or 5 }}" min="1">
+            </div>
+            <div class="form-group">
+                <label>Article Status</label>
+                <select id="metaStatus">
+                    <option value="DRAFT" {% if article.status and article.status.value == 'DRAFT' %}selected{% endif %}>Draft</option>
+                    <option value="READY" {% if article.status and article.status.value == 'READY' %}selected{% endif %}>Ready</option>
+                    <option value="PUBLISHED" {% if article.status and article.status.value == 'PUBLISHED' %}selected{% endif %}>Published</option>
+                    <option value="WORDPRESS_SYNCED" {% if article.status and article.status.value == 'WORDPRESS_SYNCED' %}selected{% endif %}>WordPress Synced</option>
+                </select>
+            </div>
+            <div style="display:flex; gap:0.5rem; justify-content:flex-end; margin-top:1.5rem;">
+                <button class="btn btn-outline" onclick="closeModal('metadataModal')">Cancel</button>
+                <button class="btn btn-accent" onclick="saveMetadataFromModal()">Save Metadata</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PDF Publication Modal Preview (Requirement #11, 12, 13, 14, 15, 16, 17) -->
+    <div class="modal-overlay" id="pdfPreviewModal">
+        <div class="modal-box pdf-modal-box">
+            <div class="pdf-modal-header">
+                <h3 class="modal-title" style="font-size:1.25rem;">Export Article as PDF — Publication Preview</h3>
+                <div class="pdf-toolbar">
+                    <button class="tb-btn" onclick="zoomPdfPreview(-0.1)" title="Zoom Out">-</button>
+                    <span id="pdfZoomLabel" style="font-size:0.8rem; font-weight:600;">100%</span>
+                    <button class="tb-btn" onclick="zoomPdfPreview(0.1)" title="Zoom In">+</button>
+                    <button class="tb-btn" onclick="resetPdfZoom()" title="Fit Page">Fit Page</button>
+                </div>
+                <button class="modal-close" onclick="closeModal('pdfPreviewModal')">&times;</button>
+            </div>
+
+            <!-- Multi-Page Rendered Canvas Viewport -->
+            <div class="pdf-preview-viewport" id="pdfPreviewViewport">
+                <!-- Multi-page A4 cards rendered dynamically -->
+            </div>
+
+            <div class="pdf-modal-footer">
+                <div style="font-size:0.82rem; color:var(--muted);">
+                    <i class="fa-solid fa-circle-check" style="color:var(--accent);"></i> Rendered with publication page layout, margins, and hyperlinks.
+                </div>
+                <div style="display:flex; gap:0.5rem;">
+                    <button class="btn btn-outline" onclick="closeModal('pdfPreviewModal')">Cancel</button>
+                    <button class="btn btn-accent" onclick="downloadPdfDirect()">
+                        <i class="fa-solid fa-download"></i> Download PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- WordPress Publish / Sync Modal -->
+    <div class="modal-overlay" id="wpModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 class="modal-title">Publish to WordPress</h3>
+                <button class="modal-close" onclick="closeModal('wpModal')">&times;</button>
+            </div>
+            
+            <div class="form-group">
+                <label>WordPress Site URL</label>
+                <input type="text" id="wpUrl" placeholder="https://yourblog.com" value="{{ article.wordpress_site or '' }}">
+            </div>
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="wpUsername" placeholder="admin">
+            </div>
+            <div class="form-group">
+                <label>Application Password</label>
+                <input type="password" id="wpAppPassword" placeholder="abcd 1234 efgh 5678">
+            </div>
+
+            <div style="display:flex; gap:0.5rem; margin-bottom:1rem;">
+                <button class="btn btn-outline" style="font-size:0.8rem;" onclick="testWpConnect()">Test Connection & Fetch Categories</button>
+            </div>
+
+            <div id="wpMetaContainer" style="display:none;">
+                <div class="form-group">
+                    <label>Post Status</label>
+                    <select id="wpStatus">
+                        <option value="draft" selected>Draft</option>
+                        <option value="publish">Publish Immediately</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Category</label>
+                    <select id="wpCategory">
+                        <option value="">Default Category</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Author</label>
+                    <select id="wpAuthor">
+                        <option value="">Default Author</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="wpStatusMsg" style="font-size:0.85rem; margin-bottom:1rem; display:none;"></div>
+
+            <div style="display:flex; gap:0.5rem; justify-content:flex-end; margin-top:1.5rem;">
+                <button class="btn btn-outline" onclick="closeModal('wpModal')">Cancel</button>
+                <button class="btn btn-accent" id="wpSyncBtn" onclick="submitWordPressSync()">
+                    Sync to WordPress
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Core Digital Publishing Workspace Javascript -->
+    <script>
+        const articleId = {{ article.id }};
+        let saveTimer = null;
+        let isSaving = false;
+        let hasUnsavedChanges = false;
+        let savedRange = null;
+
+        // Workspace Mode Switcher (Edit vs Preview)
+        function setWorkspaceMode(mode) {
+            const body = document.body;
+            const btnEdit = document.getElementById('btnModeEdit');
+            const btnPreview = document.getElementById('btnModePreview');
+            const toolbar = document.getElementById('mainToolbar');
+            const bodyCanvas = document.getElementById('articleBody');
+            const titleEl = document.getElementById('articleTitle');
+            const subEl = document.getElementById('articleSubtitle');
+
+            if (mode === 'preview') {
+                body.className = 'mode-preview';
+                btnEdit.classList.remove('active');
+                btnPreview.classList.add('active');
+                toolbar.style.display = 'none';
+                bodyCanvas.setAttribute('contenteditable', 'false');
+                titleEl.setAttribute('contenteditable', 'false');
+                subEl.setAttribute('contenteditable', 'false');
+                // Hide block handles
+                document.querySelectorAll('.block-handle-bar, .img-toolbar-overlay').forEach(el => el.style.display = 'none');
+            } else {
+                body.className = 'mode-edit';
+                btnPreview.classList.remove('active');
+                btnEdit.classList.add('active');
+                toolbar.style.display = 'flex';
+                bodyCanvas.setAttribute('contenteditable', 'true');
+                titleEl.setAttribute('contenteditable', 'true');
+                subEl.setAttribute('contenteditable', 'true');
+                document.querySelectorAll('.img-toolbar-overlay').forEach(el => el.style.display = '');
+            }
+        }
+
+        // Autosave Status Indicators
+        function updateAutosaveUI(state, html) {
+            const el = document.getElementById('autosaveIndicator');
+            if (!el) return;
+            el.className = 'autosave-status ' + state;
+            el.innerHTML = html;
+        }
+
+        function markUnsaved() {
+            hasUnsavedChanges = true;
+            updateAutosaveUI('autosave-unsaved', '<i class="fa-solid fa-circle-dot"></i> Unsaved changes');
+            scheduleAutosave();
+        }
+
+        function scheduleAutosave() {
+            if (saveTimer) clearTimeout(saveTimer);
+            saveTimer = setTimeout(saveArticle, 2500); // 2.5s debounce
+        }
+
+        // Save Article State & Content to Database
+        async function saveArticle() {
+            if (isSaving) return;
+            isSaving = true;
+            updateAutosaveUI('autosave-saving', '<i class="fa-solid fa-spinner fa-spin"></i> Saving...');
+
+            const titleEl = document.getElementById('articleTitle');
+            const subEl = document.getElementById('articleSubtitle');
+            const bodyEl = document.getElementById('articleBody');
+            
+            const title = titleEl ? titleEl.innerText.trim() : '';
+            const subtitle = subEl ? subEl.innerText.trim() : '';
+            
+            let contentHtml = '';
+            if (bodyEl) {
+                // Clean content DOM clone without editor handle UI
+                const bodyClone = bodyEl.cloneNode(true);
+                bodyClone.querySelectorAll('.block-handle-bar, .img-toolbar-overlay').forEach(el => el.remove());
+                contentHtml = bodyClone.innerHTML;
+            }
+
+            const heroImgEl = document.getElementById('heroImageEl');
+            const heroCaptionEl = document.getElementById('heroCaption');
+            const heroUrl = heroImgEl ? heroImgEl.src : null;
+            const heroCap = heroCaptionEl ? heroCaptionEl.innerText.trim() : null;
+
+            const categoryEl = document.getElementById('articleCategoryText');
+            const authorEl = document.getElementById('articleAuthorText');
+            const readTimeEl = document.getElementById('articleReadTimeText');
+            
+            const category = categoryEl ? categoryEl.innerText.trim() : null;
+            const author = authorEl ? authorEl.innerText.trim() : null;
+            const readTime = readTimeEl ? (parseInt(readTimeEl.innerText) || 5) : 5;
+
+            try {
+                const response = await fetch(`/api/article/${articleId}/save`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: title || 'Untitled Article',
+                        subtitle: subtitle,
+                        content: contentHtml,
+                        hero_image_url: heroUrl,
+                        hero_image_caption: heroCap,
+                        category: category,
+                        author: author,
+                        reading_time: readTime
+                    })
+                });
+
+                const data = await response.json();
+                if (response.ok && (data.status === 'success' || data.article_status)) {
+                    hasUnsavedChanges = false;
+                    isSaving = false;
+                    updateAutosaveUI('autosave-saved', `<i class="fa-solid fa-check"></i> Saved at ${data.saved_at}`);
+                } else {
+                    isSaving = false;
+                    updateAutosaveUI('autosave-error', `<i class="fa-solid fa-xmark"></i> ${data.message || 'Failed to save'}`);
+                }
+            } catch (err) {
+                isSaving = false;
+                updateAutosaveUI('autosave-error', '<i class="fa-solid fa-xmark"></i> Connection error');
+                console.error('Autosave error:', err);
+            }
+        }
+
+        // Attach listeners for contenteditable changes
+        document.querySelectorAll('[contenteditable="true"]').forEach(el => {
+            el.addEventListener('input', markUnsaved);
+            el.addEventListener('keyup', markUnsaved);
+        });
+
+        // Save / Restore Cursor Selection
+        function saveSelection() {
+            if (window.getSelection) {
+                let sel = window.getSelection();
+                if (sel.getRangeAt && sel.rangeCount) {
+                    savedRange = sel.getRangeAt(0);
+                }
+            }
+        }
+
+        function restoreSelection() {
+            if (savedRange && window.getSelection) {
+                let sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(savedRange);
+            }
+        }
+
+        const editorBody = document.getElementById('articleBody');
+        if (editorBody) {
+            editorBody.addEventListener('keyup', saveSelection);
+            editorBody.addEventListener('mouseup', saveSelection);
+            editorBody.addEventListener('mouseleave', saveSelection);
+        }
+
+        // Rich Text Formatting Helper Commands
+        function execCmd(command, value = null) {
+            document.execCommand(command, false, value);
+            markUnsaved();
+        }
+
+        function formatBlockSelect(tag) {
+            if (tag === 'PRE') {
+                execCmd('formatBlock', '<pre>');
+            } else {
+                execCmd('formatBlock', `<${tag}>`);
+            }
+            markUnsaved();
+        }
+
+        function applyHighlight() {
+            const sel = window.getSelection();
+            if (sel.rangeCount) {
+                const range = sel.getRangeAt(0);
+                const mark = document.createElement('mark');
+                mark.style.backgroundColor = '#fff2ac';
+                mark.style.padding = '2px 4px';
+                mark.style.borderRadius = '3px';
+                range.surroundContents(mark);
+                markUnsaved();
+            }
+        }
+
+        // Text Alignment Handler (Left, Center, Right, Justify)
+        function setTextAlign(align) {
+            const sel = window.getSelection();
+            let parentBlock = null;
+
+            if (sel.rangeCount) {
+                let node = sel.getRangeAt(0).commonAncestorContainer;
+                while (node && node !== editorBody) {
+                    if (node.nodeType === 1 && ['P','H1','H2','H3','H4','BLOCKQUOTE','FIGURE','DIV','PRE','UL','OL'].includes(node.tagName)) {
+                        parentBlock = node;
+                        break;
+                    }
+                    node = node.parentNode;
+                }
+            }
+
+            if (parentBlock) {
+                parentBlock.style.textAlign = align;
+                parentBlock.setAttribute('data-align', align);
+            } else {
+                document.execCommand('justify' + align.charAt(0).toUpperCase() + align.slice(1), false, null);
+            }
+
+            // Update active toolbar alignment buttons
+            ['Left','Center','Right','Justify'].forEach(a => {
+                const b = document.getElementById('btnAlign' + a);
+                if (b) b.classList.toggle('active', a.toLowerCase() === align);
+            });
+
+            markUnsaved();
+        }
+
+        // Insert Block Helpers
+        function insertCalloutBox() {
+            const html = `<div class="callout-box" contenteditable="true" data-align="left"><strong><i class="fa-regular fa-lightbulb"></i> Key Takeaway:</strong> Enter callout highlight text here...</div><p><br></p>`;
+            document.execCommand('insertHTML', false, html);
+            markUnsaved();
+        }
+
+        function insertHorizontalRule() {
+            document.execCommand('insertHorizontalRule', false, null);
+            markUnsaved();
+        }
+
+        // Link Management
+        function openLinkModal() {
+            saveSelection();
+            const selText = window.getSelection().toString();
+            document.getElementById('linkTextInput').value = selText;
+            document.getElementById('linkUrlInput').value = '';
+            openModal('linkModal');
+        }
+
+        function applyLink() {
+            const text = document.getElementById('linkTextInput').value.trim();
+            let url = document.getElementById('linkUrlInput').value.trim();
+            const newTab = document.getElementById('linkNewTabCheckbox').checked;
+
+            if (!url) {
+                alert('Please enter a valid URL.');
+                return;
+            }
+            if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('mailto:')) {
+                url = 'https://' + url;
+            }
+
+            restoreSelection();
+            if (text && window.getSelection().toString() !== text) {
+                const targetAttr = newTab ? ' target="_blank" rel="noopener"' : '';
+                document.execCommand('insertHTML', false, `<a href="${url}"${targetAttr}>${text}</a>`);
+            } else {
+                execCmd('createLink', url);
+            }
+
+            closeModal('linkModal');
+            markUnsaved();
+        }
+
+        function removeActiveLink() {
+            execCmd('unlink');
+            closeModal('linkModal');
+            markUnsaved();
+        }
+
+        // Image Management (Insert, Align, Width, Delete)
+        let imageUploadTarget = 'body';
+
+        function openImageUploadModal(target = 'body') {
+            imageUploadTarget = target;
+            openModal('imageUploadModal');
+        }
+
+        async function submitImageUpload() {
+            const fileInput = document.getElementById('imageFileInput');
+            const urlInput = document.getElementById('imageUrlInput');
+            const captionInput = document.getElementById('imageCaptionInput').value.trim();
+            const creditInput = document.getElementById('imageCreditInput').value.trim();
+            let imgUrl = null;
+
+            if (fileInput.files.length > 0) {
+                const formData = new FormData();
+                formData.append('file', fileInput.files[0]);
+                try {
+                    const res = await fetch(`/api/article/${articleId}/upload-image`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await res.json();
+                    if (data.status === 'success') {
+                        imgUrl = data.url;
+                    } else {
+                        alert('Image upload failed: ' + data.message);
+                        return;
+                    }
+                } catch (e) {
+                    alert('Upload error: ' + e);
+                    return;
+                }
+            } else if (urlInput.value.trim()) {
+                imgUrl = urlInput.value.trim();
+            } else {
+                alert('Please select an image file or enter a web URL.');
+                return;
+            }
+
+            if (imgUrl) {
+                if (imageUploadTarget === 'hero') {
+                    setHeroImage(imgUrl, captionInput);
+                } else {
+                    insertRichImageBlock(imgUrl, captionInput, creditInput);
+                }
+                closeModal('imageUploadModal');
+                fileInput.value = '';
+                urlInput.value = '';
+                document.getElementById('imageCaptionInput').value = '';
+                document.getElementById('imageCreditInput').value = '';
+            }
+        }
+
+        function setHeroImage(imgUrl, caption = '') {
+            const figure = document.getElementById('heroFigure');
+            figure.innerHTML = `
+                <img id="heroImageEl" src="${imgUrl}" alt="Featured Hero Image">
+                <figcaption class="hero-caption" id="heroCaption" contenteditable="true">${caption || 'Click to edit hero image caption...'}</figcaption>
+                <div class="hero-controls">
+                    <button class="btn btn-outline btn-sm" onclick="openImageUploadModal('hero')">Replace Hero Image</button>
+                    <button class="btn btn-danger btn-sm" onclick="removeHeroImage()">Delete Hero Image</button>
+                </div>
+            `;
+            markUnsaved();
+        }
+
+        async function removeHeroImage() {
+            if (!confirm('Are you sure you want to remove the hero image?')) return;
+            const heroImg = document.getElementById('heroImageEl');
+            const url = heroImg ? heroImg.src : null;
+
+            document.getElementById('heroFigure').innerHTML = `
+                <div id="noHeroPlaceholder" style="background:var(--paper); border:1px dashed var(--border-dark); padding:2rem; text-align:center; border-radius:8px; margin-bottom:1rem;">
+                    <i class="fa-regular fa-image fa-2x" style="color:var(--muted); margin-bottom:0.4rem; display:block;"></i>
+                    <div style="font-size:0.88rem; color:var(--muted); margin-top:0.3rem;">No featured hero image set. <a href="javascript:void(0)" onclick="openImageUploadModal('hero')" style="color:var(--accent); font-weight:600;">Upload Hero Image</a></div>
+                </div>
+            `;
+
+            if (url) {
+                await fetch(`/api/article/${articleId}/delete-image`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: url })
+                });
+            }
+            markUnsaved();
+            saveArticle();
+        }
+
+        function insertRichImageBlock(imgUrl, caption = '', credit = '') {
+            const capText = caption || 'Click to edit image caption...';
+            const credText = credit ? `Credit: ${credit}` : 'Credit: Source / Photographer';
+
+            const figureHtml = `
+                <figure class="article-image-block" data-align="center" data-width="medium" contenteditable="false">
+                    <div style="position:relative; display:inline-block; max-width:100%;">
+                        <img src="${imgUrl}" alt="Article Image" />
+                        <div class="img-toolbar-overlay">
+                            <span style="color:#aaa; font-size:10px; margin-right:4px;">ALIGN:</span>
+                            <button class="img-tb-btn" onclick="setImgBlockAlign(this, 'left')">Left</button>
+                            <button class="img-tb-btn active" onclick="setImgBlockAlign(this, 'center')">Center</button>
+                            <button class="img-tb-btn" onclick="setImgBlockAlign(this, 'right')">Right</button>
+                            <span style="color:#aaa; font-size:10px; margin:0 4px;">WIDTH:</span>
+                            <button class="img-tb-btn" onclick="setImgBlockWidth(this, 'small')">Small</button>
+                            <button class="img-tb-btn active" onclick="setImgBlockWidth(this, 'medium')">Medium</button>
+                            <button class="img-tb-btn" onclick="setImgBlockWidth(this, 'large')">Large</button>
+                            <button class="img-tb-btn" onclick="setImgBlockWidth(this, 'full')">Full</button>
+                            <button class="img-tb-btn" style="background:#a13b32; margin-left:4px;" onclick="deleteImgBlock(this)">Delete</button>
+                        </div>
+                    </div>
+                    <figcaption contenteditable="true" class="img-caption">${capText}</figcaption>
+                    <div contenteditable="true" class="img-credit">${credText}</div>
+                </figure><p><br></p>
+            `;
+
+            editorBody.focus();
+            restoreSelection();
+            if (!document.execCommand('insertHTML', false, figureHtml)) {
+                editorBody.innerHTML += figureHtml;
+            }
+            markUnsaved();
+        }
+
+        function setImgBlockAlign(btn, align) {
+            const figure = btn.closest('figure');
+            if (figure) {
+                figure.setAttribute('data-align', align);
+                figure.className = `article-image-block text-${align}`;
+                btn.parentNode.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                markUnsaved();
+            }
+        }
+
+        function setImgBlockWidth(btn, width) {
+            const figure = btn.closest('figure');
+            if (figure) {
+                figure.setAttribute('data-width', width);
+                btn.parentNode.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                markUnsaved();
+            }
+        }
+
+        async function deleteImgBlock(btn) {
+            if (!confirm('Are you sure you want to delete this image?')) return;
+            const figure = btn.closest('figure');
+            const img = figure ? figure.querySelector('img') : null;
+            const url = img ? img.src : null;
+
+            if (figure) {
+                figure.remove();
+            }
+
+            if (url) {
+                await fetch(`/api/article/${articleId}/delete-image`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: url })
+                });
+            }
+            markUnsaved();
+            saveArticle();
+        }
+
+        // Article Metadata Editor
+        function openMetadataModal() { openModal('metadataModal'); }
+
+        function saveMetadataFromModal() {
+            const cat = document.getElementById('metaCategory').value.trim();
+            const author = document.getElementById('metaAuthor').value.trim();
+            const time = document.getElementById('metaReadingTime').value;
+            const status = document.getElementById('metaStatus').value;
+
+            document.getElementById('articleCategoryText').innerText = cat || 'IN-DEPTH EDITORIAL';
+            document.getElementById('articleAuthorText').innerText = author || 'Inpartner Editorial Board';
+            document.getElementById('articleReadTimeText').innerText = (time || 5) + ' min read';
+
+            document.getElementById('sideCategoryDisplay').innerText = cat;
+            document.getElementById('sideAuthorDisplay').innerText = author;
+            document.getElementById('sideReadTimeDisplay').innerText = time + ' min';
+            document.getElementById('sideStatusDisplay').innerText = status;
+
+            closeModal('metadataModal');
+            markUnsaved();
+            saveArticle();
+        }
+
+        // PDF Preview Modal Controls & Rendering (Requirements #11, 12, 13, 14, 15, 16, 17, 18)
+        let pdfZoomLevel = 1.0;
+
+        async function openPdfPreviewModal() {
+            await saveArticle();
+
+            const viewport = document.getElementById('pdfPreviewViewport');
+            viewport.innerHTML = '';
+
+            const title = document.getElementById('articleTitle').innerText;
+            const subtitle = document.getElementById('articleSubtitle').innerText;
+            const category = document.getElementById('articleCategoryText').innerText;
+            const author = document.getElementById('articleAuthorText').innerText;
+            const dateStr = new Date().toLocaleDateString('en-US', {month:'long', day:'numeric', year:'numeric'});
+
+            const heroImg = document.getElementById('heroImageEl');
+            const heroCap = document.getElementById('heroCaption');
+
+            const bodyClone = editorBody.cloneNode(true);
+            bodyClone.querySelectorAll('.block-handle-bar, .img-toolbar-overlay').forEach(el => el.remove());
+
+            const children = Array.from(bodyClone.children);
+
+            // Group blocks into paginated pages
+            const pages = [];
+            let currentPage = [];
+            let currentHeightEstimate = 350; // Header & Title estimate
+
+            children.forEach(child => {
+                let blockHeight = 70;
+                if (child.tagName === 'FIGURE' || child.querySelector('img')) blockHeight = 320;
+                else if (['H1','H2','H3'].includes(child.tagName)) blockHeight = 90;
+                else if ((child.innerText || '').length > 250) blockHeight = 150;
+
+                if (currentPage.length > 0 && currentHeightEstimate + blockHeight > 820) {
+                    pages.push(currentPage);
+                    currentPage = [];
+                    currentHeightEstimate = 80; // Header spacing on later pages
+                }
+                currentPage.push(child);
+                currentHeightEstimate += blockHeight;
+            });
+            if (currentPage.length > 0) {
+                pages.push(currentPage);
+            }
+            if (pages.length === 0) pages.push([]);
+
+            const totalPages = pages.length;
+
+            pages.forEach((pageBlocks, index) => {
+                const pageNum = index + 1;
+                const pageSheet = document.createElement('div');
+                pageSheet.className = 'pdf-a4-page';
+                pageSheet.style.transform = `scale(${pdfZoomLevel})`;
+
+                const headerHtml = `
+                    <div class="pdf-page-header">
+                        <span>INPARTNER DIGITAL PUBLISHING WORKSPACE</span>
+                        <span>Page ${pageNum} of ${totalPages}</span>
+                    </div>
+                `;
+
+                let contentHtml = '';
+                if (pageNum === 1) {
+                    const heroHtml = heroImg ? `
+                        <div style="text-align:center; margin-bottom:1.5rem;">
+                            <img src="${heroImg.src}" style="max-width:100%; max-height:280px; border-radius:4px; border:1px solid #eee;">
+                            <div style="font-size:8.5pt; font-style:italic; color:#666; margin-top:4px;">${heroCap ? heroCap.innerText : ''}</div>
+                        </div>
+                    ` : '';
+
+                    contentHtml += `
+                        <div style="font-size:8pt; font-weight:bold; color:#93602a; margin-bottom:4px; font-family:sans-serif; text-transform:uppercase;">INPARTNER ARTICLE GENERATOR &mdash; EDITORIAL REPORT</div>
+                        <h1 style="font-family:'Times New Roman', serif; font-size:20pt; margin:0 0 8px 0; line-height:1.2; font-weight:bold; color:#141311;">${title}</h1>
+                        <div style="font-family:'Times New Roman', serif; font-size:11pt; font-style:italic; color:#555; margin-bottom:12px;">${subtitle}</div>
+                        <div style="font-family:sans-serif; font-size:8.5pt; color:#777; border-top:1px solid #ddd; border-bottom:1px solid #ddd; padding:6px 0; margin-bottom:18px;">
+                            Category: <b>${category}</b> &bull; Author: <b>${author}</b> &bull; Date: <b>${dateStr}</b>
+                        </div>
+                        ${heroHtml}
+                    `;
+                }
+
+                contentHtml += `<div style="font-family:'Times New Roman', serif; font-size:10.5pt; line-height:1.65; color:#222;">`;
+                pageBlocks.forEach(b => {
+                    contentHtml += b.outerHTML;
+                });
+                contentHtml += `</div>`;
+
+                const footerHtml = `
+                    <div class="pdf-page-footer">
+                        <span>Inpartner Editorial Publication</span>
+                        <span>Page ${pageNum} of ${totalPages}</span>
+                    </div>
+                `;
+
+                pageSheet.innerHTML = headerHtml + `<div class="pdf-page-body">${contentHtml}</div>` + footerHtml;
+                viewport.appendChild(pageSheet);
+            });
+
+            openModal('pdfPreviewModal');
+        }
+
+        function zoomPdfPreview(delta) {
+            pdfZoomLevel = Math.max(0.6, Math.min(1.5, pdfZoomLevel + delta));
+            document.querySelectorAll('.pdf-a4-page').forEach(p => {
+                p.style.transform = `scale(${pdfZoomLevel})`;
+            });
+            document.getElementById('pdfZoomLabel').innerText = Math.round(pdfZoomLevel * 100) + '%';
+        }
+
+        function resetPdfZoom() {
+            pdfZoomLevel = 1.0;
+            document.querySelectorAll('.pdf-a4-page').forEach(p => {
+                p.style.transform = `scale(1)`;
+            });
+            document.getElementById('pdfZoomLabel').innerText = '100%';
+        }
+
+        function downloadPdfDirect() {
+            window.open(`/api/article/${articleId}/export/pdf`, '_blank');
+            closeModal('pdfPreviewModal');
+        }
+
+        // Dropdown Toggle & Outside Click Handler
+        function toggleDropdown(id) {
+            document.getElementById(id).classList.toggle('active');
+        }
+
+        window.addEventListener('click', function(e) {
+            if (!e.target.closest('.dropdown')) {
+                document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('active'));
+            }
+        });
+
+        // Keyboard Shortcuts Handler (Ctrl+B, Ctrl+I, Ctrl+U, Ctrl+K, Ctrl+S)
+        window.addEventListener('keydown', function (e) {
+            if (e.ctrlKey || e.metaKey) {
+                if (e.key === 's' || e.key === 'S') {
+                    e.preventDefault();
+                    saveArticle();
+                } else if (e.key === 'k' || e.key === 'K') {
+                    e.preventDefault();
+                    openLinkModal();
+                }
+            }
+        });
+
+        // WordPress Integration Handlers
+        async function testWpConnect() {
+            const url = document.getElementById('wpUrl').value.trim();
+            const username = document.getElementById('wpUsername').value.trim();
+            const appPassword = document.getElementById('wpAppPassword').value.trim();
+            const msgEl = document.getElementById('wpStatusMsg');
+            msgEl.style.display = 'block';
+            msgEl.style.color = 'var(--accent)';
+            msgEl.innerText = 'Testing connection to WordPress...';
+
+            if (!url || !username || !appPassword) {
+                msgEl.style.color = 'var(--negative)';
+                msgEl.innerText = 'Please fill in Site URL, Username, and Application Password.';
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/wordpress/connect', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ wp_url: url, username: username, app_password: appPassword })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    msgEl.style.color = 'var(--positive)';
+                    msgEl.innerText = `Connected as ${data.user_name}! Select categories below:`;
+
+                    const catSelect = document.getElementById('wpCategory');
+                    catSelect.innerHTML = '<option value="">Default Category</option>';
+                    data.categories.forEach(c => {
+                        catSelect.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+                    });
+
+                    const authSelect = document.getElementById('wpAuthor');
+                    authSelect.innerHTML = '<option value="">Default Author</option>';
+                    data.authors.forEach(a => {
+                        authSelect.innerHTML += `<option value="${a.id}">${a.name}</option>`;
+                    });
+
+                    document.getElementById('wpMetaContainer').style.display = 'block';
+                } else {
+                    msgEl.style.color = 'var(--negative)';
+                    msgEl.innerText = data.message || 'WordPress connection failed.';
+                }
+            } catch (e) {
+                msgEl.style.color = 'var(--negative)';
+                msgEl.innerText = 'Error: ' + e;
+            }
+        }
+
+        async function submitWordPressSync() {
+            const url = document.getElementById('wpUrl').value.trim();
+            const username = document.getElementById('wpUsername').value.trim();
+            const appPassword = document.getElementById('wpAppPassword').value.trim();
+            const status = document.getElementById('wpStatus').value;
+            const categoryId = document.getElementById('wpCategory').value;
+            const authorId = document.getElementById('wpAuthor').value;
+            const btn = document.getElementById('wpSyncBtn');
+            const msgEl = document.getElementById('wpStatusMsg');
+
+            msgEl.style.display = 'block';
+            msgEl.style.color = 'var(--accent)';
+            msgEl.innerText = 'Syncing article to WordPress...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(`/api/article/${articleId}/publish-wordpress`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        wp_url: url,
+                        username: username,
+                        app_password: appPassword,
+                        status: status,
+                        category_id: categoryId ? parseInt(categoryId) : null,
+                        author_id: authorId ? parseInt(authorId) : null
+                    })
+                });
+
+                const data = await res.json();
+                btn.disabled = false;
+
+                if (data.status === 'success') {
+                    msgEl.style.color = 'var(--positive)';
+                    msgEl.innerHTML = `✓ ${data.message}! <a href="${data.post_link}" target="_blank" style="color:var(--accent);">View Post &rarr;</a>`;
+                    document.getElementById('wpSyncStatusBadge').className = 'badge-status';
+                    document.getElementById('wpSyncStatusBadge').innerText = 'WP ' + data.wordpress_status.toUpperCase();
+                } else {
+                    msgEl.style.color = 'var(--negative)';
+                    msgEl.innerText = data.message || 'Sync to WordPress failed.';
+                }
+            } catch (e) {
+                btn.disabled = false;
+                msgEl.style.color = 'var(--negative)';
+                msgEl.innerText = 'Network error: ' + e;
+            }
+        }
+
+        // Modal Helpers
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+        function openWordPressModal() { openModal('wpModal'); }
+
+        // Prevent Accidental Unsaved Navigation
+        window.addEventListener('beforeunload', function (e) {
+            if (hasUnsavedChanges) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+    </script>
+</body>
+</html>

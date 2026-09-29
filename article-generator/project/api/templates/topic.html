@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ topic.title | clean_html }} — Inpartner Article Generator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --paper: #f0f7ff;
+            --surface: #ffffff;
+            --border: #dbeafe;
+            --border-dark: #bfdbfe;
+            --ink: #0f172a;
+            --ink-body: #1e293b;
+            --ink-soft: #334155;
+            --muted: #64748b;
+            --accent: #2563eb;
+            --accent-hover: #1d4ed8;
+            --accent-soft: #eff6ff;
+            --accent-border: #bfdbfe;
+            --positive: #059669;
+            --positive-soft: #ecfdf5;
+            --negative: #dc2626;
+            --negative-soft: #fef2f2;
+            --info: #0284c7;
+            --info-soft: #f0f9ff;
+            --radius: 8px;
+            --shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--paper);
+            color: var(--ink-body);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Top Bar Navigation */
+        nav.nav-bar {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+        }
+
+        .nav-inner {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 0.75rem 1.75rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .brand-group {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .nav-brand {
+            font-family: 'Newsreader', Georgia, serif;
+            font-weight: 700;
+            font-size: 1.15rem;
+            color: var(--ink);
+            text-decoration: none;
+        }
+
+        .nav-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--ink-soft);
+            text-decoration: none;
+            transition: color 0.15s ease;
+        }
+
+        .nav-back:hover { color: var(--accent); }
+
+        .btn {
+            background: var(--ink);
+            color: #ffffff;
+            border: 1px solid var(--ink);
+            padding: 0.55rem 1.15rem;
+            border-radius: var(--radius);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.86rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .btn:hover:not(:disabled) {
+            background: #32302b;
+            transform: translateY(-1px);
+        }
+
+        .btn:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-accent {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #ffffff;
+        }
+
+        .btn-accent:hover:not(:disabled) { background: #7a4f21; }
+
+        /* Workspace Grid Layout */
+        .workspace-grid {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 2.25rem 1.75rem 5rem;
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 2.25rem;
+            align-items: start;
+        }
+
+        /* Main Container */
+        .main-container {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 2.5rem 3rem;
+            box-shadow: var(--shadow);
+        }
+
+        .category-kicker {
+            display: inline-block;
+            font-size: 0.76rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 0.65rem;
+        }
+
+        h1.topic-title {
+            font-family: 'Newsreader', Georgia, serif;
+            font-size: 2.35rem;
+            line-height: 1.2;
+            font-weight: 700;
+            color: var(--ink);
+            margin: 0 0 1rem 0;
+            letter-spacing: -0.01em;
+        }
+
+        .topic-meta-bar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 1rem;
+            font-size: 0.84rem;
+            color: var(--muted);
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            padding: 0.85rem 0;
+            margin-bottom: 2.25rem;
+        }
+
+        .badge-status {
+            background: var(--accent-soft);
+            color: var(--accent);
+            border: 1px solid var(--accent-border);
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 0.18rem 0.55rem;
+            border-radius: 4px;
+            letter-spacing: 0.04em;
+        }
+
+        .section-heading {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.88rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--ink);
+            margin-bottom: 1.25rem;
+        }
+
+        /* Source Feed Card */
+        .source-feed-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.5rem 1.75rem;
+            margin-bottom: 1.5rem;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .source-feed-card:hover {
+            border-color: var(--border-dark);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+        }
+
+        .source-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 0.6rem;
+        }
+
+        .source-publisher {
+            font-size: 0.76rem;
+            font-weight: 700;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .reliability-pill {
+            font-size: 0.68rem;
+            font-weight: 700;
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .pill-primary { background: var(--positive-soft); color: var(--positive); border: 1px solid rgba(39,98,61,0.25); }
+        .pill-reputable { background: var(--info-soft); color: var(--info); border: 1px solid rgba(29,82,136,0.25); }
+        .pill-industry { background: var(--accent-soft); color: var(--accent); border: 1px solid rgba(147,96,42,0.25); }
+
+        .source-card-title {
+            font-family: 'Newsreader', Georgia, serif;
+            font-size: 1.3rem;
+            font-weight: 700;
+            line-height: 1.35;
+            color: var(--ink);
+            margin-bottom: 0.75rem;
+        }
+
+        .source-card-snippet {
+            font-family: 'Newsreader', Georgia, serif;
+            font-size: 1.08rem;
+            line-height: 1.7;
+            color: var(--ink-soft);
+            margin-bottom: 1.2rem;
+            background: var(--paper);
+            padding: 1rem 1.25rem;
+            border-left: 3px solid var(--accent);
+            border-radius: 0 6px 6px 0;
+            white-space: pre-wrap;
+        }
+
+        .source-card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: var(--muted);
+        }
+
+        .source-link-btn {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--accent);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            transition: color 0.12s ease;
+        }
+
+        .source-link-btn:hover { color: var(--ink); text-decoration: underline; }
+
+        /* Sidebar Styling */
+        .sidebar-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            position: sticky;
+            top: 85px;
+        }
+
+        .card-widget {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+        }
+
+        .widget-title {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--ink);
+            margin-bottom: 1rem;
+        }
+
+        .widget-stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.85rem;
+        }
+
+        .widget-stat-row:last-child { border-bottom: none; }
+        .stat-label { color: var(--muted); }
+        .stat-val { font-weight: 600; color: var(--ink); }
+
+        /* Progress Card Modal */
+        .progress-card {
+            display: none;
+            background: var(--surface);
+            border: 2px solid var(--accent);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .progress-card.active { display: block; }
+
+        .progress-title {
+            font-family: 'Newsreader', Georgia, serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--ink);
+            margin-bottom: 0.4rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--border-dark);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Mobile adjustments */
+        @media (max-width: 960px) {
+            .workspace-grid { grid-template-columns: 1fr; }
+            .main-container { padding: 1.75rem 1.5rem; }
+            .sidebar-panel { position: static; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Navigation Bar -->
+    <nav class="nav-bar">
+        <div class="nav-inner">
+            <div class="brand-group">
+                <a href="/" class="nav-back"><i class="fa-solid fa-arrow-left"></i> Dashboard</a>
+                <div style="color:var(--border-dark);">|</div>
+                <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAMAAABF0y+mAAAAMFBMVEVHcEwZdtIZdtIZdtIYdtL///8Ab9EAas9Pjtm5zu2QtOXo8Po1gtZzot/z9/3L2/ISDX22AAAABHRSTlMA+6WnkcCETAAAAKFJREFUKJGdk1kOwyAMRB3wws79b1uWpFELjtTOl+HJkhkPAObArQ4DYPaoy4DSN3pBZ4gD8qz51AdMIQ8WprITvqEj309CbwVZYcTU5EKkyCucDSx+3uxgKwvpkD25/6BUShpkpCIrHA5JipSXgcpwyNfLha1D1bHmEF7WrgPdO9Ge8jMsG9iW3WFbNq8Qz2TwF8PngD1G8yHUFsBq38HCC/PVD3xL5H7OAAAAAElFTkSuQmCC" alt="Logo" style="width:24px;height:24px;object-fit:contain;">
+                <a href="/" class="nav-brand">Inpartner Article Generator</a>
+            </div>
+
+            <div>
+                <button class="btn btn-accent" id="topGenBtn" onclick="generateTopic({{ topic.id }})">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Generate Article from Topic
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Workspace Grid -->
+    <div class="workspace-grid">
+
+        <!-- Main Content Area -->
+        <main class="main-container">
+
+            <!-- Progress Overlay for Generation -->
+            <div id="progressCard" class="progress-card">
+                <div class="progress-title">
+                    <div class="spinner"></div>
+                    <span id="progressTitleText">Starting AI Article Generation...</span>
+                </div>
+                <div style="font-size:0.88rem; color:var(--ink-soft); margin-top:0.5rem;" id="progressMsgText">
+                    Synthesizing research evidence and structuring narrative plan...
+                </div>
+            </div>
+
+            <!-- Topic Masthead -->
+            <header>
+                <span class="category-kicker">DISCOVERED TOPIC DETAIL</span>
+                <h1 class="topic-title">{{ topic.title | clean_html }}</h1>
+
+                <div class="topic-meta-bar">
+                    <div>Category: <strong>{{ topic.category or 'Business & Economy' }}</strong></div>
+                    <div>&bull;</div>
+                    <div>Status: <span class="badge-status">{{ topic.status }}</span></div>
+                    <div>&bull;</div>
+                    <div>Discovered Sources: <strong>{{ topic.sources|length }}</strong></div>
+                    {% if topic.detected_at %}
+                    <div>&bull;</div>
+                    <div>{{ topic.detected_at|date_format }}</div>
+                    {% endif %}
+                </div>
+            </header>
+
+            <!-- Sources List -->
+            <section>
+                <div class="section-heading">Aggregated News Sources & Evidence Base</div>
+
+                {% if topic.sources %}
+                    {% for source in topic.sources %}
+                    <div class="source-feed-card">
+                        <div class="source-card-header">
+                            <span class="source-publisher">{{ source.publisher | clean_html or 'News Publisher' }}</span>
+                            {% if source.reliability == 1 %}
+                            <span class="reliability-pill pill-primary">PRIMARY / OFFICIAL</span>
+                            {% elif source.reliability == 2 %}
+                            <span class="reliability-pill pill-reputable">REPUTABLE MEDIA</span>
+                            {% else %}
+                            <span class="reliability-pill pill-industry">INDUSTRY REPORT</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="source-card-title">{{ source.title | clean_html }}</div>
+
+                        {% set snippet = (source.content_data.full_content if source.content_data and source.content_data.full_content else source.description) | clean_html %}
+                        {% if snippet %}
+                        <div class="source-card-snippet">{{ snippet[:500] }}{{ '...' if snippet|length > 500 else '' }}</div>
+                        {% endif %}
+
+                        <div class="source-card-footer">
+                            <div>
+                                {% if source.published_at %}
+                                <span>Published: {{ source.published_at.strftime('%B %d, %Y %H:%M') }}</span>
+                                {% endif %}
+                            </div>
+                            <a href="{{ source.url }}" target="_blank" rel="noopener" class="source-link-btn">
+                                Open Original Source <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div style="padding: 3rem; text-align: center; color: var(--muted); font-size: 0.95rem; background: var(--paper); border-radius: 8px;">
+                        No sources discovered for this topic.
+                    </div>
+                {% endif %}
+            </section>
+
+        </main>
+
+        <!-- Right Sidebar -->
+        <aside class="sidebar-panel">
+
+            <!-- Quick Action Box -->
+            <div class="card-widget" style="background: var(--accent-soft); border-color: var(--accent-border);">
+                <div class="widget-title" style="color: var(--accent);">Generate Article</div>
+                <div style="font-size: 0.85rem; color: var(--ink-soft); line-height: 1.5; margin-bottom: 1.25rem;">
+                    Run full AI research, fact extraction, evidence verification, and compose a ready-to-edit long-form article.
+                </div>
+                <button class="btn btn-accent" style="width: 100%; justify-content: center;" id="sideGenBtn" onclick="generateTopic({{ topic.id }})">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Generate Long-Form Article
+                </button>
+            </div>
+
+            <!-- Topic Stats Widget -->
+            <div class="card-widget">
+                <div class="widget-title">Topic Information</div>
+                <div class="widget-stat-row">
+                    <span class="stat-label">Category</span>
+                    <span class="stat-val">{{ topic.category or 'Business & Economy' }}</span>
+                </div>
+                <div class="widget-stat-row">
+                    <span class="stat-label">Trend Score</span>
+                    <span class="stat-val">{{ "%.1f"|format(topic.score or 85.0) }}</span>
+                </div>
+                <div class="widget-stat-row">
+                    <span class="stat-label">Sources Count</span>
+                    <span class="stat-val">{{ topic.sources|length }}</span>
+                </div>
+                <div class="widget-stat-row">
+                    <span class="stat-label">Status</span>
+                    <span class="stat-val" style="color: var(--accent);">{{ topic.status }}</span>
+                </div>
+            </div>
+
+        </aside>
+
+    </div>
+
+    <script>
+        let pollingInterval = null;
+
+        async function generateTopic(topicId) {
+            const topBtn = document.getElementById('topGenBtn');
+            const sideBtn = document.getElementById('sideGenBtn');
+            if (topBtn) topBtn.disabled = true;
+            if (sideBtn) sideBtn.disabled = true;
+
+            const progressCard = document.getElementById('progressCard');
+            progressCard.classList.add('active');
+
+            try {
+                const response = await fetch(`/api/generate/${topicId}`, { method: 'POST' });
+                const data = await response.json();
+
+                if (data.status === 'success' && data.article_id) {
+                    pollStatus(data.article_id);
+                } else {
+                    if (topBtn) topBtn.disabled = false;
+                    if (sideBtn) sideBtn.disabled = false;
+                    alert(data.message || 'Failed to start topic generation.');
+                }
+            } catch (err) {
+                if (topBtn) topBtn.disabled = false;
+                if (sideBtn) sideBtn.disabled = false;
+                alert('Network error: ' + err);
+            }
+        }
+
+        function pollStatus(articleId) {
+            if (pollingInterval) clearInterval(pollingInterval);
+
+            pollingInterval = setInterval(async () => {
+                try {
+                    const resp = await fetch(`/api/article/${articleId}/status`);
+                    const data = await resp.json();
+
+                    if (data.generation_step) {
+                        document.getElementById('progressMsgText').innerText = `Current step: ${data.generation_step}...`;
+                    }
+
+                    if (data.status === 'READY' || data.status === 'DRAFT') {
+                        clearInterval(pollingInterval);
+                        document.getElementById('progressTitleText').innerText = 'Article Complete! Loading overview...';
+                        setTimeout(() => {
+                            window.location.href = `/article/${articleId}`;
+                        }, 500);
+                    } else if (data.status === 'FAILED') {
+                        clearInterval(pollingInterval);
+                        document.getElementById('progressCard').classList.remove('active');
+                        alert(data.error_message || 'Article generation failed.');
+                    }
+                } catch (err) {
+                    console.error('Polling error:', err);
+                }
+            }, 1500);
+        }
+    </script>
+</body>
+</html>
