@@ -82,37 +82,46 @@ def call_llm(prompt: str, role: str = "REASONING", max_retries_per_model: int = 
 
 def call_llm_json(prompt: str, role: str = "REASONING") -> tuple[dict | list | None, str | None]:
     """
-    Call LLM expecting JSON output. Automatically strips markdown backticks and parses JSON.
+    Call LLM expecting JSON output. Automatically strips markdown backticks, cleans up common JSON syntax issues (trailing commas), and parses JSON.
     """
+    import re
     raw_text, model_used = call_llm(prompt, role=role)
     if not raw_text:
         return None, None
         
-    clean_text = raw_text.replace("```json", "").replace("```markdown", "").replace("```", "").strip()
+    clean_text = raw_text.strip()
+    clean_text = re.sub(r'^```(?:json|markdown)?\s*', '', clean_text, flags=re.MULTILINE)
+    clean_text = re.sub(r'\s*```$', '', clean_text, flags=re.MULTILINE).strip()
     
-    # 1. Direct JSON parse
-    try:
-        return json.loads(clean_text), model_used
-    except Exception:
-        pass
-
-    # 2. Extract JSON array [...]
-    start_arr = clean_text.find("[")
-    end_arr = clean_text.rfind("]")
-    if start_arr != -1 and end_arr != -1 and end_arr > start_arr:
+    def try_parse(s: str):
         try:
-            return json.loads(clean_text[start_arr:end_arr+1]), model_used
+            return json.loads(s)
         except Exception:
-            pass
+            # Fix trailing commas before } or ]
+            s_fixed = re.sub(r',(\s*[}\]])', r'\1', s)
+            try:
+                return json.loads(s_fixed)
+            except Exception:
+                return None
 
-    # 3. Extract JSON object {...}
+    res = try_parse(clean_text)
+    if res is not None:
+        return res, model_used
+
     start_obj = clean_text.find("{")
     end_obj = clean_text.rfind("}")
     if start_obj != -1 and end_obj != -1 and end_obj > start_obj:
-        try:
-            return json.loads(clean_text[start_obj:end_obj+1]), model_used
-        except Exception:
-            pass
+        res = try_parse(clean_text[start_obj:end_obj+1])
+        if res is not None:
+            return res, model_used
 
-    print(f"[LLM Router Error] Failed to parse JSON response from {model_used}.")
+    start_arr = clean_text.find("[")
+    end_arr = clean_text.rfind("]")
+    if start_arr != -1 and end_arr != -1 and end_arr > start_arr:
+        res = try_parse(clean_text[start_arr:end_arr+1])
+        if res is not None:
+            return res, model_used
+
+    print(f"[LLM Router Error] Failed to parse JSON response from {model_used}. Raw text sample: {raw_text[:200]}")
     return None, model_used
+

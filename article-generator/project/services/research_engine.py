@@ -345,6 +345,24 @@ def extract_facts_and_provenance(sources: list, intent: dict) -> list[dict]:
                     item["reliability"] = s.reliability
                     extracted_facts.append(item)
                     
+    if not extracted_facts and sources:
+        print("[ResearchEngine Warning] No facts extracted via LLM. Generating fallback facts from source metadata...")
+        for s in sources:
+            desc = s.description[:200] if s.description else ""
+            fact_text = f"{s.title}. {desc}".strip()
+            if len(fact_text) > 15:
+                extracted_facts.append({
+                    "fact_text": fact_text,
+                    "evidence_quote": s.title,
+                    "fact_type": "event",
+                    "confidence": 0.85,
+                    "source_id": s.id,
+                    "publisher": s.publisher,
+                    "url": s.url,
+                    "published_at": s.published_at.isoformat() if s.published_at else None,
+                    "reliability": s.reliability
+                })
+                    
     print(f"[ResearchEngine] Extracted {len(extracted_facts)} atomic facts with provenance from {len(sources)} sources.")
     return extracted_facts
 

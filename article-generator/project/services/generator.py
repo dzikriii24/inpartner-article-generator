@@ -23,6 +23,52 @@ def update_article_step(db: Session, article: GeneratedArticle, step: str, statu
             article.error_message = error_msg
         db.commit()
 
+def create_fallback_story_plan(topic_title: str, sources: list, facts: list, intent: dict) -> dict:
+    subtopics = intent.get("subtopics", ["Overview", "Key Developments", "Impact & Outlook"]) if intent else ["Overview", "Key Developments", "Impact & Outlook"]
+    
+    sections = []
+    sections.append({
+        "section_id": "sec_1",
+        "heading": "Overview & Executive Summary",
+        "section_type": "lead",
+        "planned_facts": [f["fact_text"] for f in facts[:2]] if facts else [f"Key developments regarding {topic_title}."],
+        "quote_highlight": None,
+        "data_highlight": None
+    })
+    
+    for idx, st in enumerate(subtopics[:4]):
+        matched_facts = [f["fact_text"] for f in facts[idx*2:(idx+1)*2]] if facts else []
+        sections.append({
+            "section_id": f"sec_{idx+2}",
+            "heading": str(st).title(),
+            "section_type": "main_story" if idx == 0 else "impact",
+            "planned_facts": matched_facts if matched_facts else [f"Analysis of {st} in relation to {topic_title}."],
+            "quote_highlight": None,
+            "data_highlight": None
+        })
+        
+    sections.append({
+        "section_id": f"sec_{len(sections)+1}",
+        "heading": "Strategic Outlook & Future Trajectory",
+        "section_type": "closing",
+        "planned_facts": [f["fact_text"] for f in facts[-2:]] if len(facts) >= 4 else ["Long term outlook and industry implications."],
+        "quote_highlight": None,
+        "data_highlight": None
+    })
+    
+    return {
+        "headline": topic_title,
+        "subtitle": f"An in-depth analysis of {topic_title} and its broader market implications.",
+        "category": intent.get("category", "Business & Economy") if intent else "Business & Economy",
+        "hero_image_caption": f"Context surrounding {topic_title}.",
+        "key_takeaways": [
+            f"Key developments reported in {topic_title}.",
+            "Stakeholder perspectives and market impact analysis.",
+            "Strategic outlook and future implications."
+        ],
+        "sections": sections
+    }
+
 def generate_story_plan(topic_title: str, sources: list, facts: list, intent: dict) -> dict:
     """
     Generate an adaptive, structured story plan for a long-form news article based strictly on facts.
@@ -79,7 +125,9 @@ def generate_story_plan(topic_title: str, sources: list, facts: list, intent: di
     if plan and isinstance(plan, dict) and "headline" in plan:
         print(f"[Generator] Story plan created successfully using {model_used}")
         return plan
-    return None
+        
+    print(f"[Generator Warning] LLM story plan generation failed or returned invalid format. Using robust fallback story plan...")
+    return create_fallback_story_plan(topic_title, sources, facts, intent)
 
 def compose_narrative_draft(plan: dict, facts: list, intent: dict) -> str:
     """
@@ -146,7 +194,9 @@ def editorial_correction_and_composition(draft: str, facts: list, intent: dict) 
     if final_text and len(final_text.strip()) > 300:
         print(f"[Generator] Article composed using {model_used}. Word count: {len(final_text.split())}")
         return final_text.strip()
-    return None
+        
+    print(f"[Generator Warning] Editorial composition LLM call failed or produced short output. Using narrative draft fallback...")
+    return draft
 
 def fact_audit_and_validation(final_markdown: str, facts: list) -> dict:
     """
