@@ -35,13 +35,15 @@ def sync_schema():
     ]
 
     with engine.connect() as conn:
-        # Check topic_id column nullability & modify url columns to TEXT
+        # Check topic_id column nullability & modify url and title columns to TEXT
         try:
             conn.execute(text("ALTER TABLE generated_articles MODIFY COLUMN topic_id INT NULL"))
             conn.execute(text("ALTER TABLE sources MODIFY COLUMN url TEXT"))
             conn.execute(text("ALTER TABLE claims MODIFY COLUMN url TEXT NULL"))
+            conn.execute(text("ALTER TABLE topics MODIFY COLUMN title TEXT NULL"))
+            conn.execute(text("ALTER TABLE generated_articles MODIFY COLUMN title TEXT NULL"))
             conn.commit()
-            print("Modified topic_id and url columns to TEXT")
+            print("Modified topic_id, url, and title columns to TEXT")
         except Exception as e:
             print("Modify notice:", e)
 

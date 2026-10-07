@@ -36,6 +36,11 @@
 
         * { box-sizing: border-box; }
 
+        html, body {
+            overflow-x: hidden;
+            width: 100%;
+        }
+
         body {
             margin: 0;
             padding: 0;
@@ -325,6 +330,182 @@
             margin: 0 0.3rem;
         }
 
+        /* Modern Article Version Switcher Bar & Responsive Rules */
+        .version-tabs-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(249, 246, 240, 0.9) 100%);
+            border: 1px solid var(--accent-border);
+            padding: 0.65rem 1rem;
+            border-radius: 14px;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 18px -4px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .version-tabs-left {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            flex-wrap: wrap;
+        }
+
+        .version-tabs-right {
+            display: flex;
+            align-items: center;
+        }
+
+        .version-tabs-label {
+            font-size: 0.74rem;
+            font-weight: 700;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            background: rgba(147, 96, 42, 0.08);
+            padding: 0.35rem 0.75rem;
+            border-radius: 9999px;
+            border: 1px solid rgba(147, 96, 42, 0.18);
+        }
+
+        .version-tabs-container {
+            display: inline-flex;
+            align-items: center;
+            background: var(--paper);
+            padding: 4px;
+            border-radius: 9999px;
+            border: 1px solid var(--border-dark);
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.06);
+            gap: 4px;
+        }
+
+        .version-tab-btn {
+            border: none;
+            border-radius: 9999px;
+            padding: 0.45rem 1.15rem;
+            font-size: 0.83rem;
+            font-weight: 600;
+            cursor: pointer;
+            color: var(--ink-soft);
+            background: transparent;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            white-space: nowrap;
+            user-select: none;
+        }
+
+        .version-tab-btn:hover {
+            color: var(--accent);
+            background: rgba(147, 96, 42, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .version-tab-btn.active {
+            background: linear-gradient(135deg, var(--accent) 0%, #7a4f21 100%) !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 14px rgba(147, 96, 42, 0.35);
+            font-weight: 700;
+            transform: translateY(0);
+        }
+
+        .btn-split-toggle {
+            border: 1px solid var(--accent-border);
+            border-radius: 9999px;
+            padding: 0.45rem 1.15rem;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            color: var(--accent);
+            background: var(--accent-soft);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            white-space: nowrap;
+            user-select: none;
+        }
+
+        .btn-split-toggle:hover {
+            background: var(--accent);
+            color: #ffffff;
+            border-color: var(--accent);
+            box-shadow: 0 4px 14px rgba(147, 96, 42, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .btn-split-toggle.active {
+            background: linear-gradient(135deg, #1d4ed8 0%, #1e3a8a 100%) !important;
+            color: #ffffff !important;
+            border-color: #1d4ed8 !important;
+            box-shadow: 0 4px 14px rgba(29, 78, 216, 0.35) !important;
+            font-weight: 700;
+        }
+
+        .split-wrapper {
+            display: flex;
+            gap: 1.5rem;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        @media (max-width: 992px) {
+            .split-wrapper {
+                flex-direction: column !important;
+                gap: 1.75rem !important;
+            }
+            #translationPane {
+                padding-left: 0 !important;
+                border-left: none !important;
+                border-top: 2px dashed var(--accent-border) !important;
+                padding-top: 1.75rem !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .version-tabs-bar {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.75rem;
+                padding: 0.75rem 0.85rem;
+                border-radius: 12px;
+            }
+            .version-tabs-left {
+                width: 100%;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.5rem;
+            }
+            .version-tabs-label {
+                align-self: flex-start;
+                font-size: 0.72rem;
+                padding: 0.3rem 0.65rem;
+            }
+            .version-tabs-container {
+                width: 100%;
+                display: flex;
+                justify-content: space-between;
+                box-sizing: border-box;
+            }
+            .version-tab-btn {
+                flex: 1;
+                justify-content: center;
+                text-align: center;
+                padding: 0.5rem 0.65rem;
+                font-size: 0.8rem;
+            }
+            .version-tabs-right,
+            #toggleSplitViewBtn,
+            .btn-split-toggle {
+                display: none !important;
+            }
+        }
+
         /* ContentEditable Fields Styling */
         [contenteditable="true"] {
             outline: none;
@@ -576,6 +757,195 @@
             margin: 1.75rem 0;
             font-size: 1.05rem;
             color: var(--ink);
+        }
+
+        /* Clean Professional Inline Citation Links (Editorial & Academic Style) */
+        .citation-link {
+            color: var(--accent);
+            font-weight: 600;
+            font-size: 0.85em;
+            font-family: 'Inter', -apple-system, sans-serif;
+            text-decoration: none;
+            vertical-align: super;
+            line-height: 0;
+            cursor: pointer;
+            padding: 0 2px;
+            margin: 0 1px;
+            transition: color 0.15s ease, text-decoration 0.15s ease;
+        }
+
+        .citation-link:hover {
+            color: var(--accent-hover);
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+
+        /* Bottom Article References & Bibliography */
+        .article-references {
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 2px solid var(--border-dark);
+        }
+
+        .references-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .ref-header-left {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            color: var(--accent);
+        }
+
+        .ref-header-left i {
+            font-size: 1.2rem;
+        }
+
+        .ref-header-left h2 {
+            font-family: 'Newsreader', Georgia, serif;
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--ink);
+            margin: 0;
+        }
+
+        .ref-count-badge {
+            font-size: 0.76rem;
+            font-weight: 700;
+            color: var(--accent);
+            background: var(--accent-soft);
+            border: 1px solid var(--accent-border);
+            padding: 0.3rem 0.75rem;
+            border-radius: 20px;
+            letter-spacing: 0.03em;
+        }
+
+        .references-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .reference-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.1rem 1.35rem;
+            transition: all 0.25s ease;
+            scroll-margin-top: 80px;
+        }
+
+        .reference-card:hover {
+            border-color: var(--accent-border);
+            box-shadow: 0 4px 14px rgba(0,0,0,0.05);
+        }
+
+        .reference-card.ref-card-active,
+        .reference-card:target {
+            animation: pulseHighlight 2.8s cubic-bezier(0.22, 1, 0.36, 1) !important;
+            border-color: var(--accent) !important;
+        }
+
+        @keyframes pulseHighlight {
+            0% {
+                background-color: #eff6ff;
+                border-color: var(--accent);
+                box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.3), 0 8px 24px rgba(37, 99, 235, 0.2);
+                transform: scale(1.015);
+            }
+            30% {
+                background-color: #eff6ff;
+                border-color: var(--accent);
+                box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2), 0 6px 18px rgba(37, 99, 235, 0.15);
+                transform: scale(1.005);
+            }
+            100% {
+                background-color: var(--surface);
+                border-color: var(--border);
+                box-shadow: none;
+                transform: scale(1);
+            }
+        }
+
+        .ref-card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-bottom: 0.45rem;
+            flex-wrap: wrap;
+        }
+
+        .ref-badge {
+            font-size: 0.82rem;
+            font-weight: 800;
+            color: var(--accent);
+            background: var(--accent-soft);
+            padding: 0.15rem 0.55rem;
+            border-radius: 6px;
+            border: 1px solid var(--accent-border);
+        }
+
+        .ref-publisher {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--ink);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .ref-date {
+            font-size: 0.75rem;
+            color: var(--muted);
+            margin-left: auto;
+        }
+
+        .ref-title {
+            font-family: 'Newsreader', Georgia, serif;
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: var(--ink-body);
+            line-height: 1.45;
+            margin-bottom: 0.5rem;
+        }
+
+        .ref-evidence {
+            font-size: 0.85rem;
+            color: var(--ink-soft);
+            font-style: italic;
+            background: var(--paper);
+            border-left: 3px solid var(--accent-border);
+            padding: 0.5rem 0.75rem;
+            border-radius: 0 6px 6px 0;
+            margin-bottom: 0.65rem;
+            line-height: 1.45;
+        }
+
+        .ref-card-footer {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 0.4rem;
+        }
+
+        .ref-link-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--accent);
+            text-decoration: none;
+            transition: color 0.15s ease;
+        }
+
+        .ref-link-btn:hover {
+            color: var(--accent-hover);
+            text-decoration: underline;
         }
 
         /* First-Class Article Image Block */
@@ -927,12 +1297,397 @@
             align-items: center;
         }
 
+        /* Article Content, Images & Table Responsiveness */
+        .article-body {
+            max-width: 100%;
+            word-break: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .article-body table {
+            display: block;
+            width: 100% !important;
+            max-width: 100% !important;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+        }
+
+        .article-body img, 
+        .article-body iframe, 
+        .article-body video {
+            max-width: 100% !important;
+            height: auto !important;
+        }
+
+        figure.article-image-block {
+            max-width: 100% !important;
+            width: 100% !important;
+            margin: 1.5rem 0 !important;
+            box-sizing: border-box !important;
+        }
+
+        figure.article-image-block img {
+            max-width: 100% !important;
+            height: auto !important;
+        }
+
+        figure.article-image-block[data-width="small"] img,
+        figure.article-image-block[data-width="medium"] img,
+        figure.article-image-block[data-width="large"] img,
+        figure.article-image-block[data-width="full"] img {
+            max-width: 100% !important;
+            width: 100% !important;
+        }
+
+        .source-item, .claim-item {
+            max-width: 100%;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            box-sizing: border-box;
+        }
+
+        .source-link {
+            word-break: break-all;
+        }
+
         /* Mobile Responsive */
         @media (max-width: 1024px) {
-            .workspace-grid { grid-template-columns: 1fr; }
-            .editor-container { padding: 2rem 1.75rem; }
-            .sidebar-panel { position: static; }
-            .pdf-a4-page { width: 100%; min-height: auto; padding: 20px; }
+            .workspace-grid {
+                grid-template-columns: minmax(0, 1fr) !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                padding: 1.5rem 1.25rem 4rem !important;
+                gap: 1.5rem !important;
+                box-sizing: border-box !important;
+                overflow-x: hidden !important;
+            }
+            .editor-container {
+                padding: 2rem 1.75rem !important;
+                min-width: 0 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                box-sizing: border-box !important;
+                overflow-x: hidden !important;
+            }
+            .sidebar-panel { position: static !important; width: 100% !important; max-width: 100% !important; }
+            .pdf-a4-page { width: 100% !important; min-height: auto !important; padding: 20px !important; }
+        }
+
+        @media (max-width: 768px) {
+            /* Top Navigation Mobile */
+            nav.nav-bar {
+                z-index: 1100 !important;
+            }
+            nav.nav-bar .nav-inner {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 0.75rem !important;
+                padding: 0.75rem 1rem !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 0 !important;
+                box-sizing: border-box !important;
+                overflow: visible !important;
+            }
+
+            .brand-group {
+                justify-content: space-between !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 0 !important;
+                box-sizing: border-box !important;
+                overflow: hidden !important;
+            }
+
+            .nav-brand {
+                font-size: 0.88rem !important;
+                white-space: nowrap !important;
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
+                max-width: 160px !important;
+            }
+
+            .mode-switcher {
+                width: 100% !important;
+                justify-content: center !important;
+            }
+
+            .autosave-status {
+                align-self: center !important;
+                font-size: 0.76rem !important;
+            }
+
+            .nav-actions {
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 0 !important;
+                overflow: visible !important;
+                display: flex !important;
+                flex-wrap: wrap !important;
+                align-items: center !important;
+                gap: 0.45rem !important;
+                box-sizing: border-box !important;
+                position: relative !important;
+            }
+
+            .nav-actions .btn {
+                flex: 1 1 auto !important;
+                justify-content: center !important;
+                padding: 0.45rem 0.65rem !important;
+                font-size: 0.8rem !important;
+            }
+
+            .nav-actions .dropdown {
+                position: relative !important;
+                flex: 1 1 auto !important;
+            }
+
+            .nav-actions .dropdown .btn {
+                width: 100% !important;
+            }
+
+            .nav-actions .dropdown-menu {
+                position: absolute !important;
+                right: 0 !important;
+                top: 100% !important;
+                margin-top: 0.35rem !important;
+                z-index: 999999 !important;
+                background: var(--surface) !important;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important;
+                border: 1px solid var(--border-dark) !important;
+                min-width: 220px !important;
+                border-radius: 10px !important;
+            }
+
+            .dropdown.active .dropdown-menu {
+                display: block !important;
+            }
+
+            /* WYSIWYG Toolbar Mobile Edit Mode */
+            .wysiwyg-toolbar {
+                top: 0 !important;
+                position: sticky !important;
+                z-index: 900 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 0 !important;
+                box-sizing: border-box !important;
+                overflow-x: auto !important;
+                flex-wrap: nowrap !important;
+                padding: 0.35rem 0.4rem !important;
+                gap: 0.25rem !important;
+                -webkit-overflow-scrolling: touch !important;
+                scrollbar-width: none !important;
+                background: rgba(255, 255, 255, 0.98) !important;
+                backdrop-filter: blur(12px) !important;
+                margin: 0 0 1.25rem 0 !important;
+            }
+
+            .wysiwyg-toolbar::-webkit-scrollbar { display: none !important; }
+
+            .tb-group { flex-shrink: 0 !important; }
+            .tb-select { flex-shrink: 0 !important; max-width: 110px !important; font-size: 0.76rem !important; }
+
+            .tb-btn {
+                min-width: 32px !important;
+                height: 32px !important;
+                flex-shrink: 0 !important;
+            }
+
+            /* Explicit Edit Mode Responsiveness */
+            body.mode-edit .article-body > * {
+                max-width: 100% !important;
+                box-sizing: border-box !important;
+            }
+
+            body.mode-edit .article-body > *:hover {
+                outline-offset: 0px !important; /* Prevent 4px outline offset overflow on mobile */
+            }
+
+            .block-handle-bar {
+                position: relative !important;
+                top: 0 !important;
+                right: 0 !important;
+                margin: 0.25rem 0 0.5rem 0 !important;
+                justify-content: flex-end !important;
+                max-width: 100% !important;
+                box-sizing: border-box !important;
+                float: none !important;
+            }
+
+            .img-toolbar-overlay {
+                position: relative !important;
+                top: 0 !important;
+                left: 0 !important;
+                transform: none !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                box-sizing: border-box !important;
+                margin-top: 0.5rem !important;
+                flex-wrap: wrap !important;
+                justify-content: center !important;
+                border-radius: 8px !important;
+            }
+
+            .img-tb-btn {
+                font-size: 0.72rem !important;
+                padding: 4px 6px !important;
+            }
+
+            body.mode-edit [contenteditable="true"] {
+                outline: none !important;
+                max-width: 100% !important;
+                min-width: 0 !important;
+                box-sizing: border-box !important;
+                word-break: break-word !important;
+                overflow-wrap: anywhere !important;
+            }
+
+            /* Main Workspace & Canvas */
+            .workspace-grid {
+                grid-template-columns: minmax(0, 1fr) !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 0 !important;
+                padding: 0.75rem 0.5rem 3rem !important;
+                box-sizing: border-box !important;
+                overflow-x: hidden !important;
+            }
+
+            .editor-container {
+                padding: 1rem 0.75rem !important;
+                min-height: auto !important;
+                border-radius: 8px !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 0 !important;
+                box-sizing: border-box !important;
+                overflow-x: hidden !important;
+            }
+
+            h1.article-title {
+                font-size: 1.45rem !important;
+                line-height: 1.25 !important;
+                margin-bottom: 0.75rem !important;
+                word-break: break-word !important;
+                overflow-wrap: anywhere !important;
+                max-width: 100% !important;
+                min-width: 0 !important;
+            }
+
+            .article-deck {
+                font-size: 0.98rem !important;
+                line-height: 1.4 !important;
+                margin-bottom: 1.1rem !important;
+                word-break: break-word !important;
+                overflow-wrap: anywhere !important;
+                max-width: 100% !important;
+                min-width: 0 !important;
+            }
+
+            .article-meta {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 0.35rem !important;
+                padding: 0.75rem 0 !important;
+                width: 100% !important;
+                min-width: 0 !important;
+                box-sizing: border-box !important;
+            }
+            .article-meta > div:nth-child(even) { display: none !important; } /* Hide bullet separators */
+            .article-meta > div:last-child { margin-left: 0 !important; margin-top: 0.25rem !important; }
+
+            /* Hero Figure Mobile */
+            .hero-figure { margin-bottom: 1.5rem !important; width: 100% !important; max-width: 100% !important; }
+            .hero-figure img { max-height: 260px !important; object-fit: cover !important; width: 100% !important; }
+            .hero-controls { flex-direction: column !important; gap: 0.5rem !important; width: 100% !important; }
+            .hero-controls .btn { width: 100% !important; justify-content: center !important; }
+
+            /* Article Body Typography & Elements Mobile */
+            .article-body {
+                font-size: 1.05rem !important;
+                line-height: 1.65 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 0 !important;
+                box-sizing: border-box !important;
+                word-break: break-word !important;
+                overflow-wrap: anywhere !important;
+            }
+
+            .article-body h1 { font-size: 1.45rem !important; margin: 1.5rem 0 0.65rem 0 !important; }
+            .article-body h2 { font-size: 1.3rem !important; margin: 1.35rem 0 0.6rem 0 !important; }
+            .article-body h3 { font-size: 1.15rem !important; margin: 1.2rem 0 0.5rem 0 !important; }
+            .article-body h4 { font-size: 1.02rem !important; margin: 1rem 0 0.45rem 0 !important; }
+
+            .article-body blockquote {
+                margin: 1.1rem 0 !important;
+                padding: 0.75rem 0.9rem !important;
+                font-size: 0.98rem !important;
+                border-left-width: 3px !important;
+                border-radius: 0 6px 6px 0 !important;
+            }
+
+            .article-body ul, .article-body ol {
+                padding-left: 1.1rem !important;
+                margin-bottom: 1.1rem !important;
+            }
+
+            .article-body pre {
+                padding: 0.75rem !important;
+                font-size: 0.78rem !important;
+                border-radius: 6px !important;
+                margin: 1.1rem 0 !important;
+                max-width: 100% !important;
+                overflow-x: auto !important;
+            }
+
+            .callout-box {
+                padding: 0.75rem 0.9rem !important;
+                margin: 1.1rem 0 !important;
+                font-size: 0.92rem !important;
+                border-left-width: 3px !important;
+            }
+
+            /* References & Fact Provenance Sidebar Mobile */
+            .sidebar-panel { width: 100% !important; max-width: 100% !important; min-width: 0 !important; }
+            .card-widget { padding: 0.9rem 0.8rem !important; border-radius: 8px !important; width: 100% !important; box-sizing: border-box !important; }
+            
+            .source-item { padding: 0.7rem 0 !important; }
+            .source-publisher { font-size: 0.7rem !important; }
+            .source-title-text { font-size: 0.9rem !important; line-height: 1.3 !important; }
+            .source-desc { font-size: 0.76rem !important; -webkit-line-clamp: 3 !important; }
+            .source-link { font-size: 0.74rem !important; word-break: break-all !important; }
+
+            .claim-item {
+                padding: 0.6rem 0.7rem !important;
+                margin-bottom: 0.5rem !important;
+            }
+            .claim-text { font-size: 0.8rem !important; line-height: 1.35 !important; }
+            .claim-evidence { font-size: 0.74rem !important; padding-left: 0.35rem !important; }
+
+            /* Modals Mobile */
+            .modal-box { width: 94% !important; max-width: 100% !important; padding: 1.25rem 1rem !important; max-height: 88vh !important; }
+            .pdf-modal-box { width: 100% !important; height: 100vh !important; max-height: 100vh !important; border-radius: 0 !important; margin: 0 !important; max-width: 100% !important; box-sizing: border-box !important; }
+            .pdf-modal-header { flex-direction: column !important; align-items: flex-start !important; gap: 0.75rem !important; padding: 0.85rem !important; }
+            .pdf-toolbar { flex-wrap: wrap !important; width: 100% !important; padding: 0.5rem !important; }
+            .pdf-toolbar > * { flex: 1 1 auto; text-align: center; }
+            .pdf-a4-page { width: 100% !important; min-height: auto !important; padding: 1rem !important; font-size: 0.85rem !important; transform: none !important; word-break: break-word !important; overflow-wrap: anywhere !important; box-sizing: border-box !important; max-width: 100% !important; }
+            .pdf-a4-page * { max-width: 100% !important; box-sizing: border-box !important; }
+            .pdf-preview-viewport { padding: 0.5rem !important; box-sizing: border-box !important; overflow-x: hidden !important; width: 100% !important; max-width: 100vw !important; }
+            .pdf-modal-footer { flex-direction: column !important; gap: 0.75rem !important; align-items: stretch !important; padding: 0.85rem !important; }
+            .pdf-modal-footer .btn { width: 100% !important; justify-content: center !important; }
+        }
+
+        @media (max-width: 480px) {
+            h1.article-title { font-size: 1.3rem !important; }
+            .article-deck { font-size: 0.92rem !important; }
+            .editor-container { padding: 0.85rem 0.6rem !important; }
+            .card-widget { padding: 0.75rem 0.65rem !important; }
+            .article-body { font-size: 0.98rem !important; }
+            .wysiwyg-toolbar { padding: 0.3rem 0.35rem !important; }
         }
     </style>
 </head>
@@ -942,9 +1697,9 @@
     <nav class="nav-bar">
         <div class="nav-inner">
             <div class="brand-group">
-                <a href="/" class="nav-back"><i class="fa-solid fa-arrow-left"></i> Dashboard</a>
+                <a href="/inpartner/" class="nav-back"><i class="fa-solid fa-arrow-left"></i> Dashboard</a>
                 <div style="color:var(--border-dark);">|</div>
-                <a href="/" class="nav-brand">Inpartner Digital Publishing</a>
+                <a href="/inpartner/" class="nav-brand">Inpartner Digital Publishing</a>
             </div>
 
             <!-- Mode Switcher: Edit vs Preview -->
@@ -967,22 +1722,42 @@
                 <button class="btn btn-outline" onclick="saveArticle()" title="Force save draft (Ctrl+S)">
                     <i class="fa-solid fa-floppy-disk"></i> Save
                 </button>
+                
                 <button class="btn btn-outline" onclick="openImageUploadModal()" title="Insert image into article">
                     <i class="fa-regular fa-image"></i> Image
                 </button>
-                <button class="btn btn-outline" onclick="openMetadataModal()" title="Edit article metadata">
-                    <i class="fa-solid fa-gear"></i> Metadata
+                
+                <button class="btn btn-outline" onclick="openTranslateModal()" title="Translate Article">
+                    <i class="fa-solid fa-language"></i> Translate
                 </button>
 
-                <!-- Direct Export PDF Button -->
-                <button class="btn btn-outline" onclick="openPdfPreviewModal()" title="Export Article as PDF">
-                    <i class="fa-solid fa-file-pdf"></i> Export PDF
-                </button>
-
-                <!-- WordPress Sync Button -->
-                <button class="btn btn-accent" onclick="openWordPressModal()">
-                    <i class="fa-brands fa-wordpress"></i> Publish to WP
-                </button>
+                <!-- Export & Publish Dropdown -->
+                <div class="dropdown" id="publishDropdown" onclick="this.classList.toggle('active')">
+                    <button class="btn btn-accent">
+                        Export / Publish <i class="fa-solid fa-chevron-down" style="font-size: 0.75rem; margin-left: 0.2rem;"></i>
+                    </button>
+                    <div class="dropdown-menu">
+                        <a class="dropdown-item" onclick="openPdfPreviewModal()">
+                            <i class="fa-solid fa-file-pdf" style="width: 16px; text-align: center; color: #a13b32;"></i> Export PDF (Preview)
+                        </a>
+                        <a class="dropdown-item" onclick="exportArticle('html')">
+                            <i class="fa-brands fa-html5" style="width: 16px; text-align: center; color: #e34f26;"></i> Export HTML
+                        </a>
+                        <a class="dropdown-item" onclick="exportArticle('docx')">
+                            <i class="fa-solid fa-file-word" style="width: 16px; text-align: center; color: #2b579a;"></i> Export DOCX
+                        </a>
+                        <a class="dropdown-item" onclick="exportArticle('md')">
+                            <i class="fa-solid fa-file-code" style="width: 16px; text-align: center; color: #666;"></i> Export Markdown
+                        </a>
+                        <div style="height: 1px; background: var(--border-dark); margin: 0.35rem 0;"></div>
+                        <a class="dropdown-item" onclick="openWordPressModal()">
+                            <i class="fa-brands fa-wordpress" style="width: 16px; text-align: center; color: #21759b;"></i> Publish to WP
+                        </a>
+                        <a class="dropdown-item" onclick="pushToInpartnerStore()" style="color: var(--ink);">
+                            <i class="fa-solid fa-store" style="width: 16px; text-align: center;"></i> Push to Store
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
     </nav>
@@ -1064,56 +1839,152 @@
                 </div>
             </div>
 
-            <!-- Article Header -->
-            <header class="article-header">
-                <span class="category-kicker" id="articleCategoryText">{{ article.category or 'IN-DEPTH EDITORIAL' }}</span>
-                
-                <!-- Inline Editable Title -->
-                <h1 class="article-title" id="articleTitle" contenteditable="true" spellcheck="false">{{ article.title }}</h1>
-                
-                <!-- Inline Editable Subtitle / Dek -->
-                <div class="article-deck" id="articleSubtitle" contenteditable="true" spellcheck="false">{{ article.subtitle or 'Click to add an article dek / subtitle...' }}</div>
-
-                <!-- Metadata Bar -->
-                <div class="article-meta">
-                    <div>By <strong id="articleAuthorText">{{ article.author or 'Inpartner Editorial Board' }}</strong></div>
-                    <div>&bull;</div>
-                    <div>{{ article.generated_at|date_format }}</div>
-                    <div>&bull;</div>
-                    <div><strong id="articleReadTimeText">{{ article.reading_time or 5 }} min read</strong></div>
-                    {% if article.sources %}
-                    <div>&bull;</div>
-                    <div>{{ article.sources|length }} reference{{ 's' if article.sources|length != 1 else '' }}</div>
-                    {% endif %}
-                    <div style="margin-left:auto;">
-                        <span class="badge-status" id="wpSyncStatusBadge">
-                            {{ article.wordpress_status if article.wordpress_status != 'Not Published' else (article.status.value if article.status else 'READY') }}
-                        </span>
+            <!-- Article Version Switcher Bar (Original vs Translated) -->
+            <div id="versionTabsBar" class="version-tabs-bar">
+                <div class="version-tabs-left">
+                    <span class="version-tabs-label">
+                        <i class="fa-solid fa-layer-group"></i> Versi Artikel
+                    </span>
+                    <div class="version-tabs-container">
+                        <button type="button" class="version-tab-btn active" id="tabBtnOriginal" onclick="switchArticleVersion('original')">
+                            <span>🇮🇩</span> <span>Original (Asli)</span>
+                        </button>
+                        <button type="button" class="version-tab-btn" id="tabBtnTranslated" onclick="switchArticleVersion('translated')" style="display: none;">
+                            <span>🌐</span> <span id="translatedTabLabel">Translated</span>
+                        </button>
                     </div>
                 </div>
+                <div class="version-tabs-right">
+                    <button type="button" class="btn-split-toggle" id="toggleSplitViewBtn" onclick="toggleSplitView()" style="display: none;">
+                        <i class="fa-solid fa-columns"></i> <span>Side-by-Side View</span>
+                    </button>
+                </div>
+            </div>
 
-                <!-- Hero Image Container -->
-                <figure class="hero-figure" id="heroFigure">
-                    {% if article.hero_image_url %}
-                    <img id="heroImageEl" src="{{ article.hero_image_url }}" alt="{{ article.title }}">
-                    <figcaption class="hero-caption" id="heroCaption" contenteditable="true">{{ article.hero_image_caption or 'Click to edit hero image caption...' }}</figcaption>
-                    <div class="hero-controls">
-                        <button class="btn btn-outline btn-sm" onclick="openImageUploadModal('hero')">Replace Hero Image</button>
-                        <button class="btn btn-danger btn-sm" onclick="removeHeroImage()">Delete Hero Image</button>
-                    </div>
-                    {% else %}
-                    <div id="noHeroPlaceholder" style="background:var(--paper); border:1px dashed var(--border-dark); padding:2rem; text-align:center; border-radius:8px; margin-bottom:1rem;">
-                        <i class="fa-regular fa-image fa-2x" style="color:var(--muted); margin-bottom:0.4rem; display:block;"></i>
-                        <div style="font-size:0.88rem; color:var(--muted); margin-top:0.3rem;">No featured hero image set. <a href="javascript:void(0)" onclick="openImageUploadModal('hero')" style="color:var(--accent); font-weight:600;">Upload Hero Image</a></div>
-                    </div>
+            <div id="splitWrapper" class="split-wrapper">
+                <div id="originalPane" style="flex: 1; min-width: 0;">
+                    <!-- Article Header -->
+                    <header class="article-header">
+                        <span class="category-kicker" id="articleCategoryText">{{ article.category or 'IN-DEPTH EDITORIAL' }}</span>
+                        
+                        <!-- Inline Editable Title -->
+                        <h1 class="article-title" id="articleTitle" contenteditable="true" spellcheck="false">{{ article.title }}</h1>
+                        
+                        <!-- Inline Editable Subtitle / Dek -->
+                        <div class="article-deck" id="articleSubtitle" contenteditable="true" spellcheck="false">{{ article.subtitle or 'Click to add an article dek / subtitle...' }}</div>
+
+                        <!-- Metadata Bar -->
+                        <div class="article-meta">
+                            <div>By <strong id="articleAuthorText">{{ article.author or 'Inpartner Editorial Board' }}</strong></div>
+                            <div>&bull;</div>
+                            <div>{{ article.generated_at|date_format }}</div>
+                            <div>&bull;</div>
+                            <div><strong id="articleReadTimeText">{{ article.reading_time or 5 }} min read</strong></div>
+                            {% if article.sources %}
+                            <div>&bull;</div>
+                            <div>{{ article.sources|length }} reference{{ 's' if article.sources|length != 1 else '' }}</div>
+                            {% endif %}
+                            <div style="margin-left:auto;">
+                                <span class="badge-status" id="wpSyncStatusBadge">
+                                    {{ article.wordpress_status if article.wordpress_status != 'Not Published' else (article.status.value if article.status else 'READY') }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Hero Image Container -->
+                        <figure class="hero-figure" id="heroFigure">
+                            {% if article.hero_image_url %}
+                            <img id="heroImageEl" src="{{ article.hero_image_url }}" alt="{{ article.title }}">
+                            <figcaption class="hero-caption" id="heroCaption" contenteditable="true">{{ article.hero_image_caption or 'Click to edit hero image caption...' }}</figcaption>
+                            <div class="hero-controls">
+                                <button class="btn btn-outline btn-sm" onclick="openImageUploadModal('hero')">Replace Hero Image</button>
+                                <button class="btn btn-danger btn-sm" onclick="removeHeroImage()">Delete Hero Image</button>
+                            </div>
+                            {% else %}
+                            <div id="noHeroPlaceholder" style="background:var(--paper); border:1px dashed var(--border-dark); padding:2rem; text-align:center; border-radius:8px; margin-bottom:1rem;">
+                                <i class="fa-regular fa-image fa-2x" style="color:var(--muted); margin-bottom:0.4rem; display:block;"></i>
+                                <div style="font-size:0.88rem; color:var(--muted); margin-top:0.3rem;">No featured hero image set. <a href="javascript:void(0)" onclick="openImageUploadModal('hero')" style="color:var(--accent); font-weight:600;">Upload Hero Image</a></div>
+                            </div>
+                            {% endif %}
+                        </figure>
+                    </header>
+
+                    <!-- Inline Editable Article Body Canvas -->
+                    <article class="article-body" id="articleBody" contenteditable="true" spellcheck="false">
+                        {{ article.content | markdown | safe }}
+                    </article>
+
+                    <!-- Bottom Article References & Bibliography Section -->
+                    {% set refs = article | formatted_references %}
+                    {% if refs %}
+                    <section class="article-references" id="articleReferences">
+                        <div class="references-header">
+                            <div class="ref-header-left">
+                                <i class="fa-solid fa-book-bookmark"></i>
+                                <h2>Referensi &amp; Daftar Pustaka</h2>
+                            </div>
+                            <span class="ref-count-badge">{{ refs|length }} Referensi Terverifikasi</span>
+                        </div>
+
+                        <div class="references-grid">
+                            {% for ref in refs %}
+                            <div class="reference-card" id="ref-{{ ref.num }}">
+                                <div class="ref-card-header">
+                                    <span class="ref-badge">[{{ ref.num }}]</span>
+                                    <span class="ref-publisher">{{ ref.publisher | clean_html }}</span>
+                                    {% if ref.published_at %}
+                                    <span class="ref-date"><i class="fa-regular fa-calendar"></i> {{ ref.published_at }}</span>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="ref-title">{{ ref.title | clean_html }}</div>
+                                
+                                {% if ref.evidence %}
+                                <div class="ref-evidence">
+                                    <i class="fa-solid fa-quote-left" style="opacity: 0.5; margin-right: 0.35rem;"></i>
+                                    {{ ref.evidence | clean_html }}
+                                </div>
+                                {% endif %}
+                                
+                                {% if ref.url and ref.url != '#' %}
+                                <div class="ref-card-footer">
+                                    <a href="{{ ref.url }}" target="_blank" rel="noopener" class="ref-link-btn">
+                                        <span>Buka Sumber Berita Original</span>
+                                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                    </a>
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </section>
                     {% endif %}
-                </figure>
-            </header>
-
-            <!-- Inline Editable Article Body Canvas -->
-            <article class="article-body" id="articleBody" contenteditable="true" spellcheck="false">
-                {{ article.content | markdown | safe }}
-            </article>
+                </div>
+                
+                <div id="translationPane" style="flex: 1; min-width: 0; display: none; padding-left: 1.5rem; border-left: 1px solid var(--border);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; background: var(--paper); padding: 0.85rem 1rem; border-radius: 8px; border: 1px solid var(--accent-border);">
+                        <div>
+                            <h3 style="font-size: 1rem; color: var(--accent); margin:0;">Translated Version (<span id="translatedLangLabel">English</span>)</h3>
+                            <div style="font-size: 0.8rem; color: var(--muted); margin-top:0.2rem;">Review and edit the translation below.</div>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button class="btn btn-outline btn-sm" onclick="closeTranslation()">Close Split View</button>
+                            <button class="btn btn-accent btn-sm" onclick="applyTranslation()"><i class="fa-solid fa-floppy-disk" style="margin-right:0.3rem;"></i> Save Both</button>
+                        </div>
+                    </div>
+                    
+                    <header class="article-header" id="translatedHeader" style="display:none;">
+                        <h1 class="article-title" id="translatedTitle" contenteditable="true" spellcheck="false"></h1>
+                        <div class="article-deck" id="translatedSubtitle" contenteditable="true" spellcheck="false"></div>
+                    </header>
+                    <article class="article-body" id="translatedBody" contenteditable="true" spellcheck="false" style="display:none;"></article>
+                    
+                    <div id="translationLoading" style="display: none; padding: 4rem; text-align: center; color: var(--muted);">
+                        <i class="fa-solid fa-circle-notch fa-spin fa-2x" style="color: var(--accent); margin-bottom: 1rem;"></i>
+                        <div>Translating article... This may take a minute.</div>
+                    </div>
+                </div>
+            </div>
 
         </main>
 
@@ -1290,13 +2161,22 @@
     <!-- PDF Publication Modal Preview (Requirement #11, 12, 13, 14, 15, 16, 17) -->
     <div class="modal-overlay" id="pdfPreviewModal">
         <div class="modal-box pdf-modal-box">
-            <div class="pdf-modal-header">
-                <h3 class="modal-title" style="font-size:1.25rem;">Export Article as PDF — Publication Preview</h3>
-                <div class="pdf-toolbar">
-                    <button class="tb-btn" onclick="zoomPdfPreview(-0.1)" title="Zoom Out">-</button>
-                    <span id="pdfZoomLabel" style="font-size:0.8rem; font-weight:600;">100%</span>
-                    <button class="tb-btn" onclick="zoomPdfPreview(0.1)" title="Zoom In">+</button>
-                    <button class="tb-btn" onclick="resetPdfZoom()" title="Fit Page">Fit Page</button>
+            <div class="pdf-modal-header" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.5rem;">
+                <h3 class="modal-title" style="font-size:1.15rem; margin:0;">Export PDF — Publication Preview</h3>
+                <div style="display:flex; align-items:center; gap:0.75rem;">
+                    <div style="display:flex; align-items:center; gap:0.4rem; background:var(--paper); padding:0.25rem 0.6rem; border-radius:6px; border:1px solid var(--border);">
+                        <span style="font-size:0.78rem; font-weight:600; color:var(--ink-soft);"><i class="fa-solid fa-globe"></i> Versi Bahasa:</span>
+                        <select id="pdfLangSelect" onchange="renderPdfPreviewForSelectedLang()" style="font-size:0.8rem; padding:0.25rem 0.4rem; border:1px solid var(--border); border-radius:4px; background:var(--bg);">
+                            <option value="original">🇮🇩 Original (Asli)</option>
+                            <option value="translated" id="pdfLangTranslatedOpt" style="display:none;">🌐 <span id="pdfLangTranslatedName">Translated</span></option>
+                        </select>
+                    </div>
+                    <div class="pdf-toolbar">
+                        <button class="tb-btn" onclick="zoomPdfPreview(-0.1)" title="Zoom Out">-</button>
+                        <span id="pdfZoomLabel" style="font-size:0.8rem; font-weight:600;">100%</span>
+                        <button class="tb-btn" onclick="zoomPdfPreview(0.1)" title="Zoom In">+</button>
+                        <button class="tb-btn" onclick="resetPdfZoom()" title="Fit Page">Fit Page</button>
+                    </div>
                 </div>
                 <button class="modal-close" onclick="closeModal('pdfPreviewModal')">&times;</button>
             </div>
@@ -1316,6 +2196,76 @@
                         <i class="fa-solid fa-download"></i> Download PDF
                     </button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Language Selection Modal -->
+    <div class="modal-overlay" id="exportLanguageModal">
+        <div class="modal-box" style="max-width: 480px;">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="fa-solid fa-file-export" style="color:var(--accent); margin-right:0.5rem;"></i>
+                    Export Article (<span id="exportFormatLabel">HTML</span>)
+                </h3>
+                <button class="modal-close" onclick="closeModal('exportLanguageModal')">&times;</button>
+            </div>
+            
+            <p style="font-size: 0.88rem; color: var(--ink-soft); margin-bottom: 1.2rem; line-height: 1.5;">
+                Artikel ini memiliki 2 versi bahasa. Silakan pilih versi artikel yang ingin Anda unduh/export:
+            </p>
+
+            <div class="form-group">
+                <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+                    <label style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; border: 1.5px solid var(--border-dark); border-radius: 8px; cursor: pointer; background: var(--paper); transition: all 0.2s;" id="labelExportOriginal">
+                        <input type="radio" name="exportLangOption" value="original" checked style="accent-color: var(--accent);">
+                        <div>
+                            <div style="font-weight: 700; font-size: 0.9rem; color: var(--ink);">🇮🇩 Original Version (Indonesian)</div>
+                            <div style="font-size: 0.8rem; color: var(--muted);" id="exportOriginalTitlePreview">Versi asli artikel</div>
+                        </div>
+                    </label>
+
+                    <label style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; border: 1.5px solid var(--border-dark); border-radius: 8px; cursor: pointer; background: var(--paper); transition: all 0.2s;" id="labelExportTranslated">
+                        <input type="radio" name="exportLangOption" value="translated" style="accent-color: var(--accent);">
+                        <div>
+                            <div style="font-weight: 700; font-size: 0.9rem; color: var(--ink);">🌐 Translated Version (<span id="exportTranslatedLangName">English</span>)</div>
+                            <div style="font-size: 0.8rem; color: var(--muted);" id="exportTranslatedTitlePreview">Versi terjemahan artikel</div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:0.5rem; justify-content:flex-end; margin-top:1.5rem;">
+                <button class="btn btn-outline" onclick="closeModal('exportLanguageModal')">Batal</button>
+                <button class="btn btn-accent" onclick="confirmDownloadExport()">
+                    <i class="fa-solid fa-download" style="margin-right: 0.3rem;"></i> Export Now
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Translate Modal -->
+    <div class="modal-overlay" id="translateModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fa-solid fa-language" style="color:var(--accent); margin-right:0.5rem;"></i> Translate Article</h3>
+                <button class="modal-close" onclick="closeModal('translateModal')">&times;</button>
+            </div>
+            <div class="form-group">
+                <label>Target Language</label>
+                <select id="targetLanguageSelect" style="width: 100%; padding: 0.6rem; border: 1px solid var(--border); border-radius: 6px;">
+                    <option value="English">English</option>
+                    <option value="Indonesian">Indonesian</option>
+                    <option value="Spanish">Spanish</option>
+                    <option value="French">French</option>
+                    <option value="Japanese">Japanese</option>
+                    <option value="Korean">Korean</option>
+                    <option value="Mandarin">Mandarin (Simplified)</option>
+                </select>
+            </div>
+            <div style="display:flex; gap:0.5rem; justify-content:flex-end; margin-top:1.5rem;">
+                <button class="btn btn-outline" onclick="closeModal('translateModal')">Cancel</button>
+                <button class="btn btn-accent" onclick="startTranslation()">Translate</button>
             </div>
         </div>
     </div>
@@ -1346,6 +2296,13 @@
             </div>
 
             <div id="wpMetaContainer" style="display:none;">
+                <div class="form-group">
+                    <label>Versi Bahasa yang Dipublish</label>
+                    <select id="wpPublishLangSelect">
+                        <option value="original">🇮🇩 Original (Asli)</option>
+                        <option value="translated" id="wpLangTranslatedOpt" style="display:none;">🌐 <span id="wpLangTranslatedName">Translated</span></option>
+                    </select>
+                </div>
                 <div class="form-group">
                     <label>Post Status</label>
                     <select id="wpStatus">
@@ -1380,7 +2337,275 @@
 
     <!-- Core Digital Publishing Workspace Javascript -->
     <script>
+        // Interactive Smooth Scroll & Highlight to Reference Cards
+        function scrollToReference(event, num) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            const targetId = 'ref-' + num;
+            const targetEl = document.getElementById(targetId);
+            if (targetEl) {
+                targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                
+                targetEl.classList.remove('ref-card-active');
+                void targetEl.offsetWidth; // Force reflow
+                targetEl.classList.add('ref-card-active');
+            }
+        }
+
+        document.addEventListener('click', function(e) {
+            const citationLink = e.target.closest('.citation-link');
+            if (citationLink) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                let targetId = citationLink.getAttribute('data-target') || citationLink.getAttribute('href');
+                if (targetId) {
+                    targetId = targetId.replace('#', '');
+                    const num = targetId.replace('ref-', '');
+                    scrollToReference(e, num);
+                }
+            }
+        });
+
+        // Core Modal Open / Close Helpers
+        function openModal(id) {
+            const el = document.getElementById(id);
+            if (el) el.classList.add('active');
+        }
+
+        function closeModal(id) {
+            const el = document.getElementById(id);
+            if (el) el.classList.remove('active');
+        }
+
         const articleId = {{ article.id }};
+
+        // Dual-Version State (Original vs Translated)
+        let articleOriginalData = {
+            title: "",
+            subtitle: "",
+            content: ""
+        };
+
+        let articleTranslations = {{ (article.translations or {}) | tojson }};
+        let activeVersion = 'original'; // 'original' or 'translated'
+        let activeTranslatedLang = 'English';
+        let isSplitViewOpen = false;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const titleEl = document.getElementById('articleTitle');
+            const subEl = document.getElementById('articleSubtitle');
+            const bodyEl = document.getElementById('articleBody');
+
+            articleOriginalData = {
+                title: titleEl ? titleEl.innerText.trim() : "",
+                subtitle: subEl ? subEl.innerText.trim() : "",
+                content: bodyEl ? bodyEl.innerHTML : ""
+            };
+
+            if (articleTranslations && Object.keys(articleTranslations).length > 0) {
+                const langKeys = Object.keys(articleTranslations);
+                const firstLang = langKeys[0];
+                activeTranslatedLang = articleTranslations[firstLang].language_name || firstLang;
+
+                const tabTranslated = document.getElementById('tabBtnTranslated');
+                const langLabel = document.getElementById('translatedTabLabel');
+                const splitBtn = document.getElementById('toggleSplitViewBtn');
+
+                if (tabTranslated) tabTranslated.style.display = 'inline-flex';
+                if (langLabel) langLabel.innerText = activeTranslatedLang;
+                if (splitBtn) splitBtn.style.display = 'inline-flex';
+
+                const tData = articleTranslations[firstLang];
+                if (tData) {
+                    if (document.getElementById('translatedTitle')) document.getElementById('translatedTitle').innerText = tData.title || "";
+                    if (document.getElementById('translatedSubtitle')) document.getElementById('translatedSubtitle').innerText = tData.subtitle || "";
+                    if (document.getElementById('translatedBody')) document.getElementById('translatedBody').innerHTML = tData.content || "";
+                    if (document.getElementById('translatedHeader')) document.getElementById('translatedHeader').style.display = 'block';
+                    if (document.getElementById('translatedBody')) document.getElementById('translatedBody').style.display = 'block';
+                }
+            }
+        });
+
+        function syncCurrentVersionToMemory() {
+            const titleEl = document.getElementById('articleTitle');
+            const subEl = document.getElementById('articleSubtitle');
+            const bodyEl = document.getElementById('articleBody');
+
+            if (!titleEl || !bodyEl) return;
+
+            const bodyClone = bodyEl.cloneNode(true);
+            bodyClone.querySelectorAll('.block-handle-bar, .img-toolbar-overlay').forEach(el => el.remove());
+
+            const curTitle = titleEl.innerText.trim();
+            const curSub = subEl ? subEl.innerText.trim() : '';
+            const curContent = bodyClone.innerHTML;
+
+            if (activeVersion === 'original') {
+                articleOriginalData = {
+                    title: curTitle,
+                    subtitle: curSub,
+                    content: curContent
+                };
+            } else if (activeVersion === 'translated' && activeTranslatedLang) {
+                articleTranslations[activeTranslatedLang] = {
+                    language_name: activeTranslatedLang,
+                    title: curTitle,
+                    subtitle: curSub,
+                    content: curContent
+                };
+            }
+
+            const transTitleEl = document.getElementById('translatedTitle');
+            const transSubEl = document.getElementById('translatedSubtitle');
+            const transBodyEl = document.getElementById('translatedBody');
+            if (isSplitViewOpen && transTitleEl && transBodyEl && activeTranslatedLang) {
+                articleTranslations[activeTranslatedLang] = {
+                    language_name: activeTranslatedLang,
+                    title: transTitleEl.innerText.trim(),
+                    subtitle: transSubEl ? transSubEl.innerText.trim() : '',
+                    content: transBodyEl.innerHTML
+                };
+            }
+        }
+
+        function switchArticleVersion(targetVersion) {
+            if (activeVersion === targetVersion && !isSplitViewOpen) return;
+
+            syncCurrentVersionToMemory();
+            activeVersion = targetVersion;
+
+            const btnOriginal = document.getElementById('tabBtnOriginal');
+            const btnTranslated = document.getElementById('tabBtnTranslated');
+            const titleEl = document.getElementById('articleTitle');
+            const subEl = document.getElementById('articleSubtitle');
+            const bodyEl = document.getElementById('articleBody');
+
+            if (targetVersion === 'original') {
+                if (btnOriginal) btnOriginal.classList.add('active');
+                if (btnTranslated) btnTranslated.classList.remove('active');
+
+                if (titleEl) titleEl.innerText = articleOriginalData.title || "";
+                if (subEl) subEl.innerText = articleOriginalData.subtitle || "";
+                if (bodyEl) bodyEl.innerHTML = articleOriginalData.content || "";
+            } else {
+                if (btnTranslated) btnTranslated.classList.add('active');
+                if (btnOriginal) btnOriginal.classList.remove('active');
+
+                const tData = articleTranslations[activeTranslatedLang] || {};
+                if (titleEl) titleEl.innerText = tData.title || "";
+                if (subEl) subEl.innerText = tData.subtitle || "";
+                if (bodyEl) bodyEl.innerHTML = tData.content || "";
+            }
+        }
+
+        function toggleSplitView() {
+            const pane = document.getElementById('translationPane');
+            const splitBtn = document.getElementById('toggleSplitViewBtn');
+            if (!pane) return;
+
+            if (pane.style.display === 'none' || !pane.style.display) {
+                switchArticleVersion('original');
+                pane.style.display = 'block';
+                isSplitViewOpen = true;
+                if (splitBtn) splitBtn.classList.add('active');
+            } else {
+                pane.style.display = 'none';
+                isSplitViewOpen = false;
+                if (splitBtn) splitBtn.classList.remove('active');
+            }
+        }
+
+        // Translation Modal & Action features
+        function openTranslateModal() {
+            openModal('translateModal');
+        }
+
+        async function startTranslation() {
+            const lang = document.getElementById('targetLanguageSelect').value;
+            closeModal('translateModal');
+            activeTranslatedLang = lang;
+
+            // Display split side-by-side pane
+            switchArticleVersion('original');
+            document.getElementById('translationPane').style.display = 'block';
+            isSplitViewOpen = true;
+            document.getElementById('translatedLangLabel').innerText = lang;
+
+            document.getElementById('translatedHeader').style.display = 'none';
+            document.getElementById('translatedBody').style.display = 'none';
+            document.getElementById('translationLoading').style.display = 'block';
+
+            const title = articleOriginalData.title || document.getElementById('articleTitle').innerText;
+            const subtitle = articleOriginalData.subtitle || document.getElementById('articleSubtitle').innerText;
+            const content = articleOriginalData.content || document.getElementById('articleBody').innerHTML;
+
+            try {
+                const response = await fetch(`/inpartner/api/article/${articleId}/translate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        target_language: lang,
+                        title: title,
+                        subtitle: subtitle,
+                        content: content
+                    })
+                });
+                const data = await response.json();
+
+                document.getElementById('translationLoading').style.display = 'none';
+                if (data.status === 'success') {
+                    document.getElementById('translatedTitle').innerText = data.translated_title;
+                    document.getElementById('translatedSubtitle').innerText = data.translated_subtitle;
+                    document.getElementById('translatedBody').innerHTML = data.translated_content;
+
+                    document.getElementById('translatedHeader').style.display = 'block';
+                    document.getElementById('translatedBody').style.display = 'block';
+
+                    articleTranslations[lang] = {
+                        language_name: lang,
+                        title: data.translated_title,
+                        subtitle: data.translated_subtitle,
+                        content: data.translated_content
+                    };
+
+                    const tabTranslated = document.getElementById('tabBtnTranslated');
+                    const langLabel = document.getElementById('translatedTabLabel');
+                    const splitBtn = document.getElementById('toggleSplitViewBtn');
+
+                    if (tabTranslated) tabTranslated.style.display = 'inline-flex';
+                    if (langLabel) langLabel.innerText = lang;
+                    if (splitBtn) {
+                        splitBtn.style.display = 'inline-flex';
+                        splitBtn.classList.add('active');
+                    }
+
+                    saveArticle();
+                } else {
+                    alert('Translation failed: ' + data.message);
+                    closeTranslation();
+                }
+            } catch(e) {
+                alert('Connection error during translation.');
+                closeTranslation();
+            }
+        }
+
+        function closeTranslation() {
+            document.getElementById('translationPane').style.display = 'none';
+            isSplitViewOpen = false;
+            const splitBtn = document.getElementById('toggleSplitViewBtn');
+            if (splitBtn) splitBtn.classList.remove('active');
+        }
+
+        function applyTranslation() {
+            syncCurrentVersionToMemory();
+            markUnsaved();
+            saveArticle();
+        }
+
         let saveTimer = null;
         let isSaving = false;
         let hasUnsavedChanges = false;
@@ -1404,7 +2629,6 @@
                 bodyCanvas.setAttribute('contenteditable', 'false');
                 titleEl.setAttribute('contenteditable', 'false');
                 subEl.setAttribute('contenteditable', 'false');
-                // Hide block handles
                 document.querySelectorAll('.block-handle-bar, .img-toolbar-overlay').forEach(el => el.style.display = 'none');
             } else {
                 body.className = 'mode-edit';
@@ -1418,7 +2642,6 @@
             }
         }
 
-        // Autosave Status Indicators
         function updateAutosaveUI(state, html) {
             const el = document.getElementById('autosaveIndicator');
             if (!el) return;
@@ -1434,29 +2657,15 @@
 
         function scheduleAutosave() {
             if (saveTimer) clearTimeout(saveTimer);
-            saveTimer = setTimeout(saveArticle, 2500); // 2.5s debounce
+            saveTimer = setTimeout(saveArticle, 2500);
         }
 
-        // Save Article State & Content to Database
         async function saveArticle() {
             if (isSaving) return;
             isSaving = true;
             updateAutosaveUI('autosave-saving', '<i class="fa-solid fa-spinner fa-spin"></i> Saving...');
 
-            const titleEl = document.getElementById('articleTitle');
-            const subEl = document.getElementById('articleSubtitle');
-            const bodyEl = document.getElementById('articleBody');
-            
-            const title = titleEl ? titleEl.innerText.trim() : '';
-            const subtitle = subEl ? subEl.innerText.trim() : '';
-            
-            let contentHtml = '';
-            if (bodyEl) {
-                // Clean content DOM clone without editor handle UI
-                const bodyClone = bodyEl.cloneNode(true);
-                bodyClone.querySelectorAll('.block-handle-bar, .img-toolbar-overlay').forEach(el => el.remove());
-                contentHtml = bodyClone.innerHTML;
-            }
+            syncCurrentVersionToMemory();
 
             const heroImgEl = document.getElementById('heroImageEl');
             const heroCaptionEl = document.getElementById('heroCaption');
@@ -1466,24 +2675,29 @@
             const categoryEl = document.getElementById('articleCategoryText');
             const authorEl = document.getElementById('articleAuthorText');
             const readTimeEl = document.getElementById('articleReadTimeText');
-            
+
             const category = categoryEl ? categoryEl.innerText.trim() : null;
             const author = authorEl ? authorEl.innerText.trim() : null;
             const readTime = readTimeEl ? (parseInt(readTimeEl.innerText) || 5) : 5;
 
+            const metaStatusEl = document.getElementById('metaStatus');
+            const status = metaStatusEl ? metaStatusEl.value : null;
+
             try {
-                const response = await fetch(`/api/article/${articleId}/save`, {
+                const response = await fetch(`/inpartner/api/article/${articleId}/save`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        title: title || 'Untitled Article',
-                        subtitle: subtitle,
-                        content: contentHtml,
+                        title: articleOriginalData.title || 'Untitled Article',
+                        subtitle: articleOriginalData.subtitle || '',
+                        content: articleOriginalData.content || '',
+                        translations: articleTranslations,
                         hero_image_url: heroUrl,
                         hero_image_caption: heroCap,
                         category: category,
                         author: author,
-                        reading_time: readTime
+                        reading_time: readTime,
+                        status: status
                     })
                 });
 
@@ -1665,7 +2879,7 @@
                 const formData = new FormData();
                 formData.append('file', fileInput.files[0]);
                 try {
-                    const res = await fetch(`/api/article/${articleId}/upload-image`, {
+                    const res = await fetch(`/inpartner/api/article/${articleId}/upload-image`, {
                         method: 'POST',
                         body: formData
                     });
@@ -1727,7 +2941,7 @@
             `;
 
             if (url) {
-                await fetch(`/api/article/${articleId}/delete-image`, {
+                await fetch(`/inpartner/api/article/${articleId}/delete-image`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ url: url })
@@ -1803,7 +3017,7 @@
             }
 
             if (url) {
-                await fetch(`/api/article/${articleId}/delete-image`, {
+                await fetch(`/inpartner/api/article/${articleId}/delete-image`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ url: url })
@@ -1836,17 +3050,105 @@
             saveArticle();
         }
 
-        // PDF Preview Modal Controls & Rendering (Requirements #11, 12, 13, 14, 15, 16, 17, 18)
+        let pendingExportFormat = 'html';
+
+        function exportArticle(format) {
+            pendingExportFormat = format;
+            syncCurrentVersionToMemory();
+
+            if (articleTranslations && Object.keys(articleTranslations).length > 0) {
+                const langKeys = Object.keys(articleTranslations);
+                const firstLang = langKeys[0];
+                const tData = articleTranslations[firstLang] || {};
+
+                const fmtLabel = document.getElementById('exportFormatLabel');
+                const transLangName = document.getElementById('exportTranslatedLangName');
+                if (fmtLabel) fmtLabel.innerText = format.toUpperCase();
+                if (transLangName) transLangName.innerText = activeTranslatedLang || firstLang;
+
+                const origPreview = document.getElementById('exportOriginalTitlePreview');
+                const transPreview = document.getElementById('exportTranslatedTitlePreview');
+                if (origPreview) {
+                    const origTitle = articleOriginalData.title || (document.getElementById('articleTitle') ? document.getElementById('articleTitle').innerText : '');
+                    origPreview.innerText = origTitle.length > 50 ? origTitle.slice(0, 47) + '...' : origTitle;
+                }
+                if (transPreview) {
+                    const transTitle = tData.title || '';
+                    transPreview.innerText = transTitle.length > 50 ? transTitle.slice(0, 47) + '...' : transTitle;
+                }
+
+                const radios = document.getElementsByName('exportLangOption');
+                for (let r of radios) {
+                    if (r.value === (activeVersion === 'translated' ? 'translated' : 'original')) {
+                        r.checked = true;
+                    }
+                }
+
+                openModal('exportLanguageModal');
+            } else {
+                const url = `/inpartner/api/article/${articleId}/export/${format}?lang=original`;
+                window.open(url, '_blank');
+            }
+        }
+
+        function confirmDownloadExport() {
+            const radios = document.getElementsByName('exportLangOption');
+            let selectedVal = 'original';
+            for (let r of radios) {
+                if (r.checked) selectedVal = r.value;
+            }
+
+            const langParam = selectedVal === 'translated' ? (activeTranslatedLang || 'translated') : 'original';
+            const url = `/inpartner/api/article/${articleId}/export/${pendingExportFormat}?lang=${encodeURIComponent(langParam)}`;
+
+            closeModal('exportLanguageModal');
+            window.open(url, '_blank');
+        }
+
         let pdfZoomLevel = 1.0;
 
         async function openPdfPreviewModal() {
             await saveArticle();
 
+            const langSelect = document.getElementById('pdfLangSelect');
+            const transOpt = document.getElementById('pdfLangTranslatedOpt');
+            const transName = document.getElementById('pdfLangTranslatedName');
+
+            if (articleTranslations && Object.keys(articleTranslations).length > 0) {
+                if (transOpt) transOpt.style.display = 'block';
+                if (transName) transName.innerText = activeTranslatedLang || 'Translated';
+                if (langSelect) langSelect.value = activeVersion === 'translated' ? 'translated' : 'original';
+            } else {
+                if (transOpt) transOpt.style.display = 'none';
+                if (langSelect) langSelect.value = 'original';
+            }
+
+            renderPdfPreviewForSelectedLang();
+            openModal('pdfPreviewModal');
+        }
+
+        function renderPdfPreviewForSelectedLang() {
             const viewport = document.getElementById('pdfPreviewViewport');
+            if (!viewport) return;
             viewport.innerHTML = '';
 
-            const title = document.getElementById('articleTitle').innerText;
-            const subtitle = document.getElementById('articleSubtitle').innerText;
+            const selectedLang = document.getElementById('pdfLangSelect') ? document.getElementById('pdfLangSelect').value : 'original';
+
+            let title = document.getElementById('articleTitle').innerText;
+            let subtitle = document.getElementById('articleSubtitle').innerText;
+            let bodyContentHtml = editorBody.innerHTML;
+
+            if (selectedLang === 'translated' && articleTranslations && activeTranslatedLang) {
+                const tData = articleTranslations[activeTranslatedLang] || {};
+                if (tData.title) title = tData.title;
+                if (tData.subtitle) subtitle = tData.subtitle;
+                if (tData.content) bodyContentHtml = tData.content;
+            } else {
+                if (articleOriginalData.title) title = articleOriginalData.title;
+                if (articleOriginalData.subtitle) subtitle = articleOriginalData.subtitle;
+                if (articleOriginalData.content) bodyContentHtml = articleOriginalData.content;
+            }
+
             const category = document.getElementById('articleCategoryText').innerText;
             const author = document.getElementById('articleAuthorText').innerText;
             const dateStr = new Date().toLocaleDateString('en-US', {month:'long', day:'numeric', year:'numeric'});
@@ -1854,10 +3156,11 @@
             const heroImg = document.getElementById('heroImageEl');
             const heroCap = document.getElementById('heroCaption');
 
-            const bodyClone = editorBody.cloneNode(true);
-            bodyClone.querySelectorAll('.block-handle-bar, .img-toolbar-overlay').forEach(el => el.remove());
+            const tempContainer = document.createElement('div');
+            tempContainer.innerHTML = bodyContentHtml;
+            tempContainer.querySelectorAll('.block-handle-bar, .img-toolbar-overlay').forEach(el => el.remove());
 
-            const children = Array.from(bodyClone.children);
+            const children = Array.from(tempContainer.children);
 
             // Group blocks into paginated pages
             const pages = [];
@@ -1873,14 +3176,12 @@
                 if (currentPage.length > 0 && currentHeightEstimate + blockHeight > 820) {
                     pages.push(currentPage);
                     currentPage = [];
-                    currentHeightEstimate = 80; // Header spacing on later pages
+                    currentHeightEstimate = 80;
                 }
                 currentPage.push(child);
                 currentHeightEstimate += blockHeight;
             });
-            if (currentPage.length > 0) {
-                pages.push(currentPage);
-            }
+            if (currentPage.length > 0) pages.push(currentPage);
             if (pages.length === 0) pages.push([]);
 
             const totalPages = pages.length;
@@ -1934,8 +3235,6 @@
                 pageSheet.innerHTML = headerHtml + `<div class="pdf-page-body">${contentHtml}</div>` + footerHtml;
                 viewport.appendChild(pageSheet);
             });
-
-            openModal('pdfPreviewModal');
         }
 
         function zoomPdfPreview(delta) {
@@ -1955,7 +3254,9 @@
         }
 
         function downloadPdfDirect() {
-            window.open(`/api/article/${articleId}/export/pdf`, '_blank');
+            const selectedLang = document.getElementById('pdfLangSelect') ? document.getElementById('pdfLangSelect').value : 'original';
+            const langParam = selectedLang === 'translated' ? (activeTranslatedLang || 'translated') : 'original';
+            window.open(`/inpartner/api/article/${articleId}/export/pdf?lang=${encodeURIComponent(langParam)}`, '_blank');
             closeModal('pdfPreviewModal');
         }
 
@@ -2000,7 +3301,7 @@
             }
 
             try {
-                const res = await fetch('/api/wordpress/connect', {
+                const res = await fetch('/inpartner/api/wordpress/connect', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ wp_url: url, username: username, app_password: appPassword })
@@ -2040,6 +3341,9 @@
             const status = document.getElementById('wpStatus').value;
             const categoryId = document.getElementById('wpCategory').value;
             const authorId = document.getElementById('wpAuthor').value;
+            const selectedLang = document.getElementById('wpPublishLangSelect') ? document.getElementById('wpPublishLangSelect').value : 'original';
+            const langParam = selectedLang === 'translated' ? (activeTranslatedLang || 'translated') : 'original';
+
             const btn = document.getElementById('wpSyncBtn');
             const msgEl = document.getElementById('wpStatusMsg');
 
@@ -2049,7 +3353,7 @@
             btn.disabled = true;
 
             try {
-                const res = await fetch(`/api/article/${articleId}/publish-wordpress`, {
+                const res = await fetch(`/inpartner/api/article/${articleId}/publish-wordpress`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -2058,7 +3362,8 @@
                         app_password: appPassword,
                         status: status,
                         category_id: categoryId ? parseInt(categoryId) : null,
-                        author_id: authorId ? parseInt(authorId) : null
+                        author_id: authorId ? parseInt(authorId) : null,
+                        lang: langParam
                     })
                 });
 
@@ -2081,10 +3386,81 @@
             }
         }
 
-        // Modal Helpers
-        function openModal(id) { document.getElementById(id).classList.add('active'); }
-        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
-        function openWordPressModal() { openModal('wpModal'); }
+        // Inpartner Store Integration Handlers
+        async function checkStoreStatus() {
+            try {
+                const res = await fetch(`/inpartner/api/article/${articleId}/store-status`);
+                const data = await res.json();
+                const btn = document.getElementById('btnPushStore');
+                if (btn && data.listed) {
+                    btn.innerHTML = `<i class="fa-solid fa-store"></i> Store (${data.status.toUpperCase()})`;
+                    if (data.status === 'published') {
+                        btn.style.background = 'var(--positive)';
+                        btn.style.color = '#fff';
+                    }
+                }
+            } catch (e) {
+                console.log('Store status check error:', e);
+            }
+        }
+
+        async function pushToInpartnerStore() {
+            const btn = document.getElementById('btnPushStore');
+            const originalHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Pushing...`;
+
+            try {
+                // Ensure latest content is saved first
+                await saveArticle();
+
+                const res = await fetch(`/inpartner/api/article/${articleId}/push-store`, { method: 'POST' });
+                const data = await res.json();
+                btn.disabled = false;
+
+                if (data.status === 'success') {
+                    alert(`✓ ${data.message}\n\nArtikel masuk sebagai DRAFT di Store (ID Produk #${data.product_id}). Admin dapat mengatur harga dan mem-publishnya di Admin Store.`);
+                    btn.innerHTML = `<i class="fa-solid fa-check"></i> Pushed to Store`;
+                    if (data.store_url) {
+                        window.open(data.store_url, '_blank');
+                    }
+                } else {
+                    alert(`Gagal push ke Store: ${data.message || 'Error tidak diketahui'}`);
+                    btn.innerHTML = originalHtml;
+                }
+            } catch (e) {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+                alert('Terjadi kesalahan jaringan saat mengirim ke Store: ' + e);
+            }
+        }
+
+        function openWordPressModal() {
+            const transOpt = document.getElementById('wpLangTranslatedOpt');
+            const transName = document.getElementById('wpLangTranslatedName');
+            const langSelect = document.getElementById('wpPublishLangSelect');
+            if (articleTranslations && Object.keys(articleTranslations).length > 0) {
+                if (transOpt) transOpt.style.display = 'block';
+                if (transName) transName.innerText = activeTranslatedLang || 'Translated';
+                if (langSelect) langSelect.value = activeVersion === 'translated' ? 'translated' : 'original';
+            } else {
+                if (transOpt) transOpt.style.display = 'none';
+                if (langSelect) langSelect.value = 'original';
+            }
+            openModal('wpModal');
+        }
+
+        // Check store status and setup modal overlay click handlers
+        document.addEventListener('DOMContentLoaded', function() {
+            checkStoreStatus();
+            document.querySelectorAll('.modal-overlay').forEach(overlay => {
+                overlay.addEventListener('click', function(e) {
+                    if (e.target === overlay) {
+                        overlay.classList.remove('active');
+                    }
+                });
+            });
+        });
 
         // Prevent Accidental Unsaved Navigation
         window.addEventListener('beforeunload', function (e) {

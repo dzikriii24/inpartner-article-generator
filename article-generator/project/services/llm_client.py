@@ -125,3 +125,50 @@ def call_llm_json(prompt: str, role: str = "REASONING") -> tuple[dict | list | N
     print(f"[LLM Router Error] Failed to parse JSON response from {model_used}. Raw text sample: {raw_text[:200]}")
     return None, model_used
 
+def embed_texts(texts: list[str]) -> list[list[float]]:
+    """
+    Generate embeddings for a list of strings using Gemini API.
+    Processes in chunks to avoid batch limits and ensures output length matches input.
+    """
+    if not texts:
+        return []
+    
+    client = get_genai_client()
+    all_embeddings = []
+    
+    # Process in chunks of 50 to avoid API limits (max 100 per request)
+    chunk_size = 50
+    for i in range(0, len(texts), chunk_size):
+        chunk = texts[i:i + chunk_size]
+        try:
+            response = client.models.embed_content(
+                model="gemini-embedding-2",
+                contents=chunk
+            )
+            # Add results
+            if hasattr(response, 'embeddings') and response.embeddings:
+                chunk_embs = []
+                for emb in response.embeddings:
+                    vals = emb.values if emb and hasattr(emb, 'values') else []
+                    if len(vals) > 768:
+                        vals = vals[:768]
+                    elif len(vals) < 768:
+                        vals = vals + [0.0] * (768 - len(vals))
+                    chunk_embs.append(vals)
+                
+                # Pad if the API returned fewer embeddings than requested
+                while len(chunk_embs) < len(chunk):
+                    chunk_embs.append([0.0] * 768)
+                all_embeddings.extend(chunk_embs[:len(chunk)])
+            else:
+                all_embeddings.extend([[0.0] * 768 for _ in chunk])
+                
+        except Exception as e:
+            print(f"[LLM Router Error] Embedding failed for chunk {i}: {e}")
+            all_embeddings.extend([[0.0] * 768 for _ in chunk])
+            
+    # Final safety check
+    while len(all_embeddings) < len(texts):
+        all_embeddings.append([0.0] * 768)
+        
+    return all_embeddings[:len(texts)]

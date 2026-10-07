@@ -1,11 +1,11 @@
 import os
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from models import DailyGeneration, GeneratedArticle
 from services.llm_client import get_genai_client, FALLBACK_CHAINS, MODEL_ROLE_CONFIG
 
-DEFAULT_DAILY_LIMIT = int(os.getenv("DAILY_ARTICLE_LIMIT", 5))
+DEFAULT_DAILY_LIMIT = "Unlimited"
 
 def get_or_create_daily_record(db: Session) -> DailyGeneration:
     today_date = date.today()
@@ -20,9 +20,9 @@ def get_or_create_daily_record(db: Session) -> DailyGeneration:
     if not record:
         record = DailyGeneration(
             date=today_date,
-            limit=DEFAULT_DAILY_LIMIT,
+            limit=999999,
             generated=actual_count,
-            remaining=max(0, DEFAULT_DAILY_LIMIT - actual_count)
+            remaining=999999
         )
         db.add(record)
         db.commit()
@@ -31,7 +31,6 @@ def get_or_create_daily_record(db: Session) -> DailyGeneration:
         # Keep count synced with actual generated_articles if higher
         if actual_count > record.generated:
             record.generated = actual_count
-            record.remaining = max(0, record.limit - actual_count)
             db.commit()
             
     return record
@@ -39,11 +38,10 @@ def get_or_create_daily_record(db: Session) -> DailyGeneration:
 def get_usage_and_model_status(db: Session) -> dict:
     record = get_or_create_daily_record(db)
     
-    limit = record.limit or DEFAULT_DAILY_LIMIT
     generated = record.generated or 0
-    remaining = max(0, limit - generated)
-    usage_percent = round(min(100.0, (generated / limit) * 100), 1) if limit > 0 else 100.0
-    can_generate = remaining > 0
+    remaining = "Unlimited"
+    can_generate = True
+    usage_percent = 100.0
 
     # Model status & fallback chain evaluation
     api_key_set = bool(os.getenv("GEMINI_API_KEY"))
@@ -84,16 +82,27 @@ def get_usage_and_model_status(db: Session) -> dict:
         }
     ]
 
+    now = datetime.now()
+    tomorrow = now.date() + timedelta(days=1)
+    reset_time = datetime.combine(tomorrow, datetime.min.time())
+    time_until_reset = reset_time - now
+    
+    hours, remainder = divmod(time_until_reset.seconds, 3600)
+    minutes, _ = divmod(remainder, 60)
+    reset_in = f"{hours}h {minutes}m"
+
     return {
         "status": "success",
-        "daily_limit": limit,
+        "daily_limit": "Unlimited",
         "generated_today": generated,
-        "remaining_today": remaining,
+        "remaining_today": "Unlimited",
         "usage_percent": usage_percent,
         "can_generate": can_generate,
         "api_health": api_health,
         "models": models_info,
-        "date": record.date.isoformat()
+        "date": record.date.isoformat(),
+        "current_time": now.strftime("%Y-%m-%d %H:%M"),
+        "reset_in": reset_in
     }
 
 def record_article_generation(db: Session):
@@ -102,6 +111,5 @@ def record_article_generation(db: Session):
     """
     record = get_or_create_daily_record(db)
     record.generated += 1
-    record.remaining = max(0, record.limit - record.generated)
     db.commit()
     return record

@@ -1,14 +1,23 @@
 from sqlalchemy.orm import Session
 from models import Source, Topic, NewsEmbedding, NewsContent
-from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 from datetime import datetime
 import json
 import numpy as np
 
-# Load local embedding model
-model = SentenceTransformer('all-MiniLM-L6-v2')
+from services.llm_client import embed_texts
 
+def standardize_emb(emb_data, dim=768):
+    if not isinstance(emb_data, list):
+        try:
+            emb_data = json.loads(emb_data) if isinstance(emb_data, str) else list(emb_data)
+        except:
+            emb_data = []
+    if len(emb_data) > dim:
+        return emb_data[:dim]
+    elif len(emb_data) < dim:
+        return emb_data + [0.0] * (dim - len(emb_data))
+    return emb_data
 
 def cluster_topics(db: Session):
     print("Starting Topic Clustering...")
@@ -21,30 +30,38 @@ def cluster_topics(db: Session):
     embeddings_list = []
     valid_sources = []
     
+    texts_to_embed = []
+    text_to_source = []
+    
     for s in unassigned_sources:
         # Check if already embedded
         existing_emb = db.query(NewsEmbedding).filter(NewsEmbedding.source_id == s.id).first()
         if existing_emb and existing_emb.embedding:
-            emb = np.array(existing_emb.embedding)
+            embeddings_list.append(np.array(standardize_emb(existing_emb.embedding)))
+            valid_sources.append(s)
         else:
             # Combine title and full content for better semantic understanding
             content_row = db.query(NewsContent).filter(NewsContent.source_id == s.id).first()
             content_text = content_row.cleaned_content if content_row and content_row.cleaned_content else (s.description or "")
             text_to_embed = f"{s.title}. {content_text[:1000]}" # Limit to first 1000 chars for embedding speed
-            emb = model.encode(text_to_embed)
+            texts_to_embed.append(text_to_embed)
+            text_to_source.append(s)
             
+    if texts_to_embed:
+        new_embs = embed_texts(texts_to_embed)
+        for i, s in enumerate(text_to_source):
+            emb = np.array(standardize_emb(new_embs[i]))
             # Save embedding
-            new_emb = NewsEmbedding(
+            new_emb_db = NewsEmbedding(
                 source_id=s.id,
                 embedding=emb.tolist(),
-                model_name='all-MiniLM-L6-v2',
+                model_name='gemini-embedding-2',
                 created_at=datetime.utcnow()
             )
-            db.add(new_emb)
-            db.commit()
-            
-        embeddings_list.append(emb)
-        valid_sources.append(s)
+            db.add(new_emb_db)
+            embeddings_list.append(emb)
+            valid_sources.append(s)
+        db.commit()
         
     if not embeddings_list:
         return 0
@@ -74,9 +91,21 @@ def cluster_topics(db: Session):
         # Create a new topic based on the first item in the cluster
         main_source = valid_sources[cluster_indices[0]]
         
+        # Infer category from title
+        title_lower = main_source.title.lower()
+        cat = "Business"
+        if any(kw in title_lower for kw in ["indonesia", "jokowi", "prabowo", "jakarta", "nasional", "rupiah", "bumn", "nusantara", "ikn", "dpr", "kpk", "polri", "mk", "mahkamah", "kpu", "gibran", "menteri", "pemerintah"]):
+            cat = "Nasional"
+        elif any(kw in title_lower for kw in ["crypto", "bitcoin", "ethereum", "btc", "eth", "kripto"]):
+            cat = "Crypto"
+        elif any(kw in title_lower for kw in ["saham", "stock", "invest", "ihsg", "ekonomi", "finance", "bank"]):
+            cat = "Ekonomi"
+        elif any(kw in title_lower for kw in ["tech", "ai", "google", "apple", "microsoft", "teknologi"]):
+            cat = "Teknologi"
+            
         topic = Topic(
             title=main_source.title, # Naive topic title
-            category=None, # Will let AI refine later or keep null
+            category=cat, 
             score=len(cluster_indices) * 10.0, # Simple score based on volume
             detected_at=datetime.utcnow(),
             status="DISCOVERED"
@@ -101,9 +130,10 @@ def filter_relevant_sources_for_prompt(db: Session, sources: list, user_prompt: 
     if not sources or not user_prompt:
         return sources[:top_k]
         
-    prompt_emb = model.encode(user_prompt)
+    texts_to_embed = [user_prompt]
+    src_indices_to_embed = []
+    scored_sources_tuples = []
     
-    scored_sources = []
     for s in sources:
         # Get content text
         content_row = db.query(NewsContent).filter(NewsContent.source_id == s.id).first()
@@ -113,12 +143,23 @@ def filter_relevant_sources_for_prompt(db: Session, sources: list, user_prompt: 
         # Check existing embedding or encode
         existing_emb = db.query(NewsEmbedding).filter(NewsEmbedding.source_id == s.id).first()
         if existing_emb and existing_emb.embedding:
-            src_emb = np.array(existing_emb.embedding)
+            scored_sources_tuples.append({'source': s, 'emb': np.array(standardize_emb(existing_emb.embedding))})
         else:
-            src_emb = model.encode(text_to_embed)
+            texts_to_embed.append(text_to_embed)
+            src_indices_to_embed.append(s)
             
-        sim = float(cosine_similarity([prompt_emb], [src_emb])[0][0])
-        scored_sources.append((sim, s))
+    # Embed the prompt and any missing sources using Gemini
+    new_embs = embed_texts(texts_to_embed)
+    prompt_emb = np.array(standardize_emb(new_embs[0]))
+    
+    for idx, s in enumerate(src_indices_to_embed):
+        emb = np.array(standardize_emb(new_embs[idx + 1]))
+        scored_sources_tuples.append({'source': s, 'emb': emb})
+        
+    scored_sources = []
+    for item in scored_sources_tuples:
+        sim = float(cosine_similarity([prompt_emb], [item['emb']])[0][0])
+        scored_sources.append((sim, item['source']))
         
     # Sort descending by similarity
     scored_sources.sort(key=lambda x: x[0], reverse=True)

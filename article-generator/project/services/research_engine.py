@@ -8,14 +8,11 @@ import feedparser
 from bs4 import BeautifulSoup
 import numpy as np
 from sqlalchemy.orm import Session
-from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 
 from models import Source, NewsContent, NewsEmbedding
-from services.llm_client import call_llm_json, call_llm
+from services.llm_client import call_llm_json, call_llm, embed_texts
 
-# Initialize local embedding model for fast semantic relevance and similarity
-embed_model = SentenceTransformer('all-MiniLM-L6-v2')
 
 # Known authoritative / official domains
 PRIMARY_OFFICIAL_DOMAINS = [
@@ -135,6 +132,15 @@ def analyze_topic_intent(user_prompt: str) -> dict:
     parsed, model_used = call_llm_json(prompt, role="LIGHTWEIGHT")
     if parsed and isinstance(parsed, dict) and "topic_name" in parsed:
         print(f"[ResearchEngine] Topic intent analyzed using {model_used}")
+        # Sanitize expected list fields to prevent NumPy index out of bounds errors
+        for key in ["subtopics", "research_questions", "search_queries_en", "search_queries_id"]:
+            if key in parsed:
+                if isinstance(parsed[key], str):
+                    parsed[key] = [parsed[key]]
+                elif not isinstance(parsed[key], list):
+                    parsed[key] = []
+            else:
+                parsed[key] = []
         return parsed
         
     # Fallback default intent
@@ -275,13 +281,18 @@ def discover_sources_multi_query(db: Session, intent: dict) -> list[Source]:
 
     # 3. Calculate semantic relevance scores against topic intent
     intent_text = f"{intent.get('topic_name')} {intent.get('target_angle')} {' '.join(intent.get('subtopics', []))}"
-    intent_emb = embed_model.encode(intent_text)
     
+    src_texts = []
     for s in discovered_sources:
         content_row = db.query(NewsContent).filter(NewsContent.source_id == s.id).first()
         body = content_row.cleaned_content if content_row and content_row.cleaned_content else (s.description or "")
-        src_text = f"{s.title}. {body[:800]}"
-        src_emb = embed_model.encode(src_text)
+        src_texts.append(f"{s.title}. {body[:800]}")
+        
+    all_embs = embed_texts([intent_text] + src_texts)
+    intent_emb = all_embs[0]
+    
+    for i, s in enumerate(discovered_sources):
+        src_emb = all_embs[i+1]
         sim_score = float(cosine_similarity([intent_emb], [src_emb])[0][0])
         s.relevance_score = round(sim_score, 4)
         
@@ -389,9 +400,9 @@ def cross_verify_and_evaluate_quality(sources: list, facts: list, intent: dict) 
     covered_questions = []
     
     if research_questions and facts:
-        q_embs = embed_model.encode(research_questions)
+        q_embs = embed_texts(research_questions)
         fact_texts = [f["fact_text"] for f in facts]
-        f_embs = embed_model.encode(fact_texts)
+        f_embs = embed_texts(fact_texts)
         
         sim_mat = cosine_similarity(q_embs, f_embs)
         for qi, q_text in enumerate(research_questions):

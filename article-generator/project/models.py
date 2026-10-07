@@ -97,6 +97,7 @@ class GeneratedArticle(Base):
     user_prompt = Column(Text, nullable=True)
     seo_metadata = Column(JSON, nullable=True)
     research_metadata = Column(JSON, nullable=True)
+    translations = Column(JSON, nullable=True)
     citations = Column(JSON, nullable=True)
     status = Column(SqlEnum(ArticleStatus), default=ArticleStatus.RESEARCHING)
     generation_step = Column(String(100), default="COMPLETED")

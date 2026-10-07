@@ -12,14 +12,18 @@ RSS_FEEDS = {
     "Macro Economics": [
         "https://feeds.a.dj.com/rss/RSSMarketsMain.xml",
     ],
+    "Nasional": [
+        "https://www.antaranews.com/rss/nasional.xml",
+        "https://www.suara.com/rss/news"
+    ],
+    "Ekonomi": [
+        "https://www.antaranews.com/rss/ekonomi.xml"
+    ],
     "Stock Market": [
         "https://search.cnbc.com/rs/search/combinedcms/view.xml?profile=12000000&id=10000664",
     ],
     "Crypto": [
         "https://cointelegraph.com/rss"
-    ],
-    "Commodities": [
-        "https://www.kitco.com/news/rss_news.xml"
     ],
     "Geopolitics": [
         "https://feeds.bbci.co.uk/news/world/rss.xml"
@@ -69,7 +73,7 @@ def collect_rss_news(db: Session):
         for feed_url in feeds:
             try:
                 parsed = feedparser.parse(feed_url)
-                for entry in parsed.entries[:5]: # Top 5 fresh entries per feed
+                for entry in parsed.entries[:15]: # Top 15 fresh entries per feed
                     url = entry.link
                     title = entry.title
                     
@@ -140,44 +144,47 @@ def collect_gnews(db: Session):
     if not api_key:
         return 0
         
-    url = f"https://gnews.io/api/v4/top-headlines?category=business&lang=en&apikey={api_key}"
+    categories = ['business', 'technology', 'science', 'nation', 'world']
     collected_count = 0
-    try:
-        response = requests.get(url, timeout=8)
-        if response.status_code == 200:
-            articles = response.json().get('articles', [])
-            for article in articles[:5]:
-                url = article.get('url')
-                existing = db.query(Source).filter(Source.url == url).first()
-                if existing:
-                    continue
-                
-                source = Source(
-                    url=url,
-                    title=article.get('title'),
-                    publisher=article.get('source', {}).get('name', 'GNews'),
-                    published_at=datetime.utcnow(),
-                    description=article.get('description', ''),
-                    source_type="gnews",
-                    reliability=2
-                )
-                db.add(source)
-                db.flush()
-                
-                full_text = extract_article_content(url)
-                news_content = NewsContent(
-                    source_id=source.id,
-                    full_content=full_text if full_text else article.get('description', ''),
-                    cleaned_content=full_text if full_text else article.get('description', ''),
-                    extracted_at=datetime.utcnow()
-                )
-                db.add(news_content)
-                collected_count += 1
-                
-        if collected_count > 0:
-            db.commit()
-    except Exception as e:
-        print(f"Error fetching GNews: {e}")
+    
+    for category in categories:
+        url = f"https://gnews.io/api/v4/top-headlines?category={category}&lang=id&country=id&apikey={api_key}"
+        try:
+            response = requests.get(url, timeout=8)
+            if response.status_code == 200:
+                articles = response.json().get('articles', [])
+                for article in articles[:10]:
+                    url = article.get('url')
+                    existing = db.query(Source).filter(Source.url == url).first()
+                    if existing:
+                        continue
+                    
+                    source = Source(
+                        url=url,
+                        title=article.get('title'),
+                        publisher=article.get('source', {}).get('name', 'GNews'),
+                        published_at=datetime.utcnow(),
+                        description=article.get('description', ''),
+                        source_type="gnews",
+                        reliability=2
+                    )
+                    db.add(source)
+                    db.flush()
+                    
+                    full_text = extract_article_content(url)
+                    news_content = NewsContent(
+                        source_id=source.id,
+                        full_content=full_text if full_text else article.get('description', ''),
+                        cleaned_content=full_text if full_text else article.get('description', ''),
+                        extracted_at=datetime.utcnow()
+                    )
+                    db.add(news_content)
+                    collected_count += 1
+                    
+            if collected_count > 0:
+                db.commit()
+        except Exception as e:
+            print(f"Error fetching GNews category {category}: {e}")
         
     return collected_count
 

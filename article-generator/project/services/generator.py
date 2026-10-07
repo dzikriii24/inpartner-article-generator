@@ -293,7 +293,10 @@ def generate_article_for_topic(db: Session, topic: Topic, article: GeneratedArti
     update_article_step(db, article, "discovering", ArticleStatus.RESEARCHING)
     intent = analyze_topic_intent(user_prompt)
     if topic:
-        topic.title = intent.get("topic_name", topic.title)
+        t_name = intent.get("topic_name", topic.title) or topic.title or "Custom Topic"
+        if len(t_name) > 240:
+            t_name = t_name[:237] + "..."
+        topic.title = t_name
         topic.category = intent.get("category", topic.category)
         db.commit()
 
@@ -376,7 +379,10 @@ def generate_article_for_topic(db: Session, topic: Topic, article: GeneratedArti
     blocks = build_content_blocks(plan, final_markdown)
 
     # Finalize article record
-    article.title = plan.get("headline", topic.title if topic else user_prompt)
+    raw_headline = plan.get("headline", topic.title if topic else user_prompt) or "Untitled Article"
+    if len(raw_headline) > 450:
+        raw_headline = raw_headline[:447] + "..."
+    article.title = raw_headline
     article.subtitle = plan.get("subtitle", "")
     article.category = plan.get("category", "Business & Economy")
     article.content = final_markdown

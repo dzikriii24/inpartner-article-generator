@@ -16,6 +16,59 @@ import tempfile
 import uuid
 import os
 
+def get_formatted_references(article):
+    """
+    Returns a sorted list of reference dictionaries for rendering in templates and exports.
+    [{'num': 1, 'publisher': '...', 'title': '...', 'url': '...', 'evidence': '...'}, ...]
+    """
+    refs = []
+    seen_urls = set()
+    
+    # 1. First check article.citations (JSON dict mapping index string "1", "8", "16" to metadata)
+    citations_data = getattr(article, 'citations', None)
+    if citations_data and isinstance(citations_data, dict) and len(citations_data) > 0:
+        sorted_keys = sorted(citations_data.keys(), key=lambda k: int(k) if str(k).isdigit() else str(k))
+        for k in sorted_keys:
+            val = citations_data[k]
+            if isinstance(val, dict):
+                url = val.get("url") or "#"
+                refs.append({
+                    "num": int(k) if str(k).isdigit() else k,
+                    "publisher": val.get("publisher") or "Sumber Berita",
+                    "title": val.get("fact_text") or val.get("evidence") or f"Referensi [{k}]",
+                    "url": url,
+                    "evidence": val.get("evidence"),
+                    "published_at": val.get("published_at")
+                })
+                if url and url != "#":
+                    seen_urls.add(url)
+                    
+    # 2. Check article.sources (Source models relationship) to supplement any missing sources
+    sources_data = getattr(article, 'sources', None)
+    if sources_data:
+        current_max_num = max([r["num"] for r in refs if isinstance(r["num"], int)], default=0)
+        for source in sources_data:
+            s_url = getattr(source, 'url', None) or "#"
+            if s_url not in seen_urls:
+                current_max_num += 1
+                pub = getattr(source, 'publisher', None) or "Sumber Berita"
+                stitle = getattr(source, 'title', None) or getattr(source, 'description', None) or f"Referensi [{current_max_num}]"
+                sdesc = getattr(source, 'description', None)
+                spub_at = getattr(source, 'published_at', None)
+                spub_str = spub_at.strftime('%Y-%m-%d') if hasattr(spub_at, 'strftime') and spub_at else None
+                refs.append({
+                    "num": current_max_num,
+                    "publisher": pub,
+                    "title": stitle,
+                    "url": s_url,
+                    "evidence": sdesc,
+                    "published_at": spub_str
+                })
+                if s_url and s_url != "#":
+                    seen_urls.add(s_url)
+                    
+    return refs
+
 def export_markdown(article) -> str:
     """
     Generates clean Markdown string for the article including metadata and references.
@@ -37,38 +90,41 @@ def export_markdown(article) -> str:
             
     content += article.content or ""
     
-    if article.sources:
+    refs = get_formatted_references(article)
+    if refs:
         content += "\n\n## References & Sources\n\n"
-        for idx, source in enumerate(article.sources, 1):
-            pub = f"**{source.publisher}**" if source.publisher else "Source"
-            date_str = source.published_at.strftime('%Y-%m-%d') if source.published_at else ""
-            content += f"{idx}. {pub}: [{source.title}]({source.url}) {f'({date_str})' if date_str else ''}\n"
-            if source.description:
-                clean_desc = re.sub(r'<[^>]+>', '', source.description)[:200]
+        for ref in refs:
+            pub = f"**{ref['publisher']}**" if ref.get('publisher') else "Source"
+            date_str = f"({ref['published_at']})" if ref.get('published_at') else ""
+            content += f"[{ref['num']}] {pub}: [{ref['title']}]({ref['url']}) {date_str}\n"
+            if ref.get('evidence'):
+                clean_desc = re.sub(r'<[^>]+>', '', str(ref['evidence']))[:200]
                 content += f"   > {clean_desc}...\n"
                 
     return content
+
 
 
 def export_html(article) -> str:
     """
     Generates clean HTML document for CMS or offline viewing.
     """
-    body_html = md_lib.markdown(article.content or "", extensions=['extra', 'nl2br', 'tables'])
+    body_html = article.content or ""
     
     sources_html = ""
-    if article.sources:
+    refs = get_formatted_references(article)
+    if refs:
         sources_html += "<section class='references' style='margin-top: 3rem; padding-top: 2rem; border-top: 2px solid #222;'>\n"
         sources_html += "<h2 style='font-family: sans-serif; font-size: 1.25rem;'>References & Sources</h2>\n"
-        sources_html += "<ol style='padding-left: 1.25rem; font-family: sans-serif; font-size: 0.95rem; line-height: 1.6;'>\n"
-        for source in article.sources:
-            pub = f"<strong>{source.publisher}</strong> &mdash; " if source.publisher else ""
-            sources_html += f"<li style='margin-bottom: 0.75rem;'>{pub}<a href='{source.url}' target='_blank' style='color: #93602a; font-weight: 600;'>{source.title}</a>"
-            if source.description:
-                clean_desc = re.sub(r'<[^>]+>', '', source.description)[:220]
-                sources_html += f"<br><span style='color: #666; font-size: 0.88rem;'>{clean_desc}...</span>"
+        sources_html += "<ul style='list-style: none; padding-left: 0; font-family: sans-serif; font-size: 0.95rem; line-height: 1.6;'>\n"
+        for ref in refs:
+            pub = f"<strong>{html.escape(str(ref['publisher']))}</strong> &mdash; " if ref.get('publisher') else ""
+            sources_html += f"<li style='margin-bottom: 0.85rem;' id='ref-{ref['num']}'><span style='font-weight:bold; color:#2563eb; margin-right:0.4rem;'>[{ref['num']}]</span>{pub}<a href='{ref['url']}' target='_blank' style='color: #2563eb; font-weight: 600;'>{html.escape(str(ref['title']))}</a>"
+            if ref.get('evidence'):
+                clean_desc = re.sub(r'<[^>]+>', '', str(ref['evidence']))[:220]
+                sources_html += f"<br><span style='color: #666; font-size: 0.88rem; font-style: italic;'>\"{clean_desc}...\"</span>"
             sources_html += "</li>\n"
-        sources_html += "</ol>\n</section>\n"
+        sources_html += "</ul>\n</section>\n"
 
     full_html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -253,7 +309,8 @@ def export_docx(article) -> io.BytesIO:
             p_p.paragraph_format.space_after = Pt(10)
             
     # References section
-    if article.sources:
+    refs = get_formatted_references(article)
+    if refs:
         p_ref_head = doc.add_paragraph()
         run_rh = p_ref_head.add_run("References & Sources")
         run_rh.font.name = 'Georgia'
@@ -262,15 +319,15 @@ def export_docx(article) -> io.BytesIO:
         p_ref_head.paragraph_format.space_before = Pt(20)
         p_ref_head.paragraph_format.space_after = Pt(8)
         
-        for idx, source in enumerate(article.sources, 1):
+        for ref in refs:
             p_s = doc.add_paragraph()
             p_s.paragraph_format.left_indent = Inches(0.2)
-            publisher = source.publisher or "Publisher"
-            r_idx = p_s.add_run(f"{idx}. [{publisher}] ")
+            publisher = ref.get('publisher') or "Publisher"
+            r_idx = p_s.add_run(f"[{ref['num']}] [{publisher}] ")
             r_idx.font.bold = True
             r_idx.font.size = Pt(10)
             
-            r_title = p_s.add_run(f"{source.title} — {source.url}")
+            r_title = p_s.add_run(f"{ref['title']} — {ref['url']}")
             r_title.font.size = Pt(10)
             p_s.paragraph_format.space_after = Pt(4)
 
@@ -942,13 +999,14 @@ def export_pdf(article) -> io.BytesIO:
         process_node(child)
             
     # Sources / References
-    if article.sources:
+    refs = get_formatted_references(article)
+    if refs:
         elements.append(HRFlowable(width="100%", thickness=1.5, color=colors.HexColor('#161513'), spaceBefore=20, spaceAfter=10))
         elements.append(Paragraph("Verified Sources & References", ref_head_style))
         
-        for idx, source in enumerate(article.sources, 1):
-            pub = f"<b>{source.publisher}</b> — " if source.publisher else ""
-            ref_text = f"{idx}. {pub}<a href='{source.url}' color='#93602A'><u>{html.escape(source.title)}</u></a>"
+        for ref in refs:
+            pub = f"<b>{html.escape(str(ref['publisher']))}</b> — " if ref.get('publisher') else ""
+            ref_text = f"<b>[{ref['num']}]</b> {pub}<a href='{ref['url']}' color='#2563eb'><u>{html.escape(str(ref['title']))}</u></a>"
             try:
                 elements.append(Paragraph(ref_text, ref_body_style))
             except Exception:
