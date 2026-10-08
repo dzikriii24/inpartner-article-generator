@@ -759,159 +759,106 @@
             color: var(--ink);
         }
 
-        /* Clean Professional Inline Citation Links (Editorial & Academic Style) */
-        .citation-link {
-            color: var(--accent);
-            font-weight: 600;
-            font-size: 0.85em;
-            font-family: 'Inter', -apple-system, sans-serif;
-            text-decoration: none;
-            vertical-align: super;
-            line-height: 0;
-            cursor: pointer;
-            padding: 0 2px;
-            margin: 0 1px;
-            transition: color 0.15s ease, text-decoration 0.15s ease;
+        /* Clean Editorial Sources List (No Cards, Direct URL Display) */
+        .article-sources-section {
+            margin-top: 3.5rem;
+            padding-top: 2.25rem;
+            border-top: 1px solid var(--border-dark);
         }
 
-        .citation-link:hover {
-            color: var(--accent-hover);
-            text-decoration: underline;
-            text-underline-offset: 2px;
-        }
-
-        /* Bottom Article References & Bibliography */
-        .article-references {
-            margin-top: 3rem;
-            padding-top: 2rem;
-            border-top: 2px solid var(--border-dark);
-        }
-
-        .references-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-            flex-wrap: wrap;
-            gap: 0.75rem;
-        }
-
-        .ref-header-left {
-            display: flex;
-            align-items: center;
-            gap: 0.65rem;
-            color: var(--accent);
-        }
-
-        .ref-header-left i {
-            font-size: 1.2rem;
-        }
-
-        .ref-header-left h2 {
+        .sources-heading {
             font-family: 'Newsreader', Georgia, serif;
-            font-size: 1.6rem;
+            font-size: 1.65rem;
             font-weight: 700;
             color: var(--ink);
-            margin: 0;
+            margin: 0 0 1.5rem 0;
+            letter-spacing: -0.01em;
         }
 
-        .ref-count-badge {
-            font-size: 0.76rem;
-            font-weight: 700;
-            color: var(--accent);
-            background: var(--accent-soft);
-            border: 1px solid var(--accent-border);
-            padding: 0.3rem 0.75rem;
-            border-radius: 20px;
-            letter-spacing: 0.03em;
-        }
-
-        .references-grid {
+        .sources-editorial-list {
             display: flex;
             flex-direction: column;
-            gap: 1rem;
+            gap: 0;
         }
 
-        .reference-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 1.1rem 1.35rem;
-            transition: all 0.25s ease;
-            scroll-margin-top: 80px;
+        .source-list-item {
+            padding: 1.1rem 0;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
         }
 
-        .reference-card:hover {
-            border-color: var(--accent-border);
-            box-shadow: 0 4px 14px rgba(0,0,0,0.05);
+        .source-list-item:first-child {
+            padding-top: 0;
         }
 
-        .reference-card.ref-card-active,
-        .reference-card:target {
-            animation: pulseHighlight 2.8s cubic-bezier(0.22, 1, 0.36, 1) !important;
-            border-color: var(--accent) !important;
+        .source-list-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
         }
 
-        @keyframes pulseHighlight {
-            0% {
-                background-color: #eff6ff;
-                border-color: var(--accent);
-                box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.3), 0 8px 24px rgba(37, 99, 235, 0.2);
-                transform: scale(1.015);
-            }
-            30% {
-                background-color: #eff6ff;
-                border-color: var(--accent);
-                box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2), 0 6px 18px rgba(37, 99, 235, 0.15);
-                transform: scale(1.005);
-            }
-            100% {
-                background-color: var(--surface);
-                border-color: var(--border);
-                box-shadow: none;
-                transform: scale(1);
-            }
-        }
-
-        .ref-card-header {
+        .source-item-meta {
             display: flex;
             align-items: center;
-            gap: 0.6rem;
-            margin-bottom: 0.45rem;
+            gap: 0.5rem;
             flex-wrap: wrap;
         }
 
-        .ref-badge {
+        .source-org-name {
+            font-family: 'Inter', -apple-system, sans-serif;
             font-size: 0.82rem;
-            font-weight: 800;
-            color: var(--accent);
-            background: var(--accent-soft);
-            padding: 0.15rem 0.55rem;
-            border-radius: 6px;
-            border: 1px solid var(--accent-border);
-        }
-
-        .ref-publisher {
-            font-size: 0.75rem;
             font-weight: 700;
-            color: var(--ink);
+            color: var(--accent);
             text-transform: uppercase;
             letter-spacing: 0.05em;
         }
 
-        .ref-date {
-            font-size: 0.75rem;
+        .source-date {
             color: var(--muted);
-            margin-left: auto;
+            font-size: 0.78rem;
+            font-family: 'Inter', sans-serif;
         }
 
-        .ref-title {
+        .source-report-title {
             font-family: 'Newsreader', Georgia, serif;
-            font-size: 1.05rem;
+            font-size: 1.1rem;
             font-weight: 600;
-            color: var(--ink-body);
             line-height: 1.45;
-            margin-bottom: 0.5rem;
+            color: var(--ink-body);
+            margin: 0.1rem 0 0.2rem 0;
+        }
+
+        .source-report-title a {
+            color: inherit;
+            text-decoration: none;
+            transition: color 0.15s ease;
+        }
+
+        .source-report-title a:hover {
+            color: var(--accent);
+            text-decoration: underline;
+        }
+
+        .source-url-wrapper {
+            margin-top: 0.15rem;
+        }
+
+        .source-direct-url {
+            font-family: 'JetBrains Mono', Courier, monospace, sans-serif;
+            font-size: 0.8rem;
+            color: var(--muted);
+            text-decoration: none;
+            word-break: break-all;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.2rem;
+            transition: color 0.15s ease;
+        }
+
+        .source-direct-url:hover {
+            color: var(--accent);
+            text-decoration: underline;
         }
 
         .ref-evidence {
@@ -1914,43 +1861,35 @@
                         {{ article.content | markdown | safe }}
                     </article>
 
-                    <!-- Bottom Article References & Bibliography Section -->
-                    {% set refs = article | formatted_references %}
-                    {% if refs %}
-                    <section class="article-references" id="articleReferences">
-                        <div class="references-header">
-                            <div class="ref-header-left">
-                                <i class="fa-solid fa-book-bookmark"></i>
-                                <h2>Referensi &amp; Daftar Pustaka</h2>
-                            </div>
-                            <span class="ref-count-badge">{{ refs|length }} Referensi Terverifikasi</span>
-                        </div>
-
-                        <div class="references-grid">
-                            {% for ref in refs %}
-                            <div class="reference-card" id="ref-{{ ref.num }}">
-                                <div class="ref-card-header">
-                                    <span class="ref-badge">[{{ ref.num }}]</span>
-                                    <span class="ref-publisher">{{ ref.publisher | clean_html }}</span>
-                                    {% if ref.published_at %}
-                                    <span class="ref-date"><i class="fa-regular fa-calendar"></i> {{ ref.published_at }}</span>
+                    <!-- Editorial Sources Section -->
+                    {% set sources = article | editorial_sources %}
+                    {% if sources %}
+                    <section class="article-sources-section" id="articleSources">
+                        <h2 class="sources-heading">Sources</h2>
+                        <div class="sources-editorial-list">
+                            {% for src in sources %}
+                            <div class="source-list-item">
+                                <div class="source-item-meta">
+                                    <span class="source-org-name">{{ src.publisher | clean_html }}</span>
+                                    {% if src.published_at %}
+                                    <span class="source-date">&bull; {{ src.published_at }}</span>
                                     {% endif %}
                                 </div>
-                                
-                                <div class="ref-title">{{ ref.title | clean_html }}</div>
-                                
-                                {% if ref.evidence %}
-                                <div class="ref-evidence">
-                                    <i class="fa-solid fa-quote-left" style="opacity: 0.5; margin-right: 0.35rem;"></i>
-                                    {{ ref.evidence | clean_html }}
+                                {% if src.title %}
+                                <div class="source-report-title">
+                                    {% if src.url and src.url != '#' %}
+                                    <a href="{{ src.url }}" target="_blank" rel="noopener">{{ src.title | clean_html }}</a>
+                                    {% else %}
+                                    {{ src.title | clean_html }}
+                                    {% endif %}
                                 </div>
                                 {% endif %}
-                                
-                                {% if ref.url and ref.url != '#' %}
-                                <div class="ref-card-footer">
-                                    <a href="{{ ref.url }}" target="_blank" rel="noopener" class="ref-link-btn">
-                                        <span>Buka Sumber Berita Original</span>
-                                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                {% if src.url and src.url != '#' %}
+                                <div class="source-url-wrapper">
+                                    <a href="{{ src.url }}" target="_blank" rel="noopener" class="source-direct-url">
+                                        <i class="fa-solid fa-link" style="font-size: 0.72rem; margin-right: 0.25rem; opacity: 0.6;"></i>
+                                        <span class="url-text">{{ src.url }}</span>
+                                        <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.72rem; margin-left: 0.35rem;"></i>
                                     </a>
                                 </div>
                                 {% endif %}
@@ -2018,30 +1957,36 @@
                 </div>
             </div>
 
-            <!-- Verified References Card List -->
+            <!-- Verified Sources Sidebar List -->
+            {% set sources_side = article | editorial_sources %}
+            {% if sources_side %}
             <div class="card-widget">
                 <div class="widget-title">
-                    <span>Verified References</span>
-                    <span style="font-size:0.75rem; color:var(--muted);">{{ article.sources|length }} sources</span>
+                    <span>Sources</span>
+                    <span style="font-size:0.75rem; color:var(--muted);">{{ sources_side|length }} sources</span>
                 </div>
 
-                {% if article.sources %}
-                    {% for source in article.sources %}
-                    <div class="source-item">
-                        <div class="source-publisher">{{ (source.publisher | clean_html) or 'News Outlet' }}</div>
-                        <div class="source-title-text">{{ source.title | clean_html }}</div>
-                        {% if source.description %}
-                        <div class="source-desc">{{ source.description | clean_html }}</div>
-                        {% endif %}
-                        <a href="{{ source.url }}" target="_blank" rel="noopener" class="source-link">
-                            Open source link <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                {% for source in sources_side %}
+                <div class="source-item">
+                    <div class="source-publisher">{{ source.publisher | clean_html }}</div>
+                    {% if source.title %}
+                    <div class="source-title-text">{{ source.title | clean_html }}</div>
+                    {% endif %}
+                    {% if source.published_at %}
+                    <div style="font-size: 0.74rem; color: var(--muted); margin-bottom: 0.25rem;">{{ source.published_at }}</div>
+                    {% endif %}
+                    {% if source.url and source.url != '#' %}
+                    <div style="margin-top: 0.2rem;">
+                        <a href="{{ source.url }}" target="_blank" rel="noopener" class="source-direct-url">
+                            <span class="url-text">{{ source.url }}</span>
+                            <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.7rem;"></i>
                         </a>
                     </div>
-                    {% endfor %}
-                {% else %}
-                    <div style="font-size:0.85rem; color:var(--muted); font-style:italic;">No references attached.</div>
-                {% endif %}
+                    {% endif %}
+                </div>
+                {% endfor %}
             </div>
+            {% endif %}
 
             <!-- Fact Provenance List -->
             {% if article.claims %}

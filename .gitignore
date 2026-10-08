@@ -17,6 +17,8 @@ ENV/
 punkt.zip
 scratch_art11.html
 scratch_art11_full.html
+models.zip
+*.zip
 
 # Operating System & IDE
 .DS_Store

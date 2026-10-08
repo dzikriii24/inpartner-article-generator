@@ -16,62 +16,84 @@ import tempfile
 import uuid
 import os
 
-def get_formatted_references(article):
+def get_editorial_sources(article):
     """
-    Returns a sorted list of reference dictionaries for rendering in templates and exports.
-    [{'num': 1, 'publisher': '...', 'title': '...', 'url': '...', 'evidence': '...'}, ...]
+    Returns a deduplicated, clean list of sources for editorial presentation.
+    [{'publisher': '...', 'title': '...', 'url': '...', 'published_at': '...'}, ...]
     """
-    refs = []
-    seen_urls = set()
-    
-    # 1. First check article.citations (JSON dict mapping index string "1", "8", "16" to metadata)
-    citations_data = getattr(article, 'citations', None)
-    if citations_data and isinstance(citations_data, dict) and len(citations_data) > 0:
-        sorted_keys = sorted(citations_data.keys(), key=lambda k: int(k) if str(k).isdigit() else str(k))
-        for k in sorted_keys:
-            val = citations_data[k]
-            if isinstance(val, dict):
-                url = val.get("url") or "#"
-                refs.append({
-                    "num": int(k) if str(k).isdigit() else k,
-                    "publisher": val.get("publisher") or "Sumber Berita",
-                    "title": val.get("fact_text") or val.get("evidence") or f"Referensi [{k}]",
-                    "url": url,
-                    "evidence": val.get("evidence"),
-                    "published_at": val.get("published_at")
-                })
-                if url and url != "#":
-                    seen_urls.add(url)
-                    
-    # 2. Check article.sources (Source models relationship) to supplement any missing sources
+    sources_list = []
+    seen_keys = set()
+
+    # 1. Gather from article.sources (relationship)
     sources_data = getattr(article, 'sources', None)
     if sources_data:
-        current_max_num = max([r["num"] for r in refs if isinstance(r["num"], int)], default=0)
-        for source in sources_data:
-            s_url = getattr(source, 'url', None) or "#"
-            if s_url not in seen_urls:
-                current_max_num += 1
-                pub = getattr(source, 'publisher', None) or "Sumber Berita"
-                stitle = getattr(source, 'title', None) or getattr(source, 'description', None) or f"Referensi [{current_max_num}]"
-                sdesc = getattr(source, 'description', None)
-                spub_at = getattr(source, 'published_at', None)
-                spub_str = spub_at.strftime('%Y-%m-%d') if hasattr(spub_at, 'strftime') and spub_at else None
-                refs.append({
-                    "num": current_max_num,
-                    "publisher": pub,
-                    "title": stitle,
-                    "url": s_url,
-                    "evidence": sdesc,
-                    "published_at": spub_str
+        for s in sources_data:
+            url = getattr(s, 'url', None) or "#"
+            pub = getattr(s, 'publisher', None) or ""
+            title = getattr(s, 'title', None) or ""
+            
+            pub_clean = pub.strip() if pub else "News Source"
+            title_clean = title.strip() if title else ""
+            
+            key = (url.lower() if url != "#" else "") or (pub_clean.lower() + title_clean.lower())
+            if key and key in seen_keys:
+                continue
+            if key:
+                seen_keys.add(key)
+
+            pub_date = getattr(s, 'published_at', None)
+            date_str = None
+            if hasattr(pub_date, 'strftime') and pub_date:
+                date_str = pub_date.strftime('%B %d, %Y')
+            elif isinstance(pub_date, str) and pub_date:
+                date_str = pub_date[:10]
+
+            sources_list.append({
+                "publisher": pub_clean,
+                "title": title_clean,
+                "url": url,
+                "published_at": date_str
+            })
+
+    # 2. Gather from article.citations if sources_data was empty
+    citations_data = getattr(article, 'citations', None)
+    if citations_data and isinstance(citations_data, dict):
+        for k, val in citations_data.items():
+            if isinstance(val, dict):
+                url = val.get("url") or "#"
+                pub = val.get("publisher") or "News Source"
+                title = val.get("fact_text") or val.get("evidence") or ""
+                
+                pub_clean = pub.strip() if pub else "News Source"
+                title_clean = title.strip() if title else ""
+                
+                key = (url.lower() if url != "#" else "") or (pub_clean.lower() + title_clean.lower())
+                if key and key in seen_keys:
+                    continue
+                if key:
+                    seen_keys.add(key)
+
+                pub_date = val.get("published_at")
+                date_str = None
+                if isinstance(pub_date, str) and pub_date:
+                    try:
+                        dt = datetime.fromisoformat(pub_date)
+                        date_str = dt.strftime('%B %d, %Y')
+                    except Exception:
+                        date_str = pub_date[:10]
+
+                sources_list.append({
+                    "publisher": pub_clean,
+                    "title": title_clean,
+                    "url": url,
+                    "published_at": date_str
                 })
-                if s_url and s_url != "#":
-                    seen_urls.add(s_url)
-                    
-    return refs
+
+    return sources_list
 
 def export_markdown(article) -> str:
     """
-    Generates clean Markdown string for the article including metadata and references.
+    Generates clean Markdown string for the article including metadata and editorial sources.
     """
     content = f"# {article.title}\n\n"
     if article.subtitle:
@@ -88,18 +110,20 @@ def export_markdown(article) -> str:
         if article.hero_image_caption:
             content += f"*{article.hero_image_caption}*\n\n"
             
-    content += article.content or ""
+    # Clean leftover numeric citations from body text
+    body_text = article.content or ""
+    body_text = re.sub(r'\s*\[\d+(?:\s*,\s*\d+)*\]', '', body_text)
+    content += body_text
     
-    refs = get_formatted_references(article)
-    if refs:
-        content += "\n\n## References & Sources\n\n"
-        for ref in refs:
-            pub = f"**{ref['publisher']}**" if ref.get('publisher') else "Source"
-            date_str = f"({ref['published_at']})" if ref.get('published_at') else ""
-            content += f"[{ref['num']}] {pub}: [{ref['title']}]({ref['url']}) {date_str}\n"
-            if ref.get('evidence'):
-                clean_desc = re.sub(r'<[^>]+>', '', str(ref['evidence']))[:200]
-                content += f"   > {clean_desc}...\n"
+    sources = get_editorial_sources(article)
+    if sources:
+        content += "\n\n## Sources\n\n"
+        for src in sources:
+            pub = f"**{src['publisher']}**" if src.get('publisher') else "Source"
+            title_part = f"*{src['title']}*" if src.get('title') else ""
+            date_part = f" — {src['published_at']}" if src.get('published_at') else ""
+            link_part = f" [{src['url']}]" if src.get('url') and src['url'] != '#' else ""
+            content += f"- {pub}\n  {title_part}{date_part}{link_part}\n\n"
                 
     return content
 
@@ -110,21 +134,35 @@ def export_html(article) -> str:
     Generates clean HTML document for CMS or offline viewing.
     """
     body_html = article.content or ""
+    body_html = re.sub(r'\s*\[\d+(?:\s*,\s*\d+)*\]', '', body_html)
     
     sources_html = ""
-    refs = get_formatted_references(article)
-    if refs:
-        sources_html += "<section class='references' style='margin-top: 3rem; padding-top: 2rem; border-top: 2px solid #222;'>\n"
-        sources_html += "<h2 style='font-family: sans-serif; font-size: 1.25rem;'>References & Sources</h2>\n"
-        sources_html += "<ul style='list-style: none; padding-left: 0; font-family: sans-serif; font-size: 0.95rem; line-height: 1.6;'>\n"
-        for ref in refs:
-            pub = f"<strong>{html.escape(str(ref['publisher']))}</strong> &mdash; " if ref.get('publisher') else ""
-            sources_html += f"<li style='margin-bottom: 0.85rem;' id='ref-{ref['num']}'><span style='font-weight:bold; color:#2563eb; margin-right:0.4rem;'>[{ref['num']}]</span>{pub}<a href='{ref['url']}' target='_blank' style='color: #2563eb; font-weight: 600;'>{html.escape(str(ref['title']))}</a>"
-            if ref.get('evidence'):
-                clean_desc = re.sub(r'<[^>]+>', '', str(ref['evidence']))[:220]
-                sources_html += f"<br><span style='color: #666; font-size: 0.88rem; font-style: italic;'>\"{clean_desc}...\"</span>"
-            sources_html += "</li>\n"
-        sources_html += "</ul>\n</section>\n"
+    sources = get_editorial_sources(article)
+    if sources:
+        sources_html += "<section class='sources-section' style='margin-top: 3.5rem; padding-top: 2rem; border-top: 2px solid #0f172a;'>\n"
+        sources_html += "<h2 style='font-family: Georgia, serif; font-size: 1.4rem; font-weight: 700; color: #0f172a; margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 0.05em;'>Sources</h2>\n"
+        sources_html += "<div class='sources-editorial-list' style='display: flex; flex-direction: column; gap: 1.25rem;'>\n"
+        for src in sources:
+            pub = html.escape(str(src['publisher'])) if src.get('publisher') else "Source"
+            title = html.escape(str(src['title'])) if src.get('title') else ""
+            date_str = html.escape(str(src['published_at'])) if src.get('published_at') else ""
+            url = src.get('url') or '#'
+            
+            sources_html += "<div class='source-list-item' style='padding-bottom: 1.25rem; border-bottom: 1px solid #e2e8f0;'>\n"
+            sources_html += f"<div style='font-family: sans-serif; font-size: 0.75rem; font-weight: 700; color: #2563eb; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.35rem;'>{pub}</div>\n"
+            if title:
+                if url != '#':
+                    sources_html += f"<div style='font-family: Georgia, serif; font-size: 1.05rem; font-weight: 600; color: #1e293b; line-height: 1.4; margin-bottom: 0.4rem;'><a href='{url}' target='_blank' style='color: inherit; text-decoration: none;'>{title}</a></div>\n"
+                else:
+                    sources_html += f"<div style='font-family: Georgia, serif; font-size: 1.05rem; font-weight: 600; color: #1e293b; line-height: 1.4; margin-bottom: 0.4rem;'>{title}</div>\n"
+            
+            sources_html += "<div style='display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; font-family: sans-serif; font-size: 0.8rem; color: #64748b;'>\n"
+            if date_str:
+                sources_html += f"<span>{date_str}</span>\n"
+            if url != '#':
+                sources_html += f"<a href='{url}' target='_blank' style='color: #2563eb; font-family: monospace; text-decoration: none; word-break: break-all;'>{html.escape(url)} &#x2197;</a>\n"
+            sources_html += "</div>\n</div>\n"
+        sources_html += "</div>\n</section>\n"
 
     full_html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -308,28 +346,39 @@ def export_docx(article) -> io.BytesIO:
             run_p.font.size = Pt(11)
             p_p.paragraph_format.space_after = Pt(10)
             
-    # References section
-    refs = get_formatted_references(article)
-    if refs:
+    # Sources section
+    sources = get_editorial_sources(article)
+    if sources:
         p_ref_head = doc.add_paragraph()
-        run_rh = p_ref_head.add_run("References & Sources")
+        run_rh = p_ref_head.add_run("Sources")
         run_rh.font.name = 'Georgia'
         run_rh.font.size = Pt(14)
         run_rh.font.bold = True
         p_ref_head.paragraph_format.space_before = Pt(20)
         p_ref_head.paragraph_format.space_after = Pt(8)
         
-        for ref in refs:
+        for src in sources:
             p_s = doc.add_paragraph()
-            p_s.paragraph_format.left_indent = Inches(0.2)
-            publisher = ref.get('publisher') or "Publisher"
-            r_idx = p_s.add_run(f"[{ref['num']}] [{publisher}] ")
-            r_idx.font.bold = True
-            r_idx.font.size = Pt(10)
+            publisher = src.get('publisher') or "Source"
+            title = src.get('title') or ""
+            url = src.get('url') or ""
+            date_str = src.get('published_at') or ""
             
-            r_title = p_s.add_run(f"{ref['title']} — {ref['url']}")
-            r_title.font.size = Pt(10)
-            p_s.paragraph_format.space_after = Pt(4)
+            r_pub = p_s.add_run(f"{publisher.upper()}\n")
+            r_pub.font.bold = True
+            r_pub.font.size = Pt(9)
+            r_pub.font.color.rgb = RGBColor(0x25, 0x63, 0xEB)
+            
+            if title:
+                r_title = p_s.add_run(f"{title}\n")
+                r_title.font.italic = True
+                r_title.font.size = Pt(10.5)
+                
+            meta_line = f"Date: {date_str} | Link: {url}" if date_str else f"Link: {url}"
+            r_meta = p_s.add_run(meta_line)
+            r_meta.font.size = Pt(8.5)
+            r_meta.font.color.rgb = RGBColor(0x64, 0x74, 0x8B)
+            p_s.paragraph_format.space_after = Pt(8)
 
     stream = io.BytesIO()
     doc.save(stream)
@@ -998,20 +1047,29 @@ def export_pdf(article) -> io.BytesIO:
     for child in root_node.children:
         process_node(child)
             
-    # Sources / References
-    refs = get_formatted_references(article)
-    if refs:
-        elements.append(HRFlowable(width="100%", thickness=1.5, color=colors.HexColor('#161513'), spaceBefore=20, spaceAfter=10))
-        elements.append(Paragraph("Verified Sources & References", ref_head_style))
+    # Sources Section
+    sources = get_editorial_sources(article)
+    if sources:
+        elements.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor('#E2E8F0'), spaceBefore=25, spaceAfter=15))
+        elements.append(Paragraph("Sources", ref_head_style))
         
-        for ref in refs:
-            pub = f"<b>{html.escape(str(ref['publisher']))}</b> — " if ref.get('publisher') else ""
-            ref_text = f"<b>[{ref['num']}]</b> {pub}<a href='{ref['url']}' color='#2563eb'><u>{html.escape(str(ref['title']))}</u></a>"
-            try:
-                elements.append(Paragraph(ref_text, ref_body_style))
-            except Exception:
-                clean_ref = re.sub(r'<[^>]+>', '', ref_text)
-                elements.append(Paragraph(clean_ref, ref_body_style))
+        for src in sources:
+            pub = html.escape(str(src.get('publisher', 'Source')))
+            title = html.escape(str(src.get('title', '')))
+            url = src.get('url') or '#'
+            date_str = html.escape(str(src.get('published_at', '')))
+            
+            src_block = []
+            src_block.append(Paragraph(f"<font color='#2563eb' size=8><b>{pub.upper()}</b></font>", meta_style))
+            if title:
+                src_block.append(Paragraph(f"<i><a href='{url}' color='#0f172a'>{title}</a></i>", body_style))
+            
+            footer_line = f"<font color='#64748b' size=8>{date_str}</font>"
+            if url != '#':
+                footer_line += f" &nbsp;&nbsp;&bull;&nbsp;&nbsp; <a href='{url}' color='#2563eb'><b>Read source &rarr;</b></a>"
+            src_block.append(Paragraph(footer_line, meta_style))
+            src_block.append(Spacer(1, 8))
+            elements.append(KeepTogether(src_block))
             
     doc.build(elements, canvasmaker=NumberedCanvas)
     buffer.seek(0)

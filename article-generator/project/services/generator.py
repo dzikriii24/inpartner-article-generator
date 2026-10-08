@@ -179,7 +179,7 @@ def editorial_correction_and_composition(draft: str, facts: list, intent: dict) 
     2. Write multi-paragraph narrative sections (2-4 robust paragraphs per H2 section).
     3. TARGET LENGTH: Comprehensive long-form coverage (800 to 1,500+ words) grounded in facts.
     4. FACT GROUNDING (STRICTEST RULE): DO NOT hallucinate, invent, or manufacture numbers, quotes, dates, or names not present in the fact database.
-    5. Place citation references like [1], [2] at the end of sentences containing specific data or claims corresponding to the facts below.
+    5. ATTRIBUTION STYLE (EDITORIAL): Do NOT use bracket citations like [1] or [2]. Use natural editorial attribution within the text where appropriate (e.g., 'According to Reuters...', 'Data from Bank Indonesia indicates...', 'Analyst reports indicate...').
     6. Use H2 (`## Heading`) for main section headings.
     7. Use bolding on key numbers, metrics, and dates for optimal readability.
     

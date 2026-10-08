@@ -194,12 +194,15 @@ def discover_sources_multi_query(db: Session, intent: dict) -> list[Source]:
                 rel = evaluate_source_reliability(url, pub_title)
                 domain = extract_domain(url)
                 
+                raw_summary = entry.get('summary', '')
+                clean_summary = re.sub(r'<[^>]+>', '', raw_summary)
+                
                 source = Source(
                     url=url,
                     title=entry.title,
                     publisher=pub_title,
                     published_at=datetime.utcnow(),
-                    description=entry.get('summary', ''),
+                    description=clean_summary,
                     source_type="gnews_rss",
                     reliability=rel,
                     source_domain=domain
@@ -249,12 +252,15 @@ def discover_sources_multi_query(db: Session, intent: dict) -> list[Source]:
                     rel = evaluate_source_reliability(url, pub_name)
                     domain = extract_domain(url)
                     
+                    raw_desc = a.get('description', '')
+                    clean_desc = re.sub(r'<[^>]+>', '', raw_desc)
+                    
                     source = Source(
                         url=url,
                         title=a.get('title'),
                         publisher=pub_name,
                         published_at=datetime.utcnow(),
-                        description=a.get('description', ''),
+                        description=clean_desc,
                         image_url=a.get('image'),
                         source_type="gnews_api",
                         reliability=rel,

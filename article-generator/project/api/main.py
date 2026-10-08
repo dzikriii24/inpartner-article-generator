@@ -11,6 +11,7 @@ import uuid
 import markdown
 import asyncio
 import threading
+import urllib.parse
 from fastapi.concurrency import run_in_threadpool
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -20,7 +21,7 @@ from models import Topic, Source, GeneratedArticle, NewsContent, ArticleStatus
 from services.generator import generate_article_for_topic, update_article_step
 from services.aggregator import run_aggregation, FETCH_PROGRESS, update_fetch_progress
 from services.clustering import cluster_topics, filter_relevant_sources_for_prompt
-from services.export_service import export_markdown, export_html, export_docx, export_pdf, get_formatted_references
+from services.export_service import export_markdown, export_html, export_docx, export_pdf, get_editorial_sources
 from services.wordpress_service import test_wordpress_connection, fetch_wordpress_metadata, publish_to_wordpress
 from services.quota_service import get_usage_and_model_status, record_article_generation
 from services.llm_client import call_llm_json
@@ -48,20 +49,13 @@ def render_md(text: str):
     if not text:
         return ""
     cleaned = text.strip()
+    # Strip any numeric bracket citations like [1], [2], [8, 16] from text for clean editorial style
+    cleaned = re.sub(r'\s*\[\d+(?:\s*,\s*\d+)*\]', '', cleaned)
     rendered = markdown.markdown(cleaned, extensions=['extra', 'nl2br', 'tables'])
-    
-    # Convert citation brackets like [1] or [8, 16] into interactive anchor links
-    def replace_citation(match):
-        raw_nums = match.group(1)
-        nums = [n.strip() for n in raw_nums.split(',')]
-        links = [f'<a href="#ref-{n}" data-target="ref-{n}" class="citation-link" onclick="scrollToReference(event, \'{n}\')">[{n}]</a>' for n in nums if n.isdigit()]
-        return ', '.join(links) if links else match.group(0)
-
-    rendered = re.sub(r'\[(\d+(?:\s*,\s*\d+)*)\]', replace_citation, rendered)
     return rendered
 
 templates.env.filters["markdown"] = render_md
-templates.env.filters["formatted_references"] = get_formatted_references
+templates.env.filters["editorial_sources"] = get_editorial_sources
 
 import html
 import re
@@ -529,6 +523,20 @@ class ArticleProxy:
     def __getattr__(self, item):
         return getattr(self._article, item)
 
+def make_content_disposition_header(disposition_type: str, title: str, ext: str) -> dict:
+    """
+    Creates RFC 6266 compliant Content-Disposition headers supporting Unicode (Korean, Japanese, Chinese, etc.)
+    without causing Starlette latin-1 UnicodeEncodeError.
+    """
+    ascii_clean = "".join(c for c in (title or "") if c.isascii() and (c.isalnum() or c in (' ', '_', '-'))).strip().replace(' ', '_')[:40]
+    safe_ascii_filename = f"{ascii_clean or 'article'}.{ext}"
+
+    unicode_clean = "".join(c for c in (title or "") if c.isalnum() or c in (' ', '_', '-')).strip().replace(' ', '_')[:60]
+    utf8_filename = urllib.parse.quote(f"{unicode_clean or 'article'}.{ext}")
+
+    header_val = f'{disposition_type}; filename="{safe_ascii_filename}"; filename*=UTF-8\'\'{utf8_filename}'
+    return {"Content-Disposition": header_val}
+
 @router.get("/api/article/{article_id}/export/{format}")
 def export_article_file(article_id: int, format: str, lang: Optional[str] = None, db: Session = Depends(get_db)):
     """
@@ -561,29 +569,27 @@ def export_article_file(article_id: int, format: str, lang: Optional[str] = None
                 content=t_data.get("content") or article.content
             )
             
-    safe_title = "".join(c for c in export_article.title if c.isalnum() or c in (' ', '_', '-')).strip().replace(' ', '_')[:40] or "article"
-    
     fmt = format.lower()
     if fmt == "markdown" or fmt == "md":
         md_text = export_markdown(export_article)
         return Response(
             content=md_text,
             media_type="text/markdown",
-            headers={"Content-Disposition": f'inline; filename="{safe_title}.md"'}
+            headers=make_content_disposition_header("inline", export_article.title, "md")
         )
     elif fmt == "html":
         html_text = export_html(export_article)
         return Response(
             content=html_text,
             media_type="text/html",
-            headers={"Content-Disposition": f'attachment; filename="{safe_title}.html"'}
+            headers=make_content_disposition_header("attachment", export_article.title, "html")
         )
     elif fmt == "docx":
         doc_buf = export_docx(export_article)
         return StreamingResponse(
             doc_buf,
             media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            headers={"Content-Disposition": f'attachment; filename="{safe_title}.docx"'}
+            headers=make_content_disposition_header("attachment", export_article.title, "docx")
         )
     elif fmt == "pdf":
         print(f"[DEBUG EXPORT PDF] Article ID: {export_article.id}, Title: {export_article.title}")
@@ -595,7 +601,7 @@ def export_article_file(article_id: int, format: str, lang: Optional[str] = None
         return Response(
             content=pdf_data,
             media_type="application/pdf",
-            headers={"Content-Disposition": f'inline; filename="{safe_title}.pdf"'}
+            headers=make_content_disposition_header("inline", export_article.title, "pdf")
         )
     else:
         return JSONResponse({"status": "error", "message": f"Unsupported export format '{format}'"}, status_code=400)
