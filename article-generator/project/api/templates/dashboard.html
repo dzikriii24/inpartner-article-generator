@@ -143,6 +143,29 @@
             transition: width 0.4s ease, background 0.4s ease;
         }
 
+        .admin-nav-btn {
+            background: var(--ink);
+            color: #ffffff;
+            border: 1px solid var(--ink);
+            padding: 0.42rem 0.95rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.82rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 5px rgba(15, 23, 42, 0.12);
+        }
+
+        .admin-nav-btn:hover {
+            background: #1e293b;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
+            color: #ffffff;
+        }
+
         /* Hero Masthead */
         header.hero-masthead {
             display: flex;
@@ -962,22 +985,29 @@
 
         .floating-input-row {
             display: flex;
-            align-items: center;
+            align-items: flex-end;
             gap: 0.55rem;
             background: var(--surface);
             border: 1px solid var(--border-strong);
-            border-radius: 12px;
-            padding: 0.35rem 0.4rem 0.35rem 0.75rem;
+            border-radius: 14px;
+            padding: 0.45rem 0.5rem 0.45rem 0.75rem;
             box-shadow: inset 0 1px 2px rgba(0,0,0,0.03);
             width: 100%;
             min-width: 0;
             box-sizing: border-box;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .floating-input-row:focus-within {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12), inset 0 1px 2px rgba(0,0,0,0.03);
         }
 
         .input-icon {
             color: var(--accent);
             font-size: 0.95rem;
             flex-shrink: 0;
+            margin-bottom: 0.5rem;
         }
 
         .floating-prompt-input {
@@ -988,9 +1018,27 @@
             background: transparent;
             font-family: 'Inter', sans-serif;
             font-size: 0.9rem;
+            line-height: 1.45;
             color: var(--ink);
             padding: 0.35rem 0;
             width: 100%;
+            resize: none;
+            height: 28px;
+            min-height: 28px;
+            max-height: 110px; /* Approximately 4 rows of text */
+            overflow-y: hidden;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border-strong) transparent;
+            box-sizing: border-box;
+        }
+
+        .floating-prompt-input::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .floating-prompt-input::-webkit-scrollbar-thumb {
+            background: var(--border-strong);
+            border-radius: 4px;
         }
 
         .floating-prompt-input::placeholder {
@@ -1214,6 +1262,10 @@
                 <div class="brand-name">Inpartner Article Generator</div>
             </a>
             <div class="nav-meta">
+                <a href="/inpartner/admin" class="admin-nav-btn" title="Open Admin Dashboard & Daily Automation Management">
+                    <i class="fa-solid fa-gauge-high"></i>
+                    <span>Admin Dashboard</span>
+                </a>
                 <div class="quota-badge" onclick="toggleQuotaModal()" title="Click to view AI Model limits and usage stats">
                     <i class="fa-solid fa-chart-pie"></i>
                     <span>Generated Today: <strong id="navQuotaText">{{ usage.generated_today if usage else 0 }} Articles (Unlimited)</strong></span>
@@ -1652,9 +1704,11 @@
             </div>
             <div class="floating-input-row">
                 <i class="fa-solid fa-bolt input-icon"></i>
-                <input type="text" id="customPromptInput" class="floating-prompt-input" 
+                <textarea id="customPromptInput" class="floating-prompt-input" 
+                       rows="1"
                        placeholder="Enter any business, market, or custom topic angle to generate an in-depth article..."
-                       onkeydown="if(event.key==='Enter') generateFromPrompt()">
+                       oninput="autoResizePromptInput(this)"
+                       onkeydown="handlePromptKeydown(event)"></textarea>
                 <button class="btn-floating-submit" id="generatePromptBtn" onclick="generateFromPrompt()">
                     <span>Generate</span>
                     <i class="fa-solid fa-paper-plane"></i>
@@ -1710,10 +1764,42 @@
             renderArticles();
         });
 
+        function autoResizePromptInput(el) {
+            if (!el) return;
+            el.style.height = 'auto';
+            const computed = window.getComputedStyle(el);
+            const lineHeight = parseFloat(computed.lineHeight) || 20;
+            const paddingTop = parseFloat(computed.paddingTop) || 5;
+            const paddingBottom = parseFloat(computed.paddingBottom) || 5;
+            const maxHeight = (lineHeight * 4) + paddingTop + paddingBottom + 2;
+
+            if (el.scrollHeight > maxHeight) {
+                el.style.height = maxHeight + 'px';
+                el.style.overflowY = 'auto';
+            } else {
+                el.style.height = Math.max(el.scrollHeight, 28) + 'px';
+                el.style.overflowY = 'hidden';
+            }
+        }
+
+        function handlePromptKeydown(event) {
+            if (event.key === 'Enter') {
+                if (event.shiftKey) {
+                    // Shift+Enter allows creating a new line
+                    setTimeout(() => autoResizePromptInput(event.target), 0);
+                } else {
+                    // Enter without shift submits the generation
+                    event.preventDefault();
+                    generateFromPrompt();
+                }
+            }
+        }
+
         function setPromptSuggestion(text) {
             const input = document.getElementById('customPromptInput');
             if (input) {
                 input.value = text;
+                autoResizePromptInput(input);
                 input.focus();
             }
         }

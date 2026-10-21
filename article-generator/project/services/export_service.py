@@ -100,7 +100,7 @@ def export_markdown(article) -> str:
         content += f"> *{article.subtitle}*\n\n"
         
     content += f"**Category:** {article.category or 'Editorial'}  \n"
-    content += f"**Author:** {article.author or 'Inpartner Editorial Board'}  \n"
+    content += f"**Author:** {article.author or 'Inpartner'}  \n"
     if article.generated_at:
         content += f"**Date:** {article.generated_at.strftime('%B %d, %Y')}  \n"
     content += "\n---\n\n"
@@ -237,7 +237,7 @@ def export_html(article) -> str:
         <h1>{article.title}</h1>
         {f'<div class="deck">{article.subtitle}</div>' if article.subtitle else ''}
         <div class="meta">
-            By <strong>{article.author or "Inpartner Editorial Board"}</strong> &bull;
+            By <strong>{article.author or "Inpartner"}</strong> &bull;
             {article.category or "Editorial"} &bull;
             {article.generated_at.strftime('%B %d, %Y') if article.generated_at else ''}
         </div>
@@ -279,7 +279,7 @@ def export_docx(article) -> io.BytesIO:
         
     # Metadata line
     p_meta = doc.add_paragraph()
-    meta_text = f"Category: {article.category or 'Editorial'} | Author: {article.author or 'Inpartner Editorial Board'}"
+    meta_text = f"Category: {article.category or 'Editorial'} | Author: {article.author or 'Inpartner'}"
     if article.generated_at:
         meta_text += f" | Published: {article.generated_at.strftime('%B %d, %Y')}"
     run_meta = p_meta.add_run(meta_text)
@@ -671,7 +671,7 @@ def export_pdf(article) -> io.BytesIO:
         rightMargin=45, leftMargin=45,
         topMargin=50, bottomMargin=50,
         title=article.title or "Editorial Article",
-        author=article.author or "Inpartner Editorial Board"
+        author=article.author or "Inpartner"
     )
     
     styles = getSampleStyleSheet()
@@ -883,7 +883,7 @@ def export_pdf(article) -> io.BytesIO:
         
     # Metadata Line
     date_str = article.generated_at.strftime('%B %d, %Y') if article.generated_at else datetime.now().strftime('%B %d, %Y')
-    meta_str = f"Category: <b>{article.category or 'Editorial'}</b> &bull; Author: <b>{article.author or 'Inpartner Editorial Board'}</b> &bull; Date: <b>{date_str}</b>"
+    meta_str = f"Category: <b>{article.category or 'Editorial'}</b> &bull; Author: <b>{article.author or 'Inpartner'}</b> &bull; Date: <b>{date_str}</b>"
     elements.append(Paragraph(meta_str, meta_style))
     elements.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor('#E6E2D8'), spaceAfter=15))
     

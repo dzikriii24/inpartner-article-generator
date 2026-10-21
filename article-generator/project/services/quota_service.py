@@ -49,28 +49,20 @@ def get_usage_and_model_status(db: Session) -> dict:
     
     models_info = [
         {
+            "id": "gemini-3.6-flash",
+            "name": "Gemini 3.6 Flash",
+            "role": "Primary Editorial Composition",
+            "rpd_quota": "1,500 RPD / 30 RPM",
+            "status": "Active" if api_key_set else "Disabled",
+            "tier": "High Intelligence / Primary"
+        },
+        {
             "id": "gemini-3.5-flash-lite",
             "name": "Gemini 3.5 Flash Lite",
-            "role": "Primary Research & Extraction",
+            "role": "Research, Reasoning & Fallback 1",
             "rpd_quota": "500 RPD / 15 RPM",
             "status": "Active" if api_key_set else "Disabled",
             "tier": "High Speed / Efficient"
-        },
-        {
-            "id": "gemini-3.5-flash",
-            "name": "Gemini 3.5 Flash",
-            "role": "Editorial Composition & Reasoning",
-            "rpd_quota": "1,500 RPD / 15 RPM",
-            "status": "Active" if api_key_set else "Disabled",
-            "tier": "High Intelligence"
-        },
-        {
-            "id": "gemini-3.6-flash",
-            "name": "Gemini 3.6 Flash",
-            "role": "Fallback Chain Level 1",
-            "rpd_quota": "1,500 RPD / 30 RPM",
-            "status": "Ready" if api_key_set else "Disabled",
-            "tier": "Fast Fallback"
         },
         {
             "id": "gemini-3.1-flash-lite",

@@ -22,3 +22,5 @@ Markdown==3.7
 numpy==1.26.4
 Pillow==11.1.0
 alembic==1.14.0
+apscheduler==3.11.3
+pytz>=2023.3

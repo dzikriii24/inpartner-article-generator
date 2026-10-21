@@ -10,15 +10,15 @@ load_dotenv()
 MODEL_ROLE_CONFIG = {
     "RESEARCH": os.getenv("RESEARCH_MODEL", "gemini-3.5-flash-lite"),
     "REASONING": os.getenv("REASONING_MODEL", "gemini-3.5-flash-lite"),
-    "COMPOSITION": os.getenv("COMPOSITION_MODEL", "gemini-3.5-flash"),
+    "COMPOSITION": os.getenv("COMPOSITION_MODEL", "gemini-3.6-flash"),
     "LIGHTWEIGHT": os.getenv("LIGHTWEIGHT_MODEL", "gemini-3.5-flash-lite"),
 }
 
 FALLBACK_CHAINS = {
-    "RESEARCH": ["gemini-3.5-flash-lite", "gemini-3.5-flash", "gemini-3.6-flash", "gemini-3.1-flash-lite"],
-    "REASONING": ["gemini-3.5-flash-lite", "gemini-3.5-flash", "gemini-3.6-flash", "gemini-3.1-flash-lite"],
-    "COMPOSITION": ["gemini-3.5-flash", "gemini-3.6-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"],
-    "LIGHTWEIGHT": ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-3.5-flash"]
+    "RESEARCH": ["gemini-3.5-flash-lite", "gemini-3.6-flash", "gemini-3.1-flash-lite"],
+    "REASONING": ["gemini-3.5-flash-lite", "gemini-3.6-flash", "gemini-3.1-flash-lite"],
+    "COMPOSITION": ["gemini-3.6-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"],
+    "LIGHTWEIGHT": ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-3.6-flash"]
 }
 
 _client_instance = None
@@ -43,7 +43,7 @@ def call_llm(prompt: str, role: str = "REASONING", max_retries_per_model: int = 
     client = get_genai_client()
     
     primary_model = MODEL_ROLE_CONFIG.get(role, "gemini-3.6-flash")
-    chain = FALLBACK_CHAINS.get(role, ["gemini-3.6-flash", "gemini-3.5-flash", "gemini-3.1-flash-lite"])
+    chain = FALLBACK_CHAINS.get(role, ["gemini-3.6-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"])
     
     # Ensure primary_model is first in the list
     if primary_model in chain:

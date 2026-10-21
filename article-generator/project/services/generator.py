@@ -5,7 +5,7 @@ import re
 from datetime import datetime
 from sqlalchemy.orm import Session
 
-from models import Topic, GeneratedArticle, Claim, ArticleStatus, EditorialCorrection, Source, NewsContent
+from models import Topic, GeneratedArticle, Claim, ArticleStatus, EditorialCorrection, Source, NewsContent, ArticleRevision
 from services.llm_client import call_llm, call_llm_json
 from services.research_engine import (
     analyze_topic_intent,
@@ -14,6 +14,21 @@ from services.research_engine import (
     cross_verify_and_evaluate_quality,
     run_additional_research_if_needed
 )
+from services.seo_engine import run_article_audit
+from services.optimizer_service import generate_seo_brief, execute_targeted_optimization
+
+
+def clean_article_body_content(text: str) -> str:
+    if not text:
+        return ""
+    cleaned = text.strip()
+    cleaned = re.sub(r'\s*\[\d+(?:\s*,\s*\d+)*\]', '', cleaned)
+    cleaned = re.sub(r'^\s*<h1[^>]*>.*?</h1>\s*', '', cleaned, flags=re.IGNORECASE | re.DOTALL)
+    cleaned = re.sub(r'^\s*#\s+.*?\n+', '', cleaned)
+    cleaned = re.sub(r'^\s*<blockquote[^>]*>.*?</blockquote>\s*', '', cleaned, flags=re.IGNORECASE | re.DOTALL)
+    cleaned = re.sub(r'^\s*>\s*\*.*?\*\s*\n+', '', cleaned)
+    cleaned = re.sub(r'^\s*>\s+.*?\n+', '', cleaned)
+    return cleaned.strip()
 
 def update_article_step(db: Session, article: GeneratedArticle, step: str, status: ArticleStatus = ArticleStatus.RESEARCHING, error_msg: str = None):
     if article:
@@ -69,21 +84,30 @@ def create_fallback_story_plan(topic_title: str, sources: list, facts: list, int
         "sections": sections
     }
 
-def generate_story_plan(topic_title: str, sources: list, facts: list, intent: dict) -> dict:
+def generate_story_plan(topic_title: str, sources: list, facts: list, intent: dict, seo_brief: dict = None) -> dict:
     """
-    Generate an adaptive, structured story plan for a long-form news article based strictly on facts.
+    Generate an adaptive, structured story plan for a long-form news article based strictly on facts and SEO brief.
     """
     facts_text = ""
     for idx, f in enumerate(facts[:30]):
         facts_text += f"\n[{idx+1}] Fact: {f['fact_text']}\n     Evidence: \"{f.get('evidence_quote', '')}\"\n     Publisher: {f.get('publisher', '')} ({f.get('published_at', '')})\n"
         
+    seo_instructions = ""
+    if seo_brief:
+        seo_instructions = f"""
+    SEO FOCUS KEYPHRASE: "{seo_brief.get('focus_keyphrase')}"
+    RECOMMENDED HEADINGS: {json.dumps(seo_brief.get('recommended_headings', []))}
+    MANDATORY SEO REQUIREMENT:
+    Ensure the headline naturally aligns with the focus keyphrase and at least 2 section headings incorporate key terms from the focus keyphrase.
+    """
+
     prompt = f"""
     You are a Senior Executive Editor at a world-class investigative news organization.
     Topic: '{topic_title}'
     Target Angle: '{intent.get('target_angle')}'
     Geographic Scope: '{intent.get('geographic_scope')}'
     Timeframe: '{intent.get('timeframe')}'
-    
+    {seo_instructions}
     Subtopics to cover: {json.dumps(intent.get('subtopics', []))}
     Research Questions: {json.dumps(intent.get('research_questions', []))}
     
@@ -133,9 +157,7 @@ def compose_narrative_draft(plan: dict, facts: list, intent: dict) -> str:
     """
     Transforms story plan and fact database into a detailed mechanical draft with citation tags [1], [2].
     """
-    draft = f"# {plan.get('headline', '')}\n"
-    draft += f"> *{plan.get('subtitle', '')}*\n\n"
-    
+    draft = ""
     if plan.get("key_takeaways"):
         draft += "### Key Takeaways\n"
         for kt in plan.get("key_takeaways", []):
@@ -162,17 +184,32 @@ def compose_narrative_draft(plan: dict, facts: list, intent: dict) -> str:
         
     return draft
 
-def editorial_correction_and_composition(draft: str, facts: list, intent: dict) -> str:
+def editorial_correction_and_composition(draft: str, facts: list, intent: dict, seo_brief: dict = None) -> str:
     """
-    Refines mechanical outline into a rich, long-form journalistic article (800-1500+ words).
+    Refines mechanical outline into a rich, long-form journalistic article (800-1500+ words)
+    strictly grounded in facts and optimized for Yoast SEO & readability.
     STRICT RULE: Absolutely no invented facts, fake quotes, or ungrounded statistics.
     """
     facts_summary = "\n".join([f"- [{i+1}] {f['fact_text']} (Source: {f['publisher']})" for i, f in enumerate(facts[:30])])
+    
+    seo_instructions = ""
+    if seo_brief:
+        seo_instructions = f"""
+    FOCUS KEYPHRASE: "{seo_brief.get('focus_keyphrase')}"
+    
+    MANDATORY YOAST SEO & READABILITY REQUIREMENTS:
+    1. SENTENCE LENGTH: Break sentences exceeding 20 words into 2 concise, clear sentences (target 14-18 words).
+    2. TRANSITION WORDS: Add natural transitions (e.g., 'However,', 'Therefore,', 'Consequently,', 'In contrast,', 'Furthermore,', 'As a result,', 'Meanwhile,') so at least 35% of sentences contain a transition word.
+    3. PASSIVE VOICE: Prefer active voice (Subject + Verb + Object). Keep passive voice strictly below 10%.
+    4. PARAGRAPH LENGTH: Keep paragraphs to 2 to 4 sentences (under 140 words). No wall of text.
+    5. FOCUS KEYPHRASE PLACEMENT: Include the focus keyphrase "{seo_brief.get('focus_keyphrase')}" naturally in the first 2 sentences and in at least two H2 subheadings.
+    """
     
     prompt = f"""
     You are an Executive Editor-in-Chief at a top global publishing platform.
     Target Angle: "{intent.get('target_angle')}"
     Geographic Focus: "{intent.get('geographic_scope')}"
+    {seo_instructions}
     
     MANDATE:
     1. Transform the outline below into a long-form, deeply informative digital news story.
@@ -197,6 +234,7 @@ def editorial_correction_and_composition(draft: str, facts: list, intent: dict) 
         
     print(f"[Generator Warning] Editorial composition LLM call failed or produced short output. Using narrative draft fallback...")
     return draft
+
 
 def fact_audit_and_validation(final_markdown: str, facts: list) -> dict:
     """
@@ -350,25 +388,31 @@ def generate_article_for_topic(db: Session, topic: Topic, article: GeneratedArti
     article.research_metadata = quality_meta
     db.commit()
 
-    # 5. Step: Story Planning
+    # 5. Step: Search Intent & SEO Brief Generation
     update_article_step(db, article, "planning", ArticleStatus.GENERATING)
-    plan = generate_story_plan(topic.title if topic else user_prompt, sources, facts, intent)
+    seo_brief = generate_seo_brief(topic.title if topic else user_prompt, intent, facts)
+    article.focus_keyphrase = seo_brief.get("focus_keyphrase")
+    article.seo_metadata = seo_brief
+    db.commit()
+
+    # 6. Step: Story Planning (Guided by facts + SEO brief)
+    plan = generate_story_plan(topic.title if topic else user_prompt, sources, facts, intent, seo_brief=seo_brief)
     if not plan:
         update_article_step(db, article, "failed", ArticleStatus.FAILED, "Failed to create story plan.")
         return None
 
-    # 6. Step: Draft Composition
+    # 7. Step: Draft Composition
     update_article_step(db, article, "composing", ArticleStatus.GENERATING)
     mechanical_draft = compose_narrative_draft(plan, facts, intent)
 
-    # 7. Step: Editorial Review & Polish
+    # 8. Step: Editorial Review & Polish (Guided by Yoast SEO & readability requirements)
     update_article_step(db, article, "reviewing", ArticleStatus.FACT_CHECKING)
-    final_markdown = editorial_correction_and_composition(mechanical_draft, facts, intent)
+    final_markdown = editorial_correction_and_composition(mechanical_draft, facts, intent, seo_brief=seo_brief)
     if not final_markdown:
         update_article_step(db, article, "failed", ArticleStatus.FAILED, "Editorial composition failed.")
         return None
 
-    # 8. Step: Fact Audit & Citation Mapping
+    # 9. Step: Fact Audit & Citation Mapping
     update_article_step(db, article, "fact_checking", ArticleStatus.FACT_CHECKING)
     audit_res = fact_audit_and_validation(final_markdown, facts)
 
@@ -385,12 +429,16 @@ def generate_article_for_topic(db: Session, topic: Topic, article: GeneratedArti
     article.title = raw_headline
     article.subtitle = plan.get("subtitle", "")
     article.category = plan.get("category", "Business & Economy")
-    article.content = final_markdown
+    article.content = clean_article_body_content(final_markdown)
     article.reading_time = reading_time
     article.hero_image_caption = plan.get("hero_image_caption")
     article.content_blocks = blocks
     article.citations = audit_res.get("citations")
-    article.seo_metadata = {"title": article.title, "description": article.subtitle}
+    
+    # Store complete SEO metadata from SEO brief
+    seo_brief["title"] = article.title
+    seo_brief["description"] = article.subtitle
+    article.seo_metadata = seo_brief
     article.status = ArticleStatus.READY
     article.generation_step = "ready"
     article.error_message = None
@@ -407,7 +455,82 @@ def generate_article_for_topic(db: Session, topic: Topic, article: GeneratedArti
         topic.status = "GENERATED"
     db.commit()
 
+    # 10. Step: Automated SEO & Readability Assessment and Targeted Optimization Loop
+    update_article_step(db, article, "auditing", ArticleStatus.FACT_CHECKING)
+    initial_audit = run_article_audit(db, article.id)
+    
+    # If initial scores are below quality target (< 75), perform targeted optimization pass
+    if initial_audit and (initial_audit.seo_score < 75 or initial_audit.readability_score < 75):
+        update_article_step(db, article, "optimizing", ArticleStatus.FACT_CHECKING)
+        opt_res = execute_targeted_optimization(db, article, initial_audit)
+        if opt_res.get("success"):
+            article.title = opt_res["title"]
+            article.subtitle = opt_res["subtitle"]
+            article.content = clean_article_body_content(opt_res["content"])
+            article.seo_metadata = opt_res["seo_metadata"]
+            article.last_optimized_at = datetime.utcnow()
+            article.optimization_status = "OPTIMIZED"
+            
+            # Save accepted revision snapshot
+            rev = ArticleRevision(
+                article_id=article.id,
+                revision_number=1,
+                created_at=datetime.utcnow(),
+                source_type="ai_optimization",
+                title=opt_res["title"],
+                subtitle=opt_res["subtitle"],
+                content=article.content,
+                seo_metadata=opt_res["seo_metadata"],
+                change_summary=opt_res["change_summary"],
+                status="accepted",
+                diff_data=opt_res["diff_data"],
+                audit_snapshot={"before": opt_res["before_scores"], "after": opt_res["after_scores"]}
+            )
+            db.add(rev)
+            db.commit()
+            
+            # Re-audit
+            final_audit = run_article_audit(db, article.id)
+            print(f"[Pipeline SEO Engine] Auto-optimized Article #{article.id}: SEO={final_audit.seo_score}, Readability={final_audit.readability_score}")
+        else:
+            # Baseline revision snapshot
+            rev = ArticleRevision(
+                article_id=article.id,
+                revision_number=1,
+                created_at=datetime.utcnow(),
+                source_type="initial_generation",
+                title=article.title,
+                subtitle=article.subtitle,
+                content=article.content,
+                seo_metadata=article.seo_metadata,
+                change_summary="Initial generated draft.",
+                status="accepted"
+            )
+            db.add(rev)
+            db.commit()
+    else:
+        # Baseline revision snapshot
+        rev = ArticleRevision(
+            article_id=article.id,
+            revision_number=1,
+            created_at=datetime.utcnow(),
+            source_type="initial_generation",
+            title=article.title,
+            subtitle=article.subtitle,
+            content=article.content,
+            seo_metadata=article.seo_metadata,
+            change_summary="Initial generated draft.",
+            status="accepted"
+        )
+        db.add(rev)
+        db.commit()
+
+    article.status = ArticleStatus.READY
+    article.generation_step = "ready"
+    db.commit()
+
     print(f"==================================================")
     print(f"[Pipeline Complete] Article #{article.id} generated! Words: {word_count}, Facts: {len(facts)}, Quality: {quality_meta.get('quality_score')}/100")
     print(f"==================================================\n")
     return article
+

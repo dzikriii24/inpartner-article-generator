@@ -17,7 +17,7 @@ from fastapi.concurrency import run_in_threadpool
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from database import SessionLocal
-from models import Topic, Source, GeneratedArticle, NewsContent, ArticleStatus
+from models import Topic, Source, GeneratedArticle, NewsContent, ArticleStatus, ArticleAudit
 from services.generator import generate_article_for_topic, update_article_step
 from services.aggregator import run_aggregation, FETCH_PROGRESS, update_fetch_progress
 from services.clustering import cluster_topics, filter_relevant_sources_for_prompt
@@ -25,11 +25,26 @@ from services.export_service import export_markdown, export_html, export_docx, e
 from services.wordpress_service import test_wordpress_connection, fetch_wordpress_metadata, publish_to_wordpress
 from services.quota_service import get_usage_and_model_status, record_article_generation
 from services.llm_client import call_llm_json
+from services.seo_engine import run_article_audit
+from services.optimizer_service import optimize_article_and_create_revision
 from api.store_routes import store_router
+from api.admin_routes import admin_router
+from services.auth_service import ensure_initial_admin
+from services.topic_service import ensure_default_topics
+from services.scheduler_service import get_or_create_automation_settings, init_scheduler
 import uvicorn
 
 
 app = FastAPI(title="Inpartner Article Generator")
+
+from fastapi.middleware.cors import CORSMiddleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 from fastapi import APIRouter
 router = APIRouter()
@@ -45,12 +60,25 @@ app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 templates = Jinja2Templates(directory=os.path.join(current_dir, "templates"))
 
-def render_md(text: str):
+def clean_article_body_content(text: str) -> str:
     if not text:
         return ""
     cleaned = text.strip()
     # Strip any numeric bracket citations like [1], [2], [8, 16] from text for clean editorial style
     cleaned = re.sub(r'\s*\[\d+(?:\s*,\s*\d+)*\]', '', cleaned)
+    # Strip leading duplicate H1 / H6 title or Markdown # Title if present at start of body
+    cleaned = re.sub(r'^\s*<h1[^>]*>.*?</h1>\s*', '', cleaned, flags=re.IGNORECASE | re.DOTALL)
+    cleaned = re.sub(r'^\s*#\s+.*?\n+', '', cleaned)
+    # Strip leading duplicate blockquote or > subtitle if present at start of body
+    cleaned = re.sub(r'^\s*<blockquote[^>]*>.*?</blockquote>\s*', '', cleaned, flags=re.IGNORECASE | re.DOTALL)
+    cleaned = re.sub(r'^\s*>\s*\*.*?\*\s*\n+', '', cleaned)
+    cleaned = re.sub(r'^\s*>\s+.*?\n+', '', cleaned)
+    return cleaned.strip()
+
+def render_md(text: str):
+    if not text:
+        return ""
+    cleaned = clean_article_body_content(text)
     rendered = markdown.markdown(cleaned, extensions=['extra', 'nl2br', 'tables'])
     return rendered
 
@@ -129,6 +157,8 @@ class WordPressPublishRequest(BaseModel):
     category_id: Optional[int] = None
     author_id: Optional[int] = None
     lang: Optional[str] = None
+    include_hero_in_body: Optional[bool] = True
+    set_featured_image: Optional[bool] = False
 
 
 def background_generate_prompt(article_id: int, user_prompt: str):
@@ -355,18 +385,106 @@ def view_article(article_id: int, request: Request, db: Session = Depends(get_db
         GeneratedArticle.id != article_id,
         GeneratedArticle.status.in_([ArticleStatus.READY, ArticleStatus.PUBLISHED, ArticleStatus.WORDPRESS_SYNCED])
     ).order_by(GeneratedArticle.generated_at.desc()).limit(3).all()
+
+    latest_audit = db.query(ArticleAudit).filter(ArticleAudit.article_id == article_id, ArticleAudit.is_latest == True).first()
+    if not latest_audit and article.content:
+        try:
+            latest_audit = run_article_audit(db, article_id)
+        except Exception as e:
+            print(f"[Article View] Audit error: {e}")
     
     return templates.TemplateResponse(
         name="article.html",
         context={
             "request": request,
             "article": article,
-            "related_articles": related_articles
+            "related_articles": related_articles,
+            "latest_audit": latest_audit
         }
     )
 
+@router.get("/api/article/{article_id}/seo-audit")
+def api_get_article_seo_audit(article_id: int, db: Session = Depends(get_db)):
+    audit = db.query(ArticleAudit).filter(ArticleAudit.article_id == article_id, ArticleAudit.is_latest == True).first()
+    if not audit:
+        audit = run_article_audit(db, article_id)
+    if not audit:
+        return JSONResponse({"status": "error", "success": False, "message": "Article not found.", "error": "Article not found."}, status_code=404)
+        
+    readability_details = (audit.metrics or {}).get("readability", {})
+    seo_details = (audit.metrics or {}).get("seo", {})
+    audit_dict = {
+        "article_id": audit.article_id,
+        "seo_score": audit.seo_score,
+        "seo_status": (audit.seo_status or "ok").lower(),
+        "readability_score": audit.readability_score,
+        "readability_status": (audit.readability_status or "ok").lower(),
+        "focus_keyphrase": audit.focus_keyphrase,
+        "metrics": audit.metrics,
+        "seo_details": seo_details,
+        "readability_details": readability_details,
+        "issues": audit.issues
+    }
+    return {
+        "status": "success",
+        "success": True,
+        "audit": audit_dict,
+        "seo_score": audit.seo_score,
+        "seo_status": (audit.seo_status or "ok").lower(),
+        "readability_score": audit.readability_score,
+        "readability_status": (audit.readability_status or "ok").lower(),
+        "focus_keyphrase": audit.focus_keyphrase,
+        "seo_details": seo_details,
+        "readability_details": readability_details,
+        "metrics": audit.metrics,
+        "issues": audit.issues
+    }
+
+@router.post("/api/article/{article_id}/seo-audit")
+def api_run_article_seo_audit(article_id: int, db: Session = Depends(get_db)):
+    audit = run_article_audit(db, article_id)
+    if not audit:
+        return JSONResponse({"status": "error", "success": False, "message": "Article not found.", "error": "Article not found."}, status_code=404)
+        
+    readability_details = (audit.metrics or {}).get("readability", {})
+    seo_details = (audit.metrics or {}).get("seo", {})
+    audit_dict = {
+        "article_id": audit.article_id,
+        "seo_score": audit.seo_score,
+        "seo_status": (audit.seo_status or "ok").lower(),
+        "readability_score": audit.readability_score,
+        "readability_status": (audit.readability_status or "ok").lower(),
+        "focus_keyphrase": audit.focus_keyphrase,
+        "metrics": audit.metrics,
+        "seo_details": seo_details,
+        "readability_details": readability_details,
+        "issues": audit.issues
+    }
+    return {
+        "status": "success",
+        "success": True,
+        "audit": audit_dict,
+        "seo_score": audit.seo_score,
+        "seo_status": (audit.seo_status or "ok").lower(),
+        "readability_score": audit.readability_score,
+        "readability_status": (audit.readability_status or "ok").lower(),
+        "focus_keyphrase": audit.focus_keyphrase,
+        "seo_details": seo_details,
+        "readability_details": readability_details,
+        "metrics": audit.metrics,
+        "issues": audit.issues
+    }
+
+@router.post("/api/article/{article_id}/seo-optimize")
+def api_optimize_workspace_article(article_id: int, db: Session = Depends(get_db)):
+    res = optimize_article_and_create_revision(db, article_id, auto_accept=True)
+    if not res.get("success"):
+        return JSONResponse({"status": "error", "message": res.get("error")}, status_code=400)
+    return res
+
 @router.post("/api/article/{article_id}/save")
 def api_save_article(article_id: int, req: ArticleSaveRequest, db: Session = Depends(get_db)):
+
     """
     Autosave / Manual save endpoint for inline editor changes and article metadata.
     """
@@ -379,7 +497,7 @@ def api_save_article(article_id: int, req: ArticleSaveRequest, db: Session = Dep
     if req.subtitle is not None:
         article.subtitle = req.subtitle.strip()
     if req.content is not None:
-        article.content = req.content
+        article.content = clean_article_body_content(req.content)
     if req.hero_image_url is not None:
         article.hero_image_url = req.hero_image_url
     if req.hero_image_caption is not None:
@@ -616,11 +734,21 @@ def api_wordpress_connect(req: WordPressConnectRequest):
         return JSONResponse({"status": "error", "message": auth_res.get("error", "Connection failed")}, status_code=400)
         
     meta = fetch_wordpress_metadata(req.wp_url, req.username, req.app_password)
+    authors = meta.get("authors", [])
+    current_uid = auth_res.get("user_id")
+    current_uname = auth_res.get("name") or req.username
+
+    if current_uid and not any(a.get("id") == current_uid for a in authors):
+        authors.insert(0, {"id": current_uid, "name": current_uname})
+    elif not authors:
+        authors = [{"id": current_uid or 1, "name": current_uname}]
+
     return {
         "status": "success",
-        "user_name": auth_res.get("name"),
+        "user_name": current_uname,
+        "user_id": current_uid,
         "categories": meta.get("categories", []),
-        "authors": meta.get("authors", [])
+        "authors": authors
     }
 
 @router.post("/api/article/{article_id}/publish-wordpress")
@@ -655,27 +783,34 @@ def api_publish_wordpress(article_id: int, req: WordPressPublishRequest, db: Ses
                 content=t_data.get("content") or article.content
             )
             
-    res = publish_to_wordpress(
-        db=db,
-        article=pub_article,
-        wp_url=req.wp_url,
-        username=req.username,
-        app_password=req.app_password,
-        status=req.status,
-        category_id=req.category_id,
-        author_id=req.author_id
-    )
-    
-    if res.get("success"):
-        return {
-            "status": "success",
-            "message": res.get("message"),
-            "post_id": res.get("post_id"),
-            "post_link": res.get("post_link"),
-            "wordpress_status": res.get("wordpress_status")
-        }
-    else:
-        return JSONResponse({"status": "error", "message": res.get("error", "Failed to sync to WordPress.")}, status_code=400)
+    try:
+        res = publish_to_wordpress(
+            db=db,
+            article=pub_article,
+            wp_url=req.wp_url,
+            username=req.username,
+            app_password=req.app_password,
+            status=req.status,
+            category_id=req.category_id,
+            author_id=req.author_id,
+            include_hero_in_body=req.include_hero_in_body if req.include_hero_in_body is not None else True,
+            set_featured_image=req.set_featured_image if req.set_featured_image is not None else False
+        )
+        
+        if res.get("success"):
+            return {
+                "status": "success",
+                "message": res.get("message"),
+                "post_id": res.get("post_id"),
+                "post_link": res.get("post_link"),
+                "edit_link": res.get("edit_link"),
+                "wordpress_status": res.get("wordpress_status")
+            }
+        else:
+            return JSONResponse({"status": "error", "message": res.get("error", "Failed to sync to WordPress.")}, status_code=400)
+    except Exception as e:
+        print(f"[WordPress Sync Error] {str(e)}")
+        return JSONResponse({"status": "error", "message": f"Server error publishing to WordPress: {str(e)}"}, status_code=500)
 
 @router.post("/api/article/{article_id}/translate")
 def api_translate_article(article_id: int, req: TranslateRequest, db: Session = Depends(get_db)):
@@ -744,9 +879,21 @@ def ensure_schema_updates():
     except Exception as e:
         pass
 
+def init_application_state():
+    try:
+        ensure_schema_updates()
+        db = SessionLocal()
+        ensure_initial_admin(db)
+        ensure_default_topics(db)
+        get_or_create_automation_settings(db)
+        db.close()
+        init_scheduler()
+    except Exception as e:
+        print(f"[Startup Warning] Error initializing application state: {e}")
+
 @app.on_event("startup")
-async def schedule_auto_fetch():
-    await run_in_threadpool(ensure_schema_updates)
+async def on_app_startup():
+    await run_in_threadpool(init_application_state)
     asyncio.create_task(auto_fetch_loop())
 
 app.include_router(router)
@@ -755,6 +902,10 @@ app.include_router(router, prefix="/inpartner")
 # Inpartner Store integration (pull API + push-to-store actions)
 app.include_router(store_router)
 app.include_router(store_router, prefix="/inpartner")
+
+# Inpartner Admin Dashboard & Daily Article Automation
+app.include_router(admin_router)
+app.include_router(admin_router, prefix="/inpartner")
 
 if __name__ == "__main__":
     uvicorn.run("api.main:app", host="127.0.0.1", port=8000, reload=False)

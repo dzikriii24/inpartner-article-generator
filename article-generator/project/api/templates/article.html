@@ -37,7 +37,7 @@
         * { box-sizing: border-box; }
 
         html, body {
-            overflow-x: hidden;
+            overflow-x: clip;
             width: 100%;
         }
 
@@ -264,22 +264,35 @@
             min-height: 800px;
         }
 
-        /* Sticky Formatting Toolbar */
-        .wysiwyg-toolbar {
+        /* Unified Sticky Floating Header (Formatting Toolbar + Versi Artikel) */
+        .editor-sticky-header {
             position: sticky;
             top: 54px;
             z-index: 900;
-            background: rgba(255, 255, 255, 0.97);
-            backdrop-filter: blur(10px);
+            background: var(--surface);
+            padding: 0.65rem 0 0.5rem 0;
+            margin-top: -1.75rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.55rem;
+            border-bottom: 1px solid var(--border);
+            box-shadow: 0 4px 14px -4px rgba(15, 23, 42, 0.05);
+            transition: all 0.2s ease;
+        }
+
+        /* Formatting Toolbar */
+        .wysiwyg-toolbar {
+            background: rgba(255, 255, 255, 0.98);
             border: 1px solid var(--border-dark);
             border-radius: var(--radius);
             padding: 0.45rem 0.65rem;
-            margin-bottom: 2rem;
+            margin-bottom: 0;
             display: flex;
             flex-wrap: wrap;
             gap: 0.3rem;
             align-items: center;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
             transition: opacity 0.2s ease;
         }
 
@@ -335,14 +348,14 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(249, 246, 240, 0.9) 100%);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(249, 246, 240, 0.95) 100%);
             border: 1px solid var(--accent-border);
-            padding: 0.65rem 1rem;
-            border-radius: 14px;
-            margin-bottom: 1.5rem;
-            box-shadow: 0 4px 18px -4px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+            padding: 0.5rem 0.85rem;
+            border-radius: 12px;
+            margin-bottom: 0;
+            box-shadow: 0 2px 10px -2px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.6);
             backdrop-filter: blur(10px);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .version-tabs-left {
@@ -493,7 +506,7 @@
                 box-sizing: border-box;
             }
             .version-tab-btn {
-                flex: 1;
+                flex: 1; 
                 justify-content: center;
                 text-align: center;
                 padding: 0.5rem 0.65rem;
@@ -578,28 +591,103 @@
             text-align: center;
         }
 
-        .hero-figure img {
+        .hero-image-wrapper {
+            position: relative;
+            display: inline-block;
             width: 100%;
-            height: auto;
-            max-height: 500px;
-            object-fit: cover;
-            border-radius: var(--radius);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.1);
             border: 1px solid var(--border);
         }
 
+        .hero-figure img {
+            width: 100%;
+            height: 480px;
+            max-height: 480px;
+            object-fit: cover;
+            object-position: center;
+            display: block;
+            border-radius: 12px;
+            transition: transform 0.3s ease;
+        }
+
         .hero-caption {
-            font-size: 0.83rem;
+            font-size: 0.85rem;
             color: var(--muted);
-            margin-top: 0.65rem;
+            margin-top: 0.75rem;
             line-height: 1.4;
             font-style: italic;
+            text-align: center;
         }
 
         .hero-controls {
+            position: absolute;
+            bottom: 14px;
+            right: 14px;
             display: flex;
-            gap: 0.4rem;
-            justify-content: center;
-            margin-top: 0.6rem;
+            gap: 0.5rem;
+            background: rgba(15, 23, 42, 0.88);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 6px 12px;
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+            z-index: 20;
+            transition: all 0.2s ease;
+        }
+
+        /* Always visible in edit mode */
+        body.mode-edit .hero-controls {
+            display: flex !important;
+        }
+
+        /* Hidden in preview mode */
+        body.mode-preview .hero-controls {
+            display: none !important;
+        }
+
+        .hero-controls .btn {
+            font-size: 0.8rem !important;
+            padding: 0.35rem 0.85rem !important;
+            border-radius: 16px !important;
+            font-weight: 600 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 0.4rem !important;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .hero-controls .btn-outline,
+        .hero-controls .btn-replace {
+            background: #2563eb !important;
+            border: 1px solid #3b82f6 !important;
+            color: #ffffff !important;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4) !important;
+        }
+
+        .hero-controls .btn-outline:hover,
+        .hero-controls .btn-replace:hover {
+            background: #1d4ed8 !important;
+            border-color: #2563eb !important;
+            color: #ffffff !important;
+            transform: translateY(-1px);
+        }
+
+        .hero-controls .btn-danger {
+            background: #dc2626 !important;
+            border: 1px solid #ef4444 !important;
+            color: #ffffff !important;
+            box-shadow: 0 2px 8px rgba(220, 38, 38, 0.4) !important;
+        }
+
+        .hero-controls .btn-danger:hover {
+            background: #b91c1c !important;
+            border-color: #dc2626 !important;
+            color: #ffffff !important;
+            transform: translateY(-1px);
         }
 
         /* Article Body Typography & Content Blocks */
@@ -653,7 +741,11 @@
         .block-btn:hover { background: var(--paper); color: var(--accent); }
 
         /* Content Blocks Styles */
-        .article-body p { margin: 0 0 1.6rem 0; }
+        .article-body p {
+            margin: 0 0 1.6rem 0;
+            text-align: justify;
+            text-justify: inter-word;
+        }
 
         .article-body h1 {
             font-family: 'Newsreader', Georgia, serif;
@@ -757,6 +849,53 @@
             margin: 1.75rem 0;
             font-size: 1.05rem;
             color: var(--ink);
+            position: relative;
+        }
+
+        .callout-actions-bar {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            display: none;
+            gap: 5px;
+            z-index: 10;
+        }
+
+        body.mode-edit .callout-box:hover .callout-actions-bar,
+        body.mode-edit .callout-box:focus-within .callout-actions-bar {
+            display: flex;
+        }
+
+        .callout-act-btn {
+            background: #ffffff;
+            border: 1px solid var(--border-dark);
+            border-radius: 5px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--ink-soft);
+            padding: 3px 8px;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .callout-act-btn:hover {
+            background: var(--paper);
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .callout-act-btn.btn-danger {
+            color: #dc2626;
+        }
+
+        .callout-act-btn.btn-danger:hover {
+            background: #fee2e2;
+            color: #b91c1c;
+            border-color: #fca5a5;
         }
 
         /* Clean Editorial Sources List (No Cards, Direct URL Display) */
@@ -920,23 +1059,38 @@
         figure.article-image-block[data-width="large"] img { width: 700px; }
         figure.article-image-block[data-width="full"] img { width: 100%; }
 
+        figure.article-image-block {
+            position: relative;
+            cursor: default;
+            transition: all 0.2s ease;
+        }
+
+        body.mode-edit figure.article-image-block:hover,
+        body.mode-edit figure.article-image-block.is-active {
+            outline: 2px dashed var(--accent);
+            outline-offset: 6px;
+            border-radius: 8px;
+        }
+
         .img-toolbar-overlay {
             position: absolute;
             top: 10px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(20, 19, 17, 0.9);
+            background: rgba(15, 23, 42, 0.94);
             backdrop-filter: blur(8px);
             border-radius: 20px;
-            padding: 4px 8px;
+            padding: 4px 10px;
             display: none;
-            gap: 4px;
+            gap: 5px;
             align-items: center;
             z-index: 200;
-            box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+            box-shadow: 0 4px 18px rgba(0,0,0,0.35);
+            white-space: nowrap;
         }
 
-        body.mode-edit figure.article-image-block:hover .img-toolbar-overlay {
+        body.mode-edit figure.article-image-block:hover .img-toolbar-overlay,
+        body.mode-edit figure.article-image-block.is-active .img-toolbar-overlay {
             display: flex;
         }
 
@@ -949,10 +1103,13 @@
             padding: 4px 8px;
             border-radius: 12px;
             cursor: pointer;
-            transition: background 0.12s ease;
+            transition: all 0.12s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
         }
 
-        .img-tb-btn:hover { background: rgba(255,255,255,0.2); }
+        .img-tb-btn:hover { background: rgba(255,255,255,0.22); color: #fff; }
         .img-tb-btn.active { background: var(--accent); color: #fff; }
 
         figcaption.img-caption {
@@ -1001,6 +1158,30 @@
             gap: 1.5rem;
             position: sticky;
             top: 70px;
+            max-height: calc(100vh - 90px);
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding-right: 6px;
+            padding-bottom: 2.5rem;
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 transparent;
+        }
+
+        .sidebar-panel::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar-panel::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .sidebar-panel::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        .sidebar-panel::-webkit-scrollbar-thumb:hover {
+            background-color: #94a3b8;
         }
 
         .card-widget {
@@ -1146,6 +1327,188 @@
             font-size: 0.88rem;
             color: var(--ink);
             background: var(--paper);
+        }
+
+        /* WordPress Publishing & Account Management Styling */
+        .wp-account-card {
+            background: linear-gradient(145deg, #ffffff, #f8fafc);
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 1.15rem;
+            margin-bottom: 1.25rem;
+            box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.05);
+            transition: all 0.2s ease;
+        }
+
+        .wp-account-card:hover {
+            border-color: #cbd5e1;
+            box-shadow: 0 6px 20px -2px rgba(15, 23, 42, 0.08);
+        }
+
+        .wp-card-title {
+            margin: 0;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .wp-brand-icon {
+            color: #21759b;
+            font-size: 1.1rem;
+        }
+
+        .btn-add-account {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 0.35rem 0.8rem;
+            font-size: 0.76rem;
+            font-weight: 600;
+            color: #2563eb;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-add-account:hover {
+            background: #2563eb;
+            color: #ffffff;
+            border-color: #2563eb;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+        }
+
+        .wp-select-wrapper {
+            position: relative;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+
+        .wp-custom-select {
+            width: 100%;
+            padding: 0.65rem 2.2rem 0.65rem 0.95rem;
+            font-size: 0.86rem;
+            font-weight: 500;
+            color: #0f172a;
+            background: #ffffff;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 10px;
+            outline: none;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+            font-family: inherit;
+        }
+
+        .wp-custom-select:hover {
+            border-color: #94a3b8;
+        }
+
+        .wp-custom-select:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+            background: #ffffff;
+        }
+
+        .wp-select-arrow {
+            position: absolute;
+            right: 0.85rem;
+            pointer-events: none;
+            color: #64748b;
+            font-size: 0.75rem;
+            transition: transform 0.2s ease;
+        }
+
+        .btn-delete-account {
+            width: 38px;
+            height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #ffffff;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 10px;
+            color: #94a3b8;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .btn-delete-account:hover {
+            border-color: #fca5a5;
+            background: #fef2f2;
+            color: #ef4444;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.15);
+        }
+
+        .wp-active-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+            margin-top: 0.75rem;
+            padding: 0.5rem 0.8rem;
+            background: #ecfdf5;
+            border: 1px solid #a7f3d0;
+            border-radius: 8px;
+            font-size: 0.78rem;
+            color: #065f46;
+        }
+
+        .wp-pulse-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
+            animation: wpPulse 2s infinite;
+            flex-shrink: 0;
+        }
+
+        @keyframes wpPulse {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5); }
+            70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        .wp-site-url-pill {
+            background: #ffffff;
+            border: 1px solid #d1fae5;
+            padding: 2px 8px;
+            border-radius: 5px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            color: #047857;
+            font-weight: 500;
+        }
+
+        .wp-meta-match-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            color: #1d4ed8;
+            font-weight: 600;
+            animation: fadeInMatch 0.3s ease;
+        }
+
+        @keyframes fadeInMatch {
+            from { opacity: 0; transform: translateY(-2px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         /* PDF Preview Modal Special Large Layout */
@@ -1308,7 +1671,7 @@
                 padding: 1.5rem 1.25rem 4rem !important;
                 gap: 1.5rem !important;
                 box-sizing: border-box !important;
-                overflow-x: hidden !important;
+                overflow-x: clip !important;
             }
             .editor-container {
                 padding: 2rem 1.75rem !important;
@@ -1316,9 +1679,9 @@
                 width: 100% !important;
                 max-width: 100% !important;
                 box-sizing: border-box !important;
-                overflow-x: hidden !important;
+                overflow-x: clip !important;
             }
-            .sidebar-panel { position: static !important; width: 100% !important; max-width: 100% !important; }
+            .sidebar-panel { position: static !important; width: 100% !important; max-width: 100% !important; max-height: none !important; overflow-y: visible !important; }
             .pdf-a4-page { width: 100% !important; min-height: auto !important; padding: 20px !important; }
         }
 
@@ -1412,11 +1775,19 @@
                 display: block !important;
             }
 
-            /* WYSIWYG Toolbar Mobile Edit Mode */
-            .wysiwyg-toolbar {
-                top: 0 !important;
+            /* Sticky Header & Toolbar Mobile Mode */
+            .editor-sticky-header {
                 position: sticky !important;
-                z-index: 900 !important;
+                top: 54px !important;
+                z-index: 950 !important;
+                margin-top: -0.75rem !important;
+                margin-bottom: 1rem !important;
+                padding: 0.35rem 0 !important;
+                gap: 0.35rem !important;
+            }
+
+            .wysiwyg-toolbar {
+                position: static !important;
                 width: 100% !important;
                 max-width: 100% !important;
                 min-width: 0 !important;
@@ -1429,7 +1800,7 @@
                 scrollbar-width: none !important;
                 background: rgba(255, 255, 255, 0.98) !important;
                 backdrop-filter: blur(12px) !important;
-                margin: 0 0 1.25rem 0 !important;
+                margin: 0 !important;
             }
 
             .wysiwyg-toolbar::-webkit-scrollbar { display: none !important; }
@@ -1500,7 +1871,7 @@
                 min-width: 0 !important;
                 padding: 0.75rem 0.5rem 3rem !important;
                 box-sizing: border-box !important;
-                overflow-x: hidden !important;
+                overflow-x: clip !important;
             }
 
             .editor-container {
@@ -1511,7 +1882,7 @@
                 max-width: 100% !important;
                 min-width: 0 !important;
                 box-sizing: border-box !important;
-                overflow-x: hidden !important;
+                overflow-x: clip !important;
             }
 
             h1.article-title {
@@ -1549,8 +1920,8 @@
             /* Hero Figure Mobile */
             .hero-figure { margin-bottom: 1.5rem !important; width: 100% !important; max-width: 100% !important; }
             .hero-figure img { max-height: 260px !important; object-fit: cover !important; width: 100% !important; }
-            .hero-controls { flex-direction: column !important; gap: 0.5rem !important; width: 100% !important; }
-            .hero-controls .btn { width: 100% !important; justify-content: center !important; }
+            .hero-controls { flex-direction: row !important; gap: 0.4rem !important; width: auto !important; right: 10px !important; bottom: 10px !important; }
+            .hero-controls .btn { width: auto !important; font-size: 0.72rem !important; padding: 0.25rem 0.6rem !important; }
 
             /* Article Body Typography & Elements Mobile */
             .article-body {
@@ -1599,7 +1970,7 @@
             }
 
             /* References & Fact Provenance Sidebar Mobile */
-            .sidebar-panel { width: 100% !important; max-width: 100% !important; min-width: 0 !important; }
+            .sidebar-panel { width: 100% !important; max-width: 100% !important; min-width: 0 !important; max-height: none !important; overflow-y: visible !important; }
             .card-widget { padding: 0.9rem 0.8rem !important; border-radius: 8px !important; width: 100% !important; box-sizing: border-box !important; }
             
             .source-item { padding: 0.7rem 0 !important; }
@@ -1636,6 +2007,47 @@
             .article-body { font-size: 0.98rem !important; }
             .wysiwyg-toolbar { padding: 0.3rem 0.35rem !important; }
         }
+
+        /* Yoast SEO & Readability Panel in Article Workspace */
+        .yoast-bullet {
+            display: inline-block;
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            margin-right: 6px;
+            flex-shrink: 0;
+        }
+        .yoast-bullet.bullet-good { background: #10b981; box-shadow: 0 0 6px rgba(16, 185, 129, 0.45); }
+        .yoast-bullet.bullet-ok { background: #f59e0b; box-shadow: 0 0 6px rgba(245, 158, 11, 0.45); }
+        .yoast-bullet.bullet-poor { background: #ef4444; box-shadow: 0 0 6px rgba(239, 68, 68, 0.45); }
+        .yoast-bullet.bullet-gray { background: #94a3b8; }
+
+        .score-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 8px;
+            border-radius: 14px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            color: var(--ink);
+        }
+        .score-pill.score-good { background: #ecfdf5; border-color: #a7f3d0; color: #065f46; }
+        .score-pill.score-ok { background: #fffbeb; border-color: #fde68a; color: #92400e; }
+        .score-pill.score-poor { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+
+        .seo-criteria-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            padding: 0.45rem 0;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 0.8rem;
+        }
+        .seo-criteria-row:last-child { border-bottom: none; }
+        .seo-criteria-row .criteria-label { font-weight: 600; color: var(--ink); }
+        .seo-criteria-row .criteria-msg { font-size: 0.75rem; color: var(--muted); margin-top: 1px; }
     </style>
 </head>
 <body class="mode-edit">
@@ -1670,7 +2082,7 @@
                     <i class="fa-solid fa-floppy-disk"></i> Save
                 </button>
                 
-                <button class="btn btn-outline" onclick="openImageUploadModal()" title="Insert image into article">
+                <button class="btn btn-outline" onmousedown="saveSelection()" onclick="openImageUploadModal('body')" title="Insert image into article">
                     <i class="fa-regular fa-image"></i> Image
                 </button>
                 
@@ -1708,103 +2120,113 @@
             </div>
         </div>
     </nav>
-
     <!-- Main Workspace Container -->
     <div class="workspace-grid">
 
         <!-- Left Column: Editorial Writing Canvas -->
         <main class="editor-container">
 
-            <!-- Sticky WYSIWYG Formatting & Alignment Toolbar -->
-            <div class="wysiwyg-toolbar" id="mainToolbar">
-                <!-- Text Block Type -->
-                <select class="tb-select" onchange="formatBlockSelect(this.value)" id="blockTypeSelect" title="Paragraph / Heading format">
-                    <option value="P">Paragraph</option>
-                    <option value="H1">Heading 1</option>
-                    <option value="H2">Heading 2</option>
-                    <option value="H3">Heading 3</option>
-                    <option value="H4">Heading 4</option>
-                    <option value="BLOCKQUOTE">Blockquote</option>
-                    <option value="PRE">Code Block</option>
-                </select>
+            <!-- Unified Sticky Floating Header (Formatting Toolbar + Versi Artikel) -->
+            <div class="editor-sticky-header" id="editorStickyHeader">
+                <!-- Sticky WYSIWYG Formatting & Alignment Toolbar -->
+                <div class="wysiwyg-toolbar" id="mainToolbar">
+                    <!-- Text Block Type -->
+                    <select class="tb-select" onchange="formatBlockSelect(this.value)" id="blockTypeSelect" title="Paragraph / Heading format">
+                        <option value="P">Paragraph</option>
+                        <option value="H1">Heading 1</option>
+                        <option value="H2">Heading 2</option>
+                        <option value="H3">Heading 3</option>
+                        <option value="H4">Heading 4</option>
+                        <option value="BLOCKQUOTE">Blockquote</option>
+                        <option value="PRE">Code Block</option>
+                    </select>
 
-                <div class="tb-divider"></div>
+                    <div class="tb-divider"></div>
 
-                <!-- Text Style Buttons -->
-                <div class="tb-group">
-                    <button class="tb-btn" onclick="execCmd('bold')" title="Bold (Ctrl+B)"><b>B</b></button>
-                    <button class="tb-btn" onclick="execCmd('italic')" title="Italic (Ctrl+I)"><i>I</i></button>
-                    <button class="tb-btn" onclick="execCmd('underline')" title="Underline (Ctrl+U)"><u>U</u></button>
-                    <button class="tb-btn" onclick="execCmd('strikeThrough')" title="Strikethrough"><s>S</s></button>
-                    <button class="tb-btn" onclick="execCmd('insertHTML', '<code>' + window.getSelection().toString() + '</code>')" title="Inline Code">&lt;/&gt;</button>
-                    <button class="tb-btn" onclick="applyHighlight()" title="Text Highlight"><i class="fa-solid fa-highlighter"></i></button>
-                </div>
+                    <!-- Text Style Buttons -->
+                    <div class="tb-group">
+                        <button class="tb-btn" onclick="execCmd('bold')" title="Bold (Ctrl+B)"><b>B</b></button>
+                        <button class="tb-btn" onclick="execCmd('italic')" title="Italic (Ctrl+I)"><i>I</i></button>
+                        <button class="tb-btn" onclick="execCmd('underline')" title="Underline (Ctrl+U)"><u>U</u></button>
+                        <button class="tb-btn" onclick="execCmd('strikeThrough')" title="Strikethrough"><s>S</s></button>
+                        <button class="tb-btn" onclick="execCmd('insertHTML', '<code>' + window.getSelection().toString() + '</code>')" title="Inline Code">&lt;/&gt;</button>
+                        <button class="tb-btn" onclick="applyHighlight()" title="Text Highlight"><i class="fa-solid fa-highlighter"></i></button>
+                    </div>
 
-                <div class="tb-divider"></div>
+                    <div class="tb-divider"></div>
 
-                <!-- Text Alignment Buttons -->
-                <div class="tb-group">
-                    <button class="tb-btn" id="btnAlignLeft" onclick="setTextAlign('left')" title="Align Left (Ctrl+Shift+L)">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
-                    </button>
-                    <button class="tb-btn" id="btnAlignCenter" onclick="setTextAlign('center')" title="Align Center (Ctrl+Shift+C)">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="10" x2="6" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="18" y1="18" x2="6" y2="18"/></svg>
-                    </button>
-                    <button class="tb-btn" id="btnAlignRight" onclick="setTextAlign('right')" title="Align Right (Ctrl+Shift+R)">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="21" y1="10" x2="7" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="7" y2="18"/></svg>
-                    </button>
-                    <button class="tb-btn" id="btnAlignJustify" onclick="setTextAlign('justify')" title="Justify (Ctrl+Shift+J)">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="21" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="3" y2="18"/></svg>
-                    </button>
-                </div>
-
-                <div class="tb-divider"></div>
-
-                <!-- Lists & Blocks -->
-                <div class="tb-group">
-                    <button class="tb-btn" onclick="execCmd('insertUnorderedList')" title="Bullet List"><i class="fa-solid fa-list-ul"></i></button>
-                    <button class="tb-btn" onclick="execCmd('insertOrderedList')" title="Numbered List"><i class="fa-solid fa-list-ol"></i></button>
-                    <button class="tb-btn" onclick="insertCalloutBox()" title="Callout Box"><i class="fa-regular fa-lightbulb"></i> Callout</button>
-                    <button class="tb-btn" onclick="insertHorizontalRule()" title="Divider Line"><i class="fa-solid fa-minus"></i> Divider</button>
-                </div>
-
-                <div class="tb-divider"></div>
-
-                <!-- Links & Media -->
-                <div class="tb-group">
-                    <button class="tb-btn" onclick="openLinkModal()" title="Insert / Edit Link (Ctrl+K)"><i class="fa-solid fa-link"></i> Link</button>
-                    <button class="tb-btn" onclick="execCmd('unlink')" title="Remove Link">Unlink</button>
-                    <button class="tb-btn" onclick="openImageUploadModal('body')" title="Insert Image"><i class="fa-regular fa-image"></i> Image</button>
-                </div>
-
-                <div class="tb-divider"></div>
-
-                <!-- History -->
-                <div class="tb-group">
-                    <button class="tb-btn" onclick="execCmd('undo')" title="Undo (Ctrl+Z)"><i class="fa-solid fa-rotate-left"></i></button>
-                    <button class="tb-btn" onclick="execCmd('redo')" title="Redo (Ctrl+Y)"><i class="fa-solid fa-rotate-right"></i></button>
-                </div>
-            </div>
-
-            <!-- Article Version Switcher Bar (Original vs Translated) -->
-            <div id="versionTabsBar" class="version-tabs-bar">
-                <div class="version-tabs-left">
-                    <span class="version-tabs-label">
-                        <i class="fa-solid fa-layer-group"></i> Versi Artikel
-                    </span>
-                    <div class="version-tabs-container">
-                        <button type="button" class="version-tab-btn active" id="tabBtnOriginal" onclick="switchArticleVersion('original')">
-                            <span>🇮🇩</span> <span>Original (Asli)</span>
+                    <!-- Text Alignment Buttons -->
+                    <div class="tb-group">
+                        <button class="tb-btn" id="btnAlignLeft" onclick="setTextAlign('left')" title="Align Left (Ctrl+Shift+L)">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
                         </button>
-                        <button type="button" class="version-tab-btn" id="tabBtnTranslated" onclick="switchArticleVersion('translated')" style="display: none;">
-                            <span>🌐</span> <span id="translatedTabLabel">Translated</span>
+                        <button class="tb-btn" id="btnAlignCenter" onclick="setTextAlign('center')" title="Align Center (Ctrl+Shift+C)">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="10" x2="6" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="18" y1="18" x2="6" y2="18"/></svg>
+                        </button>
+                        <button class="tb-btn" id="btnAlignRight" onclick="setTextAlign('right')" title="Align Right (Ctrl+Shift+R)">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="21" y1="10" x2="7" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="7" y2="18"/></svg>
+                        </button>
+                        <button class="tb-btn" id="btnAlignJustify" onclick="setTextAlign('justify')" title="Justify (Ctrl+Shift+J)">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="21" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="3" y2="18"/></svg>
                         </button>
                     </div>
+
+                    <div class="tb-divider"></div>
+
+                    <!-- Lists & Blocks -->
+                    <div class="tb-group">
+                        <button class="tb-btn" onclick="execCmd('insertUnorderedList')" title="Bullet List"><i class="fa-solid fa-list-ul"></i></button>
+                        <button class="tb-btn" onclick="execCmd('insertOrderedList')" title="Numbered List"><i class="fa-solid fa-list-ol"></i></button>
+                        <button class="tb-btn" onclick="insertCalloutBox()" title="Callout Box"><i class="fa-regular fa-lightbulb"></i> Callout</button>
+                        <button class="tb-btn" onclick="insertHorizontalRule()" title="Divider Line"><i class="fa-solid fa-minus"></i> Divider</button>
+                    </div>
+
+                    <div class="tb-divider"></div>
+
+                    <!-- Links & Media -->
+                    <div class="tb-group">
+                        <button class="tb-btn" onmousedown="saveSelection()" onclick="openLinkModal()" title="Insert / Edit Link (Ctrl+K)"><i class="fa-solid fa-link"></i> Link</button>
+                        <button class="tb-btn" onclick="execCmd('unlink')" title="Remove Link">Unlink</button>
+                        <button class="tb-btn" onmousedown="saveSelection()" onclick="openImageUploadModal('body')" title="Insert Image"><i class="fa-regular fa-image"></i> Image</button>
+                    </div>
+
+                    <div class="tb-divider"></div>
+
+                    <!-- Quick Section Actions (Add Paragraph / Delete Block) -->
+                    <div class="tb-group">
+                        <button class="tb-btn" onclick="insertNewParagraph()" title="Tambah baris / paragraf baru di bawah posisi kursor" style="font-weight:600; color:var(--accent);"><i class="fa-solid fa-plus"></i> + Paragraf</button>
+                        <button class="tb-btn" onclick="deleteActiveBlock()" title="Hapus foto, callout box, atau section aktif" style="font-weight:600; color:#dc2626;"><i class="fa-solid fa-trash"></i> Hapus Blok</button>
+                    </div>
+
+                    <div class="tb-divider"></div>
+
+                    <!-- History -->
+                    <div class="tb-group">
+                        <button class="tb-btn" onclick="execCmd('undo')" title="Undo (Ctrl+Z)"><i class="fa-solid fa-rotate-left"></i></button>
+                        <button class="tb-btn" onclick="execCmd('redo')" title="Redo (Ctrl+Y)"><i class="fa-solid fa-rotate-right"></i></button>
+                    </div>
                 </div>
-                <div class="version-tabs-right">
-                    <button type="button" class="btn-split-toggle" id="toggleSplitViewBtn" onclick="toggleSplitView()" style="display: none;">
-                        <i class="fa-solid fa-columns"></i> <span>Side-by-Side View</span>
-                    </button>
+
+                <!-- Article Version Switcher Bar (Original vs Translated) -->
+                <div id="versionTabsBar" class="version-tabs-bar">
+                    <div class="version-tabs-left">
+                        <span class="version-tabs-label">
+                            <i class="fa-solid fa-layer-group"></i> Versi Artikel
+                        </span>
+                        <div class="version-tabs-container">
+                            <button type="button" class="version-tab-btn active" id="tabBtnOriginal" onclick="switchArticleVersion('original')">
+                                <span>📄</span> <span>Original</span>
+                            </button>
+                            <button type="button" class="version-tab-btn" id="tabBtnTranslated" onclick="switchArticleVersion('translated')" style="display: none;">
+                                <span>🌐</span> <span id="translatedTabLabel">Translated</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="version-tabs-right">
+                        <button type="button" class="btn-split-toggle" id="toggleSplitViewBtn" onclick="toggleSplitView()" style="display: none;">
+                            <i class="fa-solid fa-columns"></i> <span>Side-by-Side View</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -1822,16 +2244,19 @@
 
                         <!-- Metadata Bar -->
                         <div class="article-meta">
-                            <div>By <strong id="articleAuthorText">{{ article.author or 'Inpartner Editorial Board' }}</strong></div>
-                            <div>&bull;</div>
-                            <div>{{ article.generated_at|date_format }}</div>
+                            <div>By <strong id="articleAuthorText">{{ article.author or 'Inpartner' }}</strong></div>
                             <div>&bull;</div>
                             <div><strong id="articleReadTimeText">{{ article.reading_time or 5 }} min read</strong></div>
                             {% if article.sources %}
                             <div>&bull;</div>
                             <div>{{ article.sources|length }} reference{{ 's' if article.sources|length != 1 else '' }}</div>
                             {% endif %}
-                            <div style="margin-left:auto;">
+                            <div style="margin-left:auto; display:flex; align-items:center; gap:8px;">
+                                {% if article.wordpress_post_id and article.wordpress_site %}
+                                <a href="{{ article.wordpress_site }}/wp-admin/post.php?post={{ article.wordpress_post_id }}&action=edit" target="_blank" title="Buka editor postingan ini di WordPress Admin" style="font-size:0.75rem; color:#21759b; font-weight:600; text-decoration:none; display:inline-flex; align-items:center; gap:5px; padding:3px 9px; background:#f0f9ff; border:1px solid #bae6fd; border-radius:5px;">
+                                    <i class="fa-brands fa-wordpress"></i> Edit WP #{{ article.wordpress_post_id }} <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:0.65rem;"></i>
+                                </a>
+                                {% endif %}
                                 <span class="badge-status" id="wpSyncStatusBadge">
                                     {{ article.wordpress_status if article.wordpress_status != 'Not Published' else (article.status.value if article.status else 'READY') }}
                                 </span>
@@ -1841,14 +2266,16 @@
                         <!-- Hero Image Container -->
                         <figure class="hero-figure" id="heroFigure">
                             {% if article.hero_image_url %}
-                            <img id="heroImageEl" src="{{ article.hero_image_url }}" alt="{{ article.title }}">
-                            <figcaption class="hero-caption" id="heroCaption" contenteditable="true">{{ article.hero_image_caption or 'Click to edit hero image caption...' }}</figcaption>
-                            <div class="hero-controls">
-                                <button class="btn btn-outline btn-sm" onclick="openImageUploadModal('hero')">Replace Hero Image</button>
-                                <button class="btn btn-danger btn-sm" onclick="removeHeroImage()">Delete Hero Image</button>
+                            <div class="hero-image-wrapper">
+                                <img id="heroImageEl" src="{{ article.hero_image_url }}" alt="{{ article.title }}">
+                                <div class="hero-controls">
+                                    <button class="btn btn-outline btn-replace btn-sm" onclick="openImageUploadModal('hero')"><i class="fa-solid fa-camera"></i> Replace</button>
+                                    <button class="btn btn-danger btn-sm" onclick="removeHeroImage()"><i class="fa-solid fa-trash"></i> Delete</button>
+                                </div>
                             </div>
+                            <figcaption class="hero-caption" id="heroCaption" contenteditable="true">{{ article.hero_image_caption or 'Click to edit hero image caption...' }}</figcaption>
                             {% else %}
-                            <div id="noHeroPlaceholder" style="background:var(--paper); border:1px dashed var(--border-dark); padding:2rem; text-align:center; border-radius:8px; margin-bottom:1rem;">
+                            <div id="noHeroPlaceholder" style="background:var(--paper); border:1px dashed var(--border-dark); padding:2rem; text-align:center; border-radius:12px; margin-bottom:1rem;">
                                 <i class="fa-regular fa-image fa-2x" style="color:var(--muted); margin-bottom:0.4rem; display:block;"></i>
                                 <div style="font-size:0.88rem; color:var(--muted); margin-top:0.3rem;">No featured hero image set. <a href="javascript:void(0)" onclick="openImageUploadModal('hero')" style="color:var(--accent); font-weight:600;">Upload Hero Image</a></div>
                             </div>
@@ -1930,6 +2357,143 @@
         <!-- Right Column: References & Research Audit Sidebar -->
         <aside class="sidebar-panel">
 
+            <!-- Yoast SEO & Readability Quality Scorecard -->
+            <div class="card-widget" id="seoReadabilityScorecard" style="border-top: 3px solid #2563eb;">
+                <div class="widget-title" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-magnifying-glass-chart" style="color: var(--accent);"></i>
+                        <span style="font-weight: 700; font-size: 0.95rem;">Yoast SEO &amp; Readability</span>
+                    </div>
+                    <button class="btn btn-outline btn-sm" id="btnRefreshArticleAudit" onclick="runArticleAudit({{ article.id }})" title="Recalculate audit scores" style="padding: 2px 7px; font-size: 0.75rem;">
+                        <i class="fa-solid fa-rotate"></i>
+                    </button>
+                </div>
+
+                <!-- Scores Badges Row -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.85rem;">
+                    <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 6px; padding: 0.6rem; text-align: center;">
+                        <div style="font-size: 0.72rem; color: var(--muted); text-transform: uppercase; font-weight: 600;">Yoast SEO</div>
+                        <div style="margin-top: 4px;" id="sideSeoScorePill">
+                            {% if article.seo_score is not none %}
+                            <span class="score-pill score-{{ article.seo_status or 'ok' }}">
+                                <span class="yoast-bullet bullet-{{ article.seo_status or 'ok' }}"></span> {{ article.seo_score }}/100
+                            </span>
+                            {% else %}
+                            <span class="score-pill"><span class="yoast-bullet bullet-gray"></span> Not Assessed</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 6px; padding: 0.6rem; text-align: center;">
+                        <div style="font-size: 0.72rem; color: var(--muted); text-transform: uppercase; font-weight: 600;">Readability</div>
+                        <div style="margin-top: 4px;" id="sideReadScorePill">
+                            {% if article.readability_score is not none %}
+                            <span class="score-pill score-{{ article.readability_status or 'ok' }}">
+                                <span class="yoast-bullet bullet-{{ article.readability_status or 'ok' }}"></span> {{ article.readability_score }}/100
+                            </span>
+                            {% else %}
+                            <span class="score-pill"><span class="yoast-bullet bullet-gray"></span> Not Assessed</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Focus Keyphrase Display & Edit -->
+                <div style="background: #f1f5f9; border-radius: 6px; padding: 0.6rem 0.75rem; margin-bottom: 0.85rem; font-size: 0.82rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                        <span style="font-weight: 600; color: var(--ink-soft);"><i class="fa-solid fa-key" style="font-size: 0.7rem; color: var(--accent);"></i> Focus Keyphrase:</span>
+                    </div>
+                    <div id="sideFocusKeyphrase" style="font-weight: 600; color: var(--ink); font-family: monospace; word-break: break-all;">
+                        {{ article.focus_keyphrase or 'Not set' }}
+                    </div>
+                </div>
+
+                <!-- Collapsible Detailed Diagnostics -->
+                <details style="margin-bottom: 0.85rem; font-size: 0.82rem; border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem 0.75rem;" id="sideAuditDetails">
+                    <summary style="cursor: pointer; font-weight: 600; color: var(--ink); outline: none;">
+                        <span>Yoast Diagnostics Breakdown</span>
+                    </summary>
+                    <div id="sideAuditBreakdownContent" style="margin-top: 0.6rem;">
+                        {% if latest_audit %}
+                            {% set rDet = latest_audit.readability_details or {} %}
+                            {% set sDet = latest_audit.seo_details or {} %}
+                            
+                            <div style="font-weight: 700; font-size: 0.75rem; color: var(--muted); text-transform: uppercase; margin-bottom: 4px;">Readability</div>
+                            <div class="seo-criteria-row">
+                                <span class="yoast-bullet bullet-{{ (rDet.sentence_length and rDet.sentence_length.status) or 'ok' }}"></span>
+                                <div>
+                                    <div class="criteria-label">Sentence Length</div>
+                                    <div class="criteria-msg">{{ (rDet.sentence_length and rDet.sentence_length.message) or 'Target: <= 25% > 20 words' }}</div>
+                                </div>
+                            </div>
+                            <div class="seo-criteria-row">
+                                <span class="yoast-bullet bullet-{{ (rDet.transition_words and rDet.transition_words.status) or 'ok' }}"></span>
+                                <div>
+                                    <div class="criteria-label">Transition Words</div>
+                                    <div class="criteria-msg">{{ (rDet.transition_words and rDet.transition_words.message) or 'Target: >= 30% of sentences' }}</div>
+                                </div>
+                            </div>
+                            <div class="seo-criteria-row">
+                                <span class="yoast-bullet bullet-{{ (rDet.passive_voice and rDet.passive_voice.status) or 'ok' }}"></span>
+                                <div>
+                                    <div class="criteria-label">Passive Voice</div>
+                                    <div class="criteria-msg">{{ (rDet.passive_voice and rDet.passive_voice.message) or 'Target: <= 10% of sentences' }}</div>
+                                </div>
+                            </div>
+                            <div class="seo-criteria-row">
+                                <span class="yoast-bullet bullet-{{ (rDet.subheading_distribution and rDet.subheading_distribution.status) or 'ok' }}"></span>
+                                <div>
+                                    <div class="criteria-label">Subheadings</div>
+                                    <div class="criteria-msg">{{ (rDet.subheading_distribution and rDet.subheading_distribution.message) or 'Sections <= 300 words' }}</div>
+                                </div>
+                            </div>
+
+                            <div style="font-weight: 700; font-size: 0.75rem; color: var(--muted); text-transform: uppercase; margin: 8px 0 4px 0;">SEO &amp; Keyphrase</div>
+                            <div class="seo-criteria-row">
+                                <span class="yoast-bullet bullet-{{ (sDet.keyphrase_in_title and sDet.keyphrase_in_title.status) or 'ok' }}"></span>
+                                <div>
+                                    <div class="criteria-label">Keyphrase in Title</div>
+                                    <div class="criteria-msg">{{ (sDet.keyphrase_in_title and sDet.keyphrase_in_title.message) or 'Title match' }}</div>
+                                </div>
+                            </div>
+                            <div class="seo-criteria-row">
+                                <span class="yoast-bullet bullet-{{ (sDet.keyphrase_in_intro and sDet.keyphrase_in_intro.status) or 'ok' }}"></span>
+                                <div>
+                                    <div class="criteria-label">Keyphrase in Intro</div>
+                                    <div class="criteria-msg">{{ (sDet.keyphrase_in_intro and sDet.keyphrase_in_intro.message) or 'First paragraph' }}</div>
+                                </div>
+                            </div>
+                            <div class="seo-criteria-row">
+                                <span class="yoast-bullet bullet-{{ (sDet.keyphrase_density and sDet.keyphrase_density.status) or 'ok' }}"></span>
+                                <div>
+                                    <div class="criteria-label">Keyphrase Density</div>
+                                    <div class="criteria-msg">{{ (sDet.keyphrase_density and sDet.keyphrase_density.message) or 'Optimal 0.5% - 2.5%' }}</div>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div style="color: var(--muted); font-size: 0.76rem; text-align: center; padding: 0.5rem;">
+                                Click "Audit Content Quality" below to run full Yoast analysis.
+                            </div>
+                        {% endif %}
+                    </div>
+                </details>
+
+                <!-- Actions Button Group -->
+                <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+                    <button class="btn btn-primary" id="btnSideAudit" onclick="runArticleAudit({{ article.id }})" style="justify-content: center; font-size: 0.82rem; padding: 0.45rem;">
+                        <i class="fa-solid fa-bolt"></i> Audit Content Quality
+                    </button>
+                    <button class="btn btn-outline" id="btnSideOptimize" onclick="runArticleOptimize({{ article.id }})" style="justify-content: center; font-size: 0.82rem; padding: 0.45rem; color: #7c3aed; border-color: #ddd6fe;">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Optimize with AI
+                    </button>
+                    {% if article.wordpress_post_id %}
+                    <button class="btn btn-outline" id="btnSideWpSync" onclick="reSyncArticleWp({{ article.id }})" style="justify-content: center; font-size: 0.82rem; padding: 0.45rem; color: #0284c7; border-color: #bae6fd;" title="Update WordPress Post #{{ article.wordpress_post_id }}">
+                        <i class="fa-brands fa-wordpress"></i> Re-Sync Post #{{ article.wordpress_post_id }}
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+
             <!-- Research Quality Audit -->
             {% if article.research_metadata %}
             <div class="card-widget" style="background: var(--accent-soft); border-color: var(--accent-border);">
@@ -1951,7 +2515,7 @@
                 </div>
                 <div style="font-size:0.83rem; color:var(--ink-soft); line-height:1.6;">
                     <div><strong>Category:</strong> <span id="sideCategoryDisplay">{{ article.category or 'Editorial' }}</span></div>
-                    <div><strong>Author:</strong> <span id="sideAuthorDisplay">{{ article.author or 'Inpartner Editorial Board' }}</span></div>
+                    <div><strong>Author:</strong> <span id="sideAuthorDisplay">{{ article.author or 'Inpartner' }}</span></div>
                     <div><strong>Reading Time:</strong> <span id="sideReadTimeDisplay">{{ article.reading_time or 5 }} min</span></div>
                     <div><strong>Status:</strong> <span id="sideStatusDisplay">{{ article.status.value if article.status else 'DRAFT' }}</span></div>
                 </div>
@@ -2081,7 +2645,7 @@
             </div>
             <div class="form-group">
                 <label>Author</label>
-                <input type="text" id="metaAuthor" value="{{ article.author or 'Inpartner Editorial Board' }}">
+                <input type="text" id="metaAuthor" value="{{ article.author or 'Inpartner' }}">
             </div>
             <div class="form-group">
                 <label>Estimated Reading Time (minutes)</label>
@@ -2112,7 +2676,7 @@
                     <div style="display:flex; align-items:center; gap:0.4rem; background:var(--paper); padding:0.25rem 0.6rem; border-radius:6px; border:1px solid var(--border);">
                         <span style="font-size:0.78rem; font-weight:600; color:var(--ink-soft);"><i class="fa-solid fa-globe"></i> Versi Bahasa:</span>
                         <select id="pdfLangSelect" onchange="renderPdfPreviewForSelectedLang()" style="font-size:0.8rem; padding:0.25rem 0.4rem; border:1px solid var(--border); border-radius:4px; background:var(--bg);">
-                            <option value="original">🇮🇩 Original (Asli)</option>
+                            <option value="original">📄 Original</option>
                             <option value="translated" id="pdfLangTranslatedOpt" style="display:none;">🌐 <span id="pdfLangTranslatedName">Translated</span></option>
                         </select>
                     </div>
@@ -2165,7 +2729,7 @@
                     <label style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; border: 1.5px solid var(--border-dark); border-radius: 8px; cursor: pointer; background: var(--paper); transition: all 0.2s;" id="labelExportOriginal">
                         <input type="radio" name="exportLangOption" value="original" checked style="accent-color: var(--accent);">
                         <div>
-                            <div style="font-weight: 700; font-size: 0.9rem; color: var(--ink);">🇮🇩 Original Version (Indonesian)</div>
+                            <div style="font-weight: 700; font-size: 0.9rem; color: var(--ink);">📄 Original Version</div>
                             <div style="font-size: 0.8rem; color: var(--muted);" id="exportOriginalTitlePreview">Versi asli artikel</div>
                         </div>
                     </label>
@@ -2219,62 +2783,203 @@
     <div class="modal-overlay" id="wpModal">
         <div class="modal-box">
             <div class="modal-header">
-                <h3 class="modal-title">Publish to WordPress</h3>
+                <h3 class="modal-title">
+                    <i class="fa-brands fa-wordpress" style="color: #21759b; margin-right: 6px;"></i>Publish to WordPress
+                </h3>
                 <button class="modal-close" onclick="closeModal('wpModal')">&times;</button>
             </div>
             
+            <!-- Pilih / Kelola Akun WordPress Card -->
+            <div class="wp-account-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.65rem;">
+                    <span class="wp-card-title">
+                        <i class="fa-brands fa-wordpress wp-brand-icon"></i> Akun WordPress Tersimpan
+                    </span>
+                    <button type="button" class="btn-add-account" onclick="openAddWpAccountModal()">
+                        <i class="fa-solid fa-plus"></i> Tambah Akun
+                    </button>
+                </div>
+                <div style="display: flex; gap: 0.6rem; align-items: center;">
+                    <div class="wp-select-wrapper">
+                        <select id="wpAccountSelect" class="wp-custom-select" onchange="onWpAccountChange()">
+                            <option value="">-- Pilih Akun WordPress --</option>
+                        </select>
+                        <i class="fa-solid fa-chevron-down wp-select-arrow"></i>
+                    </div>
+                    <button type="button" class="btn-delete-account" id="btnDeleteWpAccount" onclick="deleteCurrentWpAccount()" title="Hapus akun terpilih" style="display:none;">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                </div>
+                <div id="wpActiveAccountInfo" class="wp-active-badge" style="display:none;">
+                    <span class="wp-pulse-dot"></span>
+                    <span style="font-weight: 500;">Akun Aktif:</span>
+                    <strong id="wpActiveAccountLabel" style="color: #064e3b; font-weight: 700;"></strong>
+                    <span style="color: #94a3b8;">&bull;</span>
+                    <span class="wp-site-url-pill" id="wpActiveAccountUrl"></span>
+                </div>
+            </div>
+
+            <!-- Detail Kredensial Server (Collapsible) -->
+            <div id="wpCredentialsSection" style="margin-bottom: 1.15rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.45rem;">
+                    <span style="font-size: 0.74rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px;">Kredensial Server REST API</span>
+                    <a href="javascript:void(0)" id="wpToggleCredsBtn" onclick="toggleWpCredentials()" style="font-size: 0.76rem; color: var(--accent); text-decoration: none; font-weight: 600;">Lihat Detail &darr;</a>
+                </div>
+                <div id="wpCredsInputs" style="display: none; background: #f8fafc; border: 1.5px dashed #cbd5e1; border-radius: 10px; padding: 0.95rem; margin-bottom: 0.5rem;">
+                    <div class="form-group">
+                        <label>WordPress Site URL</label>
+                        <input type="text" id="wpUrl" placeholder="https://blog.inpartner.id" value="{{ article.wordpress_site or '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label>Username</label>
+                        <input type="text" id="wpUsername" placeholder="admin">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Application Password</label>
+                        <input type="password" id="wpAppPassword" placeholder="abcd 1234 efgh 5678">
+                    </div>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:0.5rem; margin-bottom:1.15rem; align-items: center;">
+                <button class="btn btn-outline" style="font-size:0.8rem; border-radius: 8px;" id="btnTestWpConnect" onclick="testWpConnect(false)">
+                    <i class="fa-solid fa-arrows-rotate"></i> Refresh Kategori & Penulis
+                </button>
+                <span id="wpConnectSpinner" style="display:none; font-size: 0.8rem; color: var(--muted);">
+                    <i class="fa-solid fa-spinner fa-spin"></i> Memeriksa koneksi...
+                </span>
+            </div>
+
+            <!-- Pengaturan Posting & Pencocokan Metadata -->
+            <div id="wpMetaContainer" style="display:none; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.15rem; margin-bottom: 1.25rem; box-shadow: 0 2px 10px rgba(15,23,42,0.03);">
+                <div class="form-group">
+                    <label style="display:flex; align-items:center; gap:6px; margin-bottom: 0.4rem;">
+                        <i class="fa-solid fa-language" style="color: #2563eb;"></i> Versi Bahasa yang Dipublish
+                    </label>
+                    <div class="wp-select-wrapper">
+                        <select id="wpPublishLangSelect" class="wp-custom-select">
+                            <option value="original">📄 Original</option>
+                            <option value="translated" id="wpLangTranslatedOpt" style="display:none;">🌐 <span id="wpLangTranslatedName">Translated</span></option>
+                        </select>
+                        <i class="fa-solid fa-chevron-down wp-select-arrow"></i>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label style="display:flex; align-items:center; gap:6px; margin-bottom: 0.4rem;">
+                        <i class="fa-solid fa-file-circle-check" style="color: #2563eb;"></i> Status Postingan
+                    </label>
+                    <div class="wp-select-wrapper">
+                        <select id="wpStatus" class="wp-custom-select">
+                            <option value="draft" selected>📝 Simpan sebagai Draft (Review di WP)</option>
+                            <option value="publish">🚀 Publish Langsung (Live Sekarang)</option>
+                        </select>
+                        <i class="fa-solid fa-chevron-down wp-select-arrow"></i>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.4rem;">
+                        <label style="margin:0; display:flex; align-items:center; gap:6px;">
+                            <i class="fa-solid fa-folder-tree" style="color: #2563eb;"></i> Kategori WordPress
+                        </label>
+                        <span id="wpCategoryMatchHint" class="wp-meta-match-badge" style="display:none;">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Sesuai Metadata: <strong id="wpCatMatchedName"></strong>
+                        </span>
+                    </div>
+                    <div class="wp-select-wrapper">
+                        <select id="wpCategory" class="wp-custom-select">
+                            <option value="">Default Category</option>
+                        </select>
+                        <i class="fa-solid fa-chevron-down wp-select-arrow"></i>
+                    </div>
+                </div>
+                <div class="form-group" style="margin-bottom: 0.85rem;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.4rem;">
+                        <label style="margin:0; display:flex; align-items:center; gap:6px;">
+                            <i class="fa-solid fa-user-pen" style="color: #2563eb;"></i> Penulis / Author
+                        </label>
+                        <span id="wpAuthorMatchHint" class="wp-meta-match-badge" style="display:none; background: #ecfdf5; border-color: #a7f3d0; color: #065f46;">
+                            <i class="fa-solid fa-circle-check" style="color:#059669;"></i> Akun Login: <strong id="wpAuthMatchedName"></strong>
+                        </span>
+                    </div>
+                    <div class="wp-select-wrapper">
+                        <select id="wpAuthor" class="wp-custom-select">
+                            <option value="">Default Author</option>
+                        </select>
+                        <i class="fa-solid fa-chevron-down wp-select-arrow"></i>
+                    </div>
+                </div>
+
+                <!-- Hero Image Position & Featured Media Settings -->
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label style="display:flex; align-items:center; gap:6px; margin-bottom: 0.45rem;">
+                        <i class="fa-regular fa-image" style="color: #2563eb;"></i> Posisi Hero Image di WordPress
+                    </label>
+                    <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 9px; padding: 0.8rem 0.95rem; display: flex; flex-direction: column; gap: 0.55rem; font-size: 0.83rem;">
+                        <label style="display: flex; align-items: center; gap: 0.55rem; cursor: pointer; font-weight: 500; margin: 0; color: #1e293b;">
+                            <input type="checkbox" id="wpIncludeBodyHero" checked style="accent-color: var(--accent); width: 16px; height: 16px;">
+                            <span>Sisipkan di dalam konten (di bawah Judul &amp; Subtitle)</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.55rem; cursor: pointer; font-weight: 500; margin: 0; color: #1e293b;">
+                            <input type="checkbox" id="wpSetFeaturedImage" checked style="accent-color: var(--accent); width: 16px; height: 16px;">
+                            <span>Jadikan Featured Image WordPress (Thumbnail tema)</span>
+                        </label>
+                        <span style="font-size: 0.74rem; color: #64748b; line-height: 1.4; border-top: 1px dashed #cbd5e1; padding-top: 0.4rem;">
+                            💡 <em>Catatan: Thumbnail tema otomatis aktif untuk kartu artikel di halaman depan (blog.inpartner.id), dan otomatis disembunyikan di dalam halaman postingan agar tidak muncul ganda.</em>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="wpStatusMsg" style="font-size:0.85rem; margin-bottom:1rem; display:none; padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--border); background: var(--paper);"></div>
+
+            <div style="display:flex; gap:0.6rem; justify-content:flex-end; margin-top:1.5rem;">
+                <button class="btn btn-outline" style="border-radius: 8px;" onclick="closeModal('wpModal')">Batal</button>
+                <button class="btn btn-accent" id="wpSyncBtn" style="border-radius: 8px;" onclick="submitWordPressSync()">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> Sync to WordPress
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Tambah Akun WordPress Baru -->
+    <div class="modal-overlay" id="addWpAccountModal">
+        <div class="modal-box" style="max-width: 480px;">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="fa-brands fa-wordpress" style="color: #21759b; margin-right: 6px;"></i>Tambah Akun WordPress
+                </h3>
+                <button class="modal-close" onclick="closeModal('addWpAccountModal')">&times;</button>
+            </div>
+            
+            <p style="font-size: 0.82rem; color: var(--muted); margin-bottom: 1.2rem; line-height: 1.45;">
+                Simpan akun WordPress agar Anda bisa langsung mempublikasikan artikel kapan saja tanpa perlu memasukkan password berulang kali.
+            </p>
+
+            <div class="form-group">
+                <label>Nama / Label Akun</label>
+                <input type="text" id="newWpAccountLabel" placeholder="Contoh: Inpartner Blog Utama">
+                <small style="color:var(--muted); font-size:0.75rem;">Nama alias untuk mengenali akun ini di pilihan dropdown.</small>
+            </div>
             <div class="form-group">
                 <label>WordPress Site URL</label>
-                <input type="text" id="wpUrl" placeholder="https://yourblog.com" value="{{ article.wordpress_site or '' }}">
+                <input type="text" id="newWpAccountUrl" placeholder="https://blog.inpartner.id" value="https://blog.inpartner.id">
             </div>
             <div class="form-group">
                 <label>Username</label>
-                <input type="text" id="wpUsername" placeholder="admin">
+                <input type="text" id="newWpAccountUsername" placeholder="admin">
             </div>
             <div class="form-group">
                 <label>Application Password</label>
-                <input type="password" id="wpAppPassword" placeholder="abcd 1234 efgh 5678">
+                <input type="password" id="newWpAccountAppPassword" placeholder="xxxx xxxx xxxx xxxx">
+                <small style="color:var(--muted); font-size:0.75rem;">Dibuat dari WP Admin &rarr; Users &rarr; Profile &rarr; Application Passwords.</small>
             </div>
 
-            <div style="display:flex; gap:0.5rem; margin-bottom:1rem;">
-                <button class="btn btn-outline" style="font-size:0.8rem;" onclick="testWpConnect()">Test Connection & Fetch Categories</button>
-            </div>
-
-            <div id="wpMetaContainer" style="display:none;">
-                <div class="form-group">
-                    <label>Versi Bahasa yang Dipublish</label>
-                    <select id="wpPublishLangSelect">
-                        <option value="original">🇮🇩 Original (Asli)</option>
-                        <option value="translated" id="wpLangTranslatedOpt" style="display:none;">🌐 <span id="wpLangTranslatedName">Translated</span></option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Post Status</label>
-                    <select id="wpStatus">
-                        <option value="draft" selected>Draft</option>
-                        <option value="publish">Publish Immediately</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Category</label>
-                    <select id="wpCategory">
-                        <option value="">Default Category</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Author</label>
-                    <select id="wpAuthor">
-                        <option value="">Default Author</option>
-                    </select>
-                </div>
-            </div>
-
-            <div id="wpStatusMsg" style="font-size:0.85rem; margin-bottom:1rem; display:none;"></div>
+            <div id="newWpAccountMsg" style="font-size:0.83rem; margin-bottom:1rem; display:none; padding: 0.6rem 0.85rem; border-radius: 6px; background: var(--paper);"></div>
 
             <div style="display:flex; gap:0.5rem; justify-content:flex-end; margin-top:1.5rem;">
-                <button class="btn btn-outline" onclick="closeModal('wpModal')">Cancel</button>
-                <button class="btn btn-accent" id="wpSyncBtn" onclick="submitWordPressSync()">
-                    Sync to WordPress
+                <button class="btn btn-outline" onclick="closeModal('addWpAccountModal')">Batal</button>
+                <button class="btn btn-accent" id="btnSaveWpAccount" onclick="saveNewWpAccount()">
+                    <i class="fa-solid fa-check"></i> Tes & Simpan Akun
                 </button>
             </div>
         </div>
@@ -2326,6 +3031,8 @@
         }
 
         const articleId = {{ article.id }};
+        const articleMetaAuthor = {{ (article.author or '') | tojson }};
+        const articleMetaCategory = {{ (article.category or '') | tojson }};
 
         // Dual-Version State (Original vs Translated)
         let articleOriginalData = {
@@ -2372,6 +3079,7 @@
                     if (document.getElementById('translatedBody')) document.getElementById('translatedBody').style.display = 'block';
                 }
             }
+            enhanceArticleBlocks();
         });
 
         function syncCurrentVersionToMemory() {
@@ -2382,7 +3090,8 @@
             if (!titleEl || !bodyEl) return;
 
             const bodyClone = bodyEl.cloneNode(true);
-            bodyClone.querySelectorAll('.block-handle-bar, .img-toolbar-overlay').forEach(el => el.remove());
+            bodyClone.querySelectorAll('.block-handle-bar, .img-toolbar-overlay, .callout-actions-bar, .block-quick-inserter').forEach(el => el.remove());
+            bodyClone.querySelectorAll('.is-active').forEach(el => el.classList.remove('is-active'));
 
             const curTitle = titleEl.innerText.trim();
             const curSub = subEl ? subEl.innerText.trim() : '';
@@ -2407,11 +3116,14 @@
             const transSubEl = document.getElementById('translatedSubtitle');
             const transBodyEl = document.getElementById('translatedBody');
             if (isSplitViewOpen && transTitleEl && transBodyEl && activeTranslatedLang) {
+                const transClone = transBodyEl.cloneNode(true);
+                transClone.querySelectorAll('.block-handle-bar, .img-toolbar-overlay, .callout-actions-bar, .block-quick-inserter').forEach(el => el.remove());
+                transClone.querySelectorAll('.is-active').forEach(el => el.classList.remove('is-active'));
                 articleTranslations[activeTranslatedLang] = {
                     language_name: activeTranslatedLang,
                     title: transTitleEl.innerText.trim(),
                     subtitle: transSubEl ? transSubEl.innerText.trim() : '',
-                    content: transBodyEl.innerHTML
+                    content: transClone.innerHTML
                 };
             }
         }
@@ -2444,6 +3156,7 @@
                 if (subEl) subEl.innerText = tData.subtitle || "";
                 if (bodyEl) bodyEl.innerHTML = tData.content || "";
             }
+            enhanceArticleBlocks();
         }
 
         function toggleSplitView() {
@@ -2527,6 +3240,7 @@
                         splitBtn.classList.add('active');
                     }
 
+                    enhanceArticleBlocks();
                     saveArticle();
                 } else {
                     alert('Translation failed: ' + data.message);
@@ -2673,7 +3387,11 @@
             if (window.getSelection) {
                 let sel = window.getSelection();
                 if (sel.getRangeAt && sel.rangeCount) {
-                    savedRange = sel.getRangeAt(0);
+                    const range = sel.getRangeAt(0);
+                    const editor = document.getElementById('articleBody');
+                    if (editor && editor.contains(range.commonAncestorContainer)) {
+                        savedRange = range.cloneRange();
+                    }
                 }
             }
         }
@@ -2691,6 +3409,27 @@
             editorBody.addEventListener('keyup', saveSelection);
             editorBody.addEventListener('mouseup', saveSelection);
             editorBody.addEventListener('mouseleave', saveSelection);
+
+            // Active block selection & keyboard delete handling
+            editorBody.addEventListener('click', function(e) {
+                const fig = e.target.closest('figure.article-image-block');
+                editorBody.querySelectorAll('figure.article-image-block.is-active').forEach(f => {
+                    if (f !== fig) f.classList.remove('is-active');
+                });
+                if (fig) {
+                    fig.classList.add('is-active');
+                }
+            });
+
+            editorBody.addEventListener('keydown', function(e) {
+                if (e.key === 'Delete' || e.key === 'Backspace') {
+                    const activeFig = editorBody.querySelector('figure.article-image-block.is-active');
+                    if (activeFig) {
+                        e.preventDefault();
+                        deleteImgBlock(activeFig);
+                    }
+                }
+            });
         }
 
         // Rich Text Formatting Helper Commands
@@ -2755,8 +3494,18 @@
 
         // Insert Block Helpers
         function insertCalloutBox() {
-            const html = `<div class="callout-box" contenteditable="true" data-align="left"><strong><i class="fa-regular fa-lightbulb"></i> Key Takeaway:</strong> Enter callout highlight text here...</div><p><br></p>`;
+            const html = `
+                <div class="callout-box" contenteditable="true" data-align="left" style="position:relative;">
+                    <div class="callout-actions-bar" contenteditable="false">
+                        <button type="button" class="callout-act-btn" onclick="insertTextBelowBlock(this)" title="Tambah paragraf di bawah box ini"><i class="fa-solid fa-plus"></i> + Teks di Bawah</button>
+                        <button type="button" class="callout-act-btn btn-danger" onclick="deleteBlockElement(this)" title="Hapus callout box ini"><i class="fa-solid fa-trash"></i> Hapus Box</button>
+                    </div>
+                    <strong><i class="fa-regular fa-lightbulb"></i> Key Takeaway:</strong> Masukkan poin penting / ringkasan di sini...
+                </div>
+                <p><br></p>
+            `;
             document.execCommand('insertHTML', false, html);
+            enhanceArticleBlocks();
             markUnsaved();
         }
 
@@ -2807,9 +3556,12 @@
 
         // Image Management (Insert, Align, Width, Delete)
         let imageUploadTarget = 'body';
+        let lastUploadScrollY = null;
 
         function openImageUploadModal(target = 'body') {
             imageUploadTarget = target;
+            lastUploadScrollY = window.scrollY;
+            saveSelection();
             openModal('imageUploadModal');
         }
 
@@ -2863,12 +3615,14 @@
         function setHeroImage(imgUrl, caption = '') {
             const figure = document.getElementById('heroFigure');
             figure.innerHTML = `
-                <img id="heroImageEl" src="${imgUrl}" alt="Featured Hero Image">
-                <figcaption class="hero-caption" id="heroCaption" contenteditable="true">${caption || 'Click to edit hero image caption...'}</figcaption>
-                <div class="hero-controls">
-                    <button class="btn btn-outline btn-sm" onclick="openImageUploadModal('hero')">Replace Hero Image</button>
-                    <button class="btn btn-danger btn-sm" onclick="removeHeroImage()">Delete Hero Image</button>
+                <div class="hero-image-wrapper">
+                    <img id="heroImageEl" src="${imgUrl}" alt="Featured Hero Image">
+                    <div class="hero-controls">
+                        <button class="btn btn-outline btn-replace btn-sm" onclick="openImageUploadModal('hero')"><i class="fa-solid fa-camera"></i> Replace</button>
+                        <button class="btn btn-danger btn-sm" onclick="removeHeroImage()"><i class="fa-solid fa-trash"></i> Delete</button>
+                    </div>
                 </div>
+                <figcaption class="hero-caption" id="heroCaption" contenteditable="true">${caption || 'Click to edit hero image caption...'}</figcaption>
             `;
             markUnsaved();
         }
@@ -2904,17 +3658,19 @@
                 <figure class="article-image-block" data-align="center" data-width="medium" contenteditable="false">
                     <div style="position:relative; display:inline-block; max-width:100%;">
                         <img src="${imgUrl}" alt="Article Image" />
-                        <div class="img-toolbar-overlay">
-                            <span style="color:#aaa; font-size:10px; margin-right:4px;">ALIGN:</span>
-                            <button class="img-tb-btn" onclick="setImgBlockAlign(this, 'left')">Left</button>
-                            <button class="img-tb-btn active" onclick="setImgBlockAlign(this, 'center')">Center</button>
-                            <button class="img-tb-btn" onclick="setImgBlockAlign(this, 'right')">Right</button>
-                            <span style="color:#aaa; font-size:10px; margin:0 4px;">WIDTH:</span>
-                            <button class="img-tb-btn" onclick="setImgBlockWidth(this, 'small')">Small</button>
-                            <button class="img-tb-btn active" onclick="setImgBlockWidth(this, 'medium')">Medium</button>
-                            <button class="img-tb-btn" onclick="setImgBlockWidth(this, 'large')">Large</button>
-                            <button class="img-tb-btn" onclick="setImgBlockWidth(this, 'full')">Full</button>
-                            <button class="img-tb-btn" style="background:#a13b32; margin-left:4px;" onclick="deleteImgBlock(this)">Delete</button>
+                        <div class="img-toolbar-overlay" contenteditable="false">
+                            <span style="color:#94a3b8; font-size:10px; font-weight:700; margin-right:2px;">ALIGN:</span>
+                            <button type="button" class="img-tb-btn" onclick="setImgBlockAlign(this, 'left')">Left</button>
+                            <button type="button" class="img-tb-btn active" onclick="setImgBlockAlign(this, 'center')">Center</button>
+                            <button type="button" class="img-tb-btn" onclick="setImgBlockAlign(this, 'right')">Right</button>
+                            <span style="color:#64748b; font-size:10px; margin:0 2px;">|</span>
+                            <button type="button" class="img-tb-btn" onclick="setImgBlockWidth(this, 'small')">S</button>
+                            <button type="button" class="img-tb-btn active" onclick="setImgBlockWidth(this, 'medium')">M</button>
+                            <button type="button" class="img-tb-btn" onclick="setImgBlockWidth(this, 'large')">L</button>
+                            <button type="button" class="img-tb-btn" onclick="setImgBlockWidth(this, 'full')">Full</button>
+                            <span style="color:#64748b; font-size:10px; margin:0 2px;">|</span>
+                            <button type="button" class="img-tb-btn" style="background:#2563eb; color:#fff;" onclick="insertTextBelowBlock(this)" title="Tambah teks di bawah foto"><i class="fa-solid fa-plus"></i> + Teks</button>
+                            <button type="button" class="img-tb-btn" style="background:#dc2626; color:#fff; font-weight:700;" onclick="deleteImgBlock(this)" title="Hapus foto"><i class="fa-solid fa-trash"></i> Hapus</button>
                         </div>
                     </div>
                     <figcaption contenteditable="true" class="img-caption">${capText}</figcaption>
@@ -2922,12 +3678,72 @@
                 </figure><p><br></p>
             `;
 
-            editorBody.focus();
-            restoreSelection();
-            if (!document.execCommand('insertHTML', false, figureHtml)) {
-                editorBody.innerHTML += figureHtml;
+            const targetScrollY = (lastUploadScrollY !== null) ? lastUploadScrollY : window.scrollY;
+
+            // Prevent browser from auto-scrolling to top of editorBody on focus
+            if (typeof editorBody.focus === 'function') {
+                try {
+                    editorBody.focus({ preventScroll: true });
+                } catch (e) {
+                    editorBody.focus();
+                }
             }
+
+            let insertedElement = null;
+            const template = document.createElement('template');
+            template.innerHTML = figureHtml.trim();
+            const fragment = template.content;
+            const figureNode = fragment.querySelector('figure');
+
+            if (savedRange && editorBody.contains(savedRange.commonAncestorContainer)) {
+                try {
+                    savedRange.deleteContents();
+                    savedRange.insertNode(fragment);
+                    insertedElement = figureNode;
+
+                    if (insertedElement) {
+                        const newRange = document.createRange();
+                        const nextP = insertedElement.nextElementSibling;
+                        if (nextP) {
+                            newRange.setStart(nextP, 0);
+                            newRange.collapse(true);
+                        } else {
+                            newRange.setStartAfter(insertedElement);
+                            newRange.collapse(true);
+                        }
+                        const sel = window.getSelection();
+                        if (sel) {
+                            sel.removeAllRanges();
+                            sel.addRange(newRange);
+                        }
+                        savedRange = newRange;
+                    }
+                } catch (err) {
+                    console.warn('DOM range insertion fallback:', err);
+                }
+            }
+
+            if (!insertedElement) {
+                restoreSelection();
+                const execSuccess = document.execCommand('insertHTML', false, figureHtml);
+                if (execSuccess) {
+                    const allFigures = editorBody.querySelectorAll('figure.article-image-block');
+                    insertedElement = allFigures[allFigures.length - 1];
+                } else {
+                    editorBody.appendChild(fragment);
+                    insertedElement = figureNode;
+                }
+            }
+
+            enhanceArticleBlocks();
             markUnsaved();
+
+            // Maintain exact view position by smoothly keeping the new image in center view
+            if (insertedElement) {
+                insertedElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } else if (targetScrollY !== null) {
+                window.scrollTo({ top: targetScrollY, behavior: 'instant' });
+            }
         }
 
         function setImgBlockAlign(btn, align) {
@@ -2951,25 +3767,258 @@
             }
         }
 
-        async function deleteImgBlock(btn) {
-            if (!confirm('Are you sure you want to delete this image?')) return;
-            const figure = btn.closest('figure');
-            const img = figure ? figure.querySelector('img') : null;
+        async function deleteImgBlock(btnOrFigure) {
+            const figure = (btnOrFigure && btnOrFigure.tagName === 'FIGURE') ? btnOrFigure : (btnOrFigure ? btnOrFigure.closest('figure') : null);
+            if (!figure) return;
+            if (!confirm('Apakah Anda yakin ingin menghapus foto ini?')) return;
+
+            const img = figure.querySelector('img');
             const url = img ? img.src : null;
 
-            if (figure) {
-                figure.remove();
+            figure.remove();
+
+            const editor = document.getElementById('articleBody');
+            if (editor && editor.children.length === 0) {
+                const p = document.createElement('p');
+                p.innerHTML = '<br>';
+                editor.appendChild(p);
             }
 
-            if (url) {
-                await fetch(`/inpartner/api/article/${articleId}/delete-image`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url: url })
-                });
+            if (url && url.includes('/uploads/')) {
+                try {
+                    await fetch(`/inpartner/api/article/${articleId}/delete-image`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ url: url })
+                    });
+                } catch (e) {
+                    console.error('Delete image server error:', e);
+                }
             }
             markUnsaved();
             saveArticle();
+        }
+
+        // Helper to insert an empty paragraph directly below any block (image, callout, table, quote)
+        function insertTextBelowBlock(btnOrEl) {
+            const block = btnOrEl.closest('figure, .callout-box, blockquote, pre, h1, h2, h3, h4, table');
+            if (!block) return;
+            const newP = document.createElement('p');
+            newP.innerHTML = '<br>';
+            block.parentNode.insertBefore(newP, block.nextSibling);
+
+            // Set focus and caret to new paragraph
+            const range = document.createRange();
+            range.setStart(newP, 0);
+            range.collapse(true);
+            const sel = window.getSelection();
+            if (sel) {
+                sel.removeAllRanges();
+                sel.addRange(range);
+            }
+            newP.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            markUnsaved();
+        }
+
+        // Helper to delete any block element (callout box, section, etc.)
+        function deleteBlockElement(btnOrEl) {
+            const block = btnOrEl.closest('figure, .callout-box, blockquote, pre, h1, h2, h3, h4, table');
+            if (!block) return;
+            if (!confirm('Hapus section / box ini?')) return;
+
+            const editor = document.getElementById('articleBody');
+            block.remove();
+            if (editor && editor.children.length === 0) {
+                const p = document.createElement('p');
+                p.innerHTML = '<br>';
+                editor.appendChild(p);
+            }
+            markUnsaved();
+            saveArticle();
+        }
+
+        // Toolbar Quick Action: Insert New Paragraph at caret or after active section
+        function insertNewParagraph() {
+            const sel = window.getSelection();
+            const editor = document.getElementById('articleBody');
+            if (!editor) return;
+
+            const newP = document.createElement('p');
+            newP.innerHTML = '<br>';
+
+            if (sel && sel.rangeCount && editor.contains(sel.getRangeAt(0).commonAncestorContainer)) {
+                let node = sel.getRangeAt(0).commonAncestorContainer;
+                while (node && node.parentNode !== editor) {
+                    node = node.parentNode;
+                }
+                if (node && node.parentNode === editor) {
+                    node.parentNode.insertBefore(newP, node.nextSibling);
+                } else {
+                    editor.appendChild(newP);
+                }
+            } else {
+                editor.appendChild(newP);
+            }
+
+            const range = document.createRange();
+            range.setStart(newP, 0);
+            range.collapse(true);
+            if (sel) {
+                sel.removeAllRanges();
+                sel.addRange(range);
+            }
+            newP.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            markUnsaved();
+        }
+
+        // Toolbar Quick Action: Delete currently selected or focused block (image, callout, quote, heading)
+        function deleteActiveBlock() {
+            const sel = window.getSelection();
+            const editor = document.getElementById('articleBody');
+            if (!editor) return;
+
+            let target = editor.querySelector('figure.article-image-block.is-active');
+
+            if (!target && sel && sel.rangeCount && editor.contains(sel.getRangeAt(0).commonAncestorContainer)) {
+                let node = sel.getRangeAt(0).commonAncestorContainer;
+                while (node && node !== editor) {
+                    if (node.nodeType === 1 && (
+                        node.classList.contains('callout-box') || 
+                        node.tagName === 'FIGURE' || 
+                        node.tagName === 'BLOCKQUOTE' || 
+                        node.tagName === 'PRE' || 
+                        ['H1','H2','H3','H4','P','UL','OL','TABLE'].includes(node.tagName)
+                    )) {
+                        target = node;
+                        break;
+                    }
+                    node = node.parentNode;
+                }
+            }
+
+            if (target) {
+                if (target.tagName === 'FIGURE') {
+                    deleteImgBlock(target);
+                } else {
+                    const tagDesc = target.classList.contains('callout-box') ? 'callout box' : (target.tagName.toLowerCase() + ' section');
+                    if (confirm(`Hapus ${tagDesc} ini?`)) {
+                        target.remove();
+                        if (editor.children.length === 0) {
+                            const p = document.createElement('p');
+                            p.innerHTML = '<br>';
+                            editor.appendChild(p);
+                        }
+                        markUnsaved();
+                        saveArticle();
+                    }
+                }
+            } else {
+                alert('Silakan klik pada gambar, callout box, atau section yang ingin dihapus terlebih dahulu.');
+            }
+        }
+
+        // Auto-Enhancer: Attaches interactive toolbars to all images and callout boxes
+        function enhanceArticleBlocks() {
+            const editors = [document.getElementById('articleBody'), document.getElementById('translatedBody')].filter(Boolean);
+
+            editors.forEach(editor => {
+                // 1. Process figures and images
+                const imgs = editor.querySelectorAll('img:not(.tb-icon)');
+                imgs.forEach(img => {
+                    let figure = img.closest('figure.article-image-block');
+                    if (!figure) {
+                        figure = document.createElement('figure');
+                        figure.className = 'article-image-block text-center';
+                        figure.setAttribute('data-align', 'center');
+                        figure.setAttribute('data-width', 'medium');
+                        figure.setAttribute('contenteditable', 'false');
+
+                        const wrap = document.createElement('div');
+                        wrap.style.cssText = 'position:relative; display:inline-block; max-width:100%;';
+                        
+                        const parentP = img.closest('p');
+                        if (parentP && parentP.parentElement === editor && parentP.textContent.trim() === '') {
+                            parentP.parentNode.replaceChild(figure, parentP);
+                        } else {
+                            img.parentNode.insertBefore(figure, img);
+                        }
+                        wrap.appendChild(img);
+                        figure.appendChild(wrap);
+
+                        const cap = document.createElement('figcaption');
+                        cap.className = 'img-caption';
+                        cap.setAttribute('contenteditable', 'true');
+                        cap.innerText = img.alt || 'Click to edit image caption...';
+                        figure.appendChild(cap);
+
+                        const cred = document.createElement('div');
+                        cred.className = 'img-credit';
+                        cred.setAttribute('contenteditable', 'true');
+                        cred.innerText = 'Credit: Source / Photographer';
+                        figure.appendChild(cred);
+                    }
+
+                    // Ensure overlay exists
+                    let overlay = figure.querySelector('.img-toolbar-overlay');
+                    if (!overlay) {
+                        overlay = document.createElement('div');
+                        overlay.className = 'img-toolbar-overlay';
+                        overlay.setAttribute('contenteditable', 'false');
+                        overlay.innerHTML = `
+                            <span style="color:#94a3b8; font-size:10px; font-weight:700; margin-right:2px;">ALIGN:</span>
+                            <button type="button" class="img-tb-btn" onclick="setImgBlockAlign(this, 'left')">Left</button>
+                            <button type="button" class="img-tb-btn active" onclick="setImgBlockAlign(this, 'center')">Center</button>
+                            <button type="button" class="img-tb-btn" onclick="setImgBlockAlign(this, 'right')">Right</button>
+                            <span style="color:#64748b; font-size:10px; margin:0 2px;">|</span>
+                            <button type="button" class="img-tb-btn" onclick="setImgBlockWidth(this, 'small')">S</button>
+                            <button type="button" class="img-tb-btn active" onclick="setImgBlockWidth(this, 'medium')">M</button>
+                            <button type="button" class="img-tb-btn" onclick="setImgBlockWidth(this, 'large')">L</button>
+                            <button type="button" class="img-tb-btn" onclick="setImgBlockWidth(this, 'full')">Full</button>
+                            <span style="color:#64748b; font-size:10px; margin:0 2px;">|</span>
+                            <button type="button" class="img-tb-btn" style="background:#2563eb; color:#fff;" onclick="insertTextBelowBlock(this)" title="Tambah teks / paragraf di bawah foto"><i class="fa-solid fa-plus"></i> + Teks</button>
+                            <button type="button" class="img-tb-btn" style="background:#dc2626; color:#fff; font-weight:700;" onclick="deleteImgBlock(this)" title="Hapus foto"><i class="fa-solid fa-trash"></i> Hapus</button>
+                        `;
+                        const wrap = figure.querySelector('div') || figure;
+                        if (wrap.style.position !== 'relative') {
+                            wrap.style.position = 'relative';
+                            wrap.style.display = 'inline-block';
+                            wrap.style.maxWidth = '100%';
+                        }
+                        wrap.appendChild(overlay);
+                    }
+
+                    // Ensure editable paragraph follows figure
+                    if (!figure.nextElementSibling || figure.nextElementSibling.tagName !== 'P') {
+                        const spacerP = document.createElement('p');
+                        spacerP.innerHTML = '<br>';
+                        figure.parentNode.insertBefore(spacerP, figure.nextSibling);
+                    }
+                });
+
+                // 2. Process callout boxes
+                editor.querySelectorAll('.callout-box').forEach(box => {
+                    box.setAttribute('contenteditable', 'true');
+                    box.style.position = 'relative';
+                    let bar = box.querySelector('.callout-actions-bar');
+                    if (!bar) {
+                        bar = document.createElement('div');
+                        bar.className = 'callout-actions-bar';
+                        bar.setAttribute('contenteditable', 'false');
+                        bar.innerHTML = `
+                            <button type="button" class="callout-act-btn" onclick="insertTextBelowBlock(this)" title="Tambah paragraf di bawah box ini"><i class="fa-solid fa-plus"></i> + Teks di Bawah</button>
+                            <button type="button" class="callout-act-btn btn-danger" onclick="deleteBlockElement(this)" title="Hapus callout box ini"><i class="fa-solid fa-trash"></i> Hapus Box</button>
+                        `;
+                        box.appendChild(bar);
+                    }
+
+                    // Ensure editable paragraph follows callout box
+                    if (!box.nextElementSibling || box.nextElementSibling.tagName !== 'P') {
+                        const spacerP = document.createElement('p');
+                        spacerP.innerHTML = '<br>';
+                        box.parentNode.insertBefore(spacerP, box.nextSibling);
+                    }
+                });
+            });
         }
 
         // Article Metadata Editor
@@ -2982,11 +4031,11 @@
             const status = document.getElementById('metaStatus').value;
 
             document.getElementById('articleCategoryText').innerText = cat || 'IN-DEPTH EDITORIAL';
-            document.getElementById('articleAuthorText').innerText = author || 'Inpartner Editorial Board';
+            document.getElementById('articleAuthorText').innerText = author || 'Inpartner';
             document.getElementById('articleReadTimeText').innerText = (time || 5) + ' min read';
 
             document.getElementById('sideCategoryDisplay').innerText = cat;
-            document.getElementById('sideAuthorDisplay').innerText = author;
+            document.getElementById('sideAuthorDisplay').innerText = author || 'Inpartner';
             document.getElementById('sideReadTimeDisplay').innerText = time + ' min';
             document.getElementById('sideStatusDisplay').innerText = status;
 
@@ -3229,19 +4278,273 @@
             }
         });
 
-        // WordPress Integration Handlers
-        async function testWpConnect() {
+        // WordPress Multi-Account Storage & Handlers
+        const WP_STORAGE_KEY = 'inpartner_wp_saved_accounts';
+        const WP_ACTIVE_ACCOUNT_KEY = 'inpartner_wp_active_account_id';
+
+        function getSavedWpAccounts() {
+            try {
+                const raw = localStorage.getItem(WP_STORAGE_KEY);
+                return raw ? JSON.parse(raw) : [];
+            } catch(e) {
+                return [];
+            }
+        }
+
+        function saveWpAccountsList(accounts) {
+            localStorage.setItem(WP_STORAGE_KEY, JSON.stringify(accounts));
+        }
+
+        function getActiveWpAccountId() {
+            return localStorage.getItem(WP_ACTIVE_ACCOUNT_KEY) || '';
+        }
+
+        function setActiveWpAccountId(id) {
+            if (id) {
+                localStorage.setItem(WP_ACTIVE_ACCOUNT_KEY, id);
+            } else {
+                localStorage.removeItem(WP_ACTIVE_ACCOUNT_KEY);
+            }
+        }
+
+        function renderWpAccountsDropdown(selectId = null) {
+            const accounts = getSavedWpAccounts();
+            const select = document.getElementById('wpAccountSelect');
+            if (!select) return;
+
+            select.innerHTML = '';
+            if (accounts.length === 0) {
+                const emptyOpt = document.createElement('option');
+                emptyOpt.value = '';
+                emptyOpt.innerText = '-- Belum ada akun tersimpan --';
+                select.appendChild(emptyOpt);
+            } else {
+                const chooseOpt = document.createElement('option');
+                chooseOpt.value = '';
+                chooseOpt.innerText = '-- Pilih Akun Tersimpan --';
+                select.appendChild(chooseOpt);
+
+                accounts.forEach(acc => {
+                    const opt = document.createElement('option');
+                    opt.value = acc.id;
+                    opt.innerText = `${acc.label || acc.username} (${acc.username})`;
+                    select.appendChild(opt);
+                });
+            }
+
+            const customOpt = document.createElement('option');
+            customOpt.value = '__custom__';
+            customOpt.innerText = '⚙️ Input Akun Manual / Akun Lain...';
+            select.appendChild(customOpt);
+
+            // Determine active selection
+            const activeId = selectId || getActiveWpAccountId();
+            const found = accounts.find(a => a.id === activeId);
+
+            if (found) {
+                select.value = found.id;
+                applySelectedWpAccount(found, false);
+            } else if (accounts.length > 0) {
+                select.value = accounts[0].id;
+                applySelectedWpAccount(accounts[0], false);
+            } else {
+                select.value = '__custom__';
+                onWpAccountChange();
+            }
+        }
+
+        function applySelectedWpAccount(acc, autoFetch = true) {
+            document.getElementById('wpUrl').value = acc.url || '';
+            document.getElementById('wpUsername').value = acc.username || '';
+            document.getElementById('wpAppPassword').value = acc.app_password || '';
+
+            const delBtn = document.getElementById('btnDeleteWpAccount');
+            if (delBtn) delBtn.style.display = 'inline-block';
+
+            const infoEl = document.getElementById('wpActiveAccountInfo');
+            const labelEl = document.getElementById('wpActiveAccountLabel');
+            const urlEl = document.getElementById('wpActiveAccountUrl');
+            if (infoEl && labelEl && urlEl) {
+                infoEl.style.display = 'block';
+                labelEl.innerText = acc.label || acc.username;
+                urlEl.innerText = acc.url;
+            }
+
+            setActiveWpAccountId(acc.id);
+            setWpCredentialsCollapsed(true);
+
+            // Auto-fetch categories and authors for this account
+            testWpConnect(autoFetch);
+        }
+
+        function onWpAccountChange() {
+            const select = document.getElementById('wpAccountSelect');
+            const val = select.value;
+            const delBtn = document.getElementById('btnDeleteWpAccount');
+            const infoEl = document.getElementById('wpActiveAccountInfo');
+
+            if (!val || val === '__custom__') {
+                if (delBtn) delBtn.style.display = 'none';
+                if (infoEl) infoEl.style.display = 'none';
+                setActiveWpAccountId('');
+                setWpCredentialsCollapsed(false);
+                document.getElementById('wpMetaContainer').style.display = 'none';
+                const msgEl = document.getElementById('wpStatusMsg');
+                if (msgEl) msgEl.style.display = 'none';
+                return;
+            }
+
+            const accounts = getSavedWpAccounts();
+            const acc = accounts.find(a => a.id === val);
+            if (acc) {
+                applySelectedWpAccount(acc, true);
+            }
+        }
+
+        function setWpCredentialsCollapsed(collapsed) {
+            const inputs = document.getElementById('wpCredsInputs');
+            const toggleBtn = document.getElementById('wpToggleCredsBtn');
+            if (!inputs || !toggleBtn) return;
+            if (collapsed) {
+                inputs.style.display = 'none';
+                toggleBtn.innerHTML = 'Lihat Detail &darr;';
+            } else {
+                inputs.style.display = 'block';
+                toggleBtn.innerHTML = 'Sembunyikan &uarr;';
+            }
+        }
+
+        function toggleWpCredentials() {
+            const inputs = document.getElementById('wpCredsInputs');
+            const isHidden = inputs && (inputs.style.display === 'none' || window.getComputedStyle(inputs).display === 'none');
+            setWpCredentialsCollapsed(!isHidden);
+        }
+
+        function openAddWpAccountModal() {
+            const labelInput = document.getElementById('newWpAccountLabel');
+            const urlInput = document.getElementById('newWpAccountUrl');
+            const usernameInput = document.getElementById('newWpAccountUsername');
+            const passInput = document.getElementById('newWpAccountAppPassword');
+            const msgEl = document.getElementById('newWpAccountMsg');
+
+            if (labelInput) labelInput.value = '';
+            if (urlInput) urlInput.value = 'https://blog.inpartner.id';
+            if (usernameInput) usernameInput.value = '';
+            if (passInput) passInput.value = '';
+            if (msgEl) msgEl.style.display = 'none';
+
+            openModal('addWpAccountModal');
+        }
+
+        async function saveNewWpAccount() {
+            const label = (document.getElementById('newWpAccountLabel').value || '').trim();
+            const url = (document.getElementById('newWpAccountUrl').value || '').trim();
+            const username = (document.getElementById('newWpAccountUsername').value || '').trim();
+            const appPassword = (document.getElementById('newWpAccountAppPassword').value || '').trim();
+            const msgEl = document.getElementById('newWpAccountMsg');
+            const btn = document.getElementById('btnSaveWpAccount');
+
+            if (!url || !username || !appPassword) {
+                msgEl.style.display = 'block';
+                msgEl.style.color = 'var(--negative)';
+                msgEl.innerText = 'Mohon lengkapi WordPress Site URL, Username, dan Application Password.';
+                return;
+            }
+
+            msgEl.style.display = 'block';
+            msgEl.style.color = 'var(--accent)';
+            msgEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menguji koneksi ke WordPress...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/inpartner/api/wordpress/connect', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ wp_url: url, username: username, app_password: appPassword })
+                });
+                const data = await res.json();
+                btn.disabled = false;
+
+                if (data.status === 'success') {
+                    const accounts = getSavedWpAccounts();
+                    const newId = 'wp_' + Date.now();
+                    const newAccount = {
+                        id: newId,
+                        label: label || `Inpartner (${data.user_name || username})`,
+                        url: url,
+                        username: username,
+                        app_password: appPassword
+                    };
+                    accounts.push(newAccount);
+                    saveWpAccountsList(accounts);
+                    setActiveWpAccountId(newId);
+
+                    closeModal('addWpAccountModal');
+                    renderWpAccountsDropdown(newId);
+
+                    const wpMsg = document.getElementById('wpStatusMsg');
+                    if (wpMsg) {
+                        wpMsg.style.display = 'block';
+                        wpMsg.style.color = 'var(--positive)';
+                        wpMsg.innerText = `✓ Akun "${newAccount.label}" berhasil disimpan dan aktif!`;
+                    }
+                } else {
+                    msgEl.style.color = 'var(--negative)';
+                    msgEl.innerText = data.message || 'Koneksi gagal. Periksa kembali URL, username, atau kata sandi aplikasi.';
+                }
+            } catch(e) {
+                btn.disabled = false;
+                msgEl.style.color = 'var(--negative)';
+                msgEl.innerText = 'Koneksi error: ' + e;
+            }
+        }
+
+        function deleteCurrentWpAccount() {
+            const activeId = getActiveWpAccountId();
+            if (!activeId) return;
+
+            const accounts = getSavedWpAccounts();
+            const acc = accounts.find(a => a.id === activeId);
+            const accName = acc ? (acc.label || acc.username) : 'ini';
+
+            if (!confirm(`Hapus akun WordPress "${accName}" dari daftar tersimpan di perangkat ini?`)) {
+                return;
+            }
+
+            const filtered = accounts.filter(a => a.id !== activeId);
+            saveWpAccountsList(filtered);
+            setActiveWpAccountId('');
+
+            renderWpAccountsDropdown();
+
+            const msgEl = document.getElementById('wpStatusMsg');
+            if (msgEl) {
+                msgEl.style.display = 'block';
+                msgEl.style.color = 'var(--muted)';
+                msgEl.innerText = `Akun "${accName}" telah dihapus.`;
+            }
+        }
+
+        async function testWpConnect(isSilent = false) {
             const url = document.getElementById('wpUrl').value.trim();
             const username = document.getElementById('wpUsername').value.trim();
             const appPassword = document.getElementById('wpAppPassword').value.trim();
             const msgEl = document.getElementById('wpStatusMsg');
-            msgEl.style.display = 'block';
-            msgEl.style.color = 'var(--accent)';
-            msgEl.innerText = 'Testing connection to WordPress...';
+            const spinner = document.getElementById('wpConnectSpinner');
+
+            if (spinner) spinner.style.display = 'inline-block';
+            if (!isSilent) {
+                msgEl.style.display = 'block';
+                msgEl.style.color = 'var(--accent)';
+                msgEl.innerText = 'Menghubungkan ke WordPress...';
+            }
 
             if (!url || !username || !appPassword) {
-                msgEl.style.color = 'var(--negative)';
-                msgEl.innerText = 'Please fill in Site URL, Username, and Application Password.';
+                if (spinner) spinner.style.display = 'none';
+                if (!isSilent) {
+                    msgEl.style.color = 'var(--negative)';
+                    msgEl.innerText = 'Silakan isi Site URL, Username, dan Application Password.';
+                }
                 return;
             }
 
@@ -3252,34 +4555,185 @@
                     body: JSON.stringify({ wp_url: url, username: username, app_password: appPassword })
                 });
                 const data = await res.json();
+                if (spinner) spinner.style.display = 'none';
+
                 if (data.status === 'success') {
+                    msgEl.style.display = 'block';
                     msgEl.style.color = 'var(--positive)';
-                    msgEl.innerText = `Connected as ${data.user_name}! Select categories below:`;
+                    msgEl.innerText = `✓ Terhubung sebagai ${data.user_name}! Kategori & penulis otomatis disesuaikan.`;
 
+                    // --- MATCH CATEGORY WITH ARTICLE METADATA ---
                     const catSelect = document.getElementById('wpCategory');
-                    catSelect.innerHTML = '<option value="">Default Category</option>';
-                    data.categories.forEach(c => {
-                        catSelect.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+                    const catHint = document.getElementById('wpCategoryMatchHint');
+                    const catHintName = document.getElementById('wpCatMatchedName');
+                    catSelect.innerHTML = '<option value="">-- Pilih Kategori --</option>';
+
+                    const targetCat = (articleMetaCategory || '').trim().toLowerCase();
+                    let bestCatId = null;
+                    let bestCatName = '';
+
+                    if (data.categories && data.categories.length > 0) {
+                        data.categories.forEach(c => {
+                            const cName = (c.name || '').trim();
+                            const cLower = cName.toLowerCase();
+                            let isMatch = false;
+
+                            if (targetCat) {
+                                if (cLower === targetCat || cLower.includes(targetCat) || targetCat.includes(cLower)) {
+                                    isMatch = true;
+                                }
+                            }
+
+                            if (isMatch && !bestCatId) {
+                                bestCatId = c.id;
+                                bestCatName = cName;
+                            }
+
+                            const opt = document.createElement('option');
+                            opt.value = c.id;
+                            opt.innerText = isMatch ? `✨ ${cName} (Sesuai Metadata)` : cName;
+                            catSelect.appendChild(opt);
+                        });
+                    }
+
+                    if (bestCatId) {
+                        catSelect.value = bestCatId;
+                        if (catHint && catHintName) {
+                            catHint.style.display = 'inline-flex';
+                            catHintName.innerText = bestCatName;
+                        }
+                    } else if (data.categories && data.categories.length > 0) {
+                        catSelect.value = data.categories[0].id;
+                        if (catHint) catHint.style.display = 'none';
+                    }
+
+                    // --- MATCH AUTHOR WITH LOGGED-IN / POSTING ACCOUNT ---
+                    const authSelect = document.getElementById('wpAuthor');
+                    const authHint = document.getElementById('wpAuthorMatchHint');
+                    const authHintName = document.getElementById('wpAuthMatchedName');
+                    authSelect.innerHTML = '';
+
+                    const loggedInUserId = data.user_id ? String(data.user_id) : null;
+                    const loggedInUserName = (data.user_name || '').trim().toLowerCase();
+                    const loggedInUsername = (username || '').trim().toLowerCase();
+                    const metaAuthor = (articleMetaAuthor || '').trim().toLowerCase();
+
+                    // Fallback: pastikan minimal ada 1 penulis dari akun yang sedang login
+                    let authorsList = (data.authors && data.authors.length > 0) ? [...data.authors] : [];
+                    if (authorsList.length === 0) {
+                        authorsList.push({
+                            id: data.user_id || 1,
+                            name: data.user_name || username || 'Admin'
+                        });
+                    }
+
+                    let bestAuthId = null;
+                    let bestAuthName = '';
+
+                    authorsList.forEach(a => {
+                        const aIdStr = String(a.id);
+                        const aName = (a.name || '').trim();
+                        const aLower = aName.toLowerCase();
+                        let isLoginUser = false;
+
+                        // Prioritas 1: Cocokkan ID user dari /wp-json/wp/v2/users/me
+                        if (loggedInUserId && aIdStr === loggedInUserId) {
+                            isLoginUser = true;
+                        }
+                        // Prioritas 2: Cocokkan Display Name akun login
+                        else if (loggedInUserName && (aLower === loggedInUserName || aLower.includes(loggedInUserName))) {
+                            isLoginUser = true;
+                        }
+                        // Prioritas 3: Cocokkan Username akun login
+                        else if (loggedInUsername && (aLower === loggedInUsername || aLower.includes(loggedInUsername))) {
+                            isLoginUser = true;
+                        }
+
+                        if (isLoginUser && !bestAuthId) {
+                            bestAuthId = a.id;
+                            bestAuthName = aName;
+                        }
+
+                        const opt = document.createElement('option');
+                        opt.value = a.id;
+                        opt.innerText = isLoginUser ? `✨ ${aName} (Akun Login Anda)` : aName;
+                        authSelect.appendChild(opt);
                     });
 
-                    const authSelect = document.getElementById('wpAuthor');
-                    authSelect.innerHTML = '<option value="">Default Author</option>';
-                    data.authors.forEach(a => {
-                        authSelect.innerHTML += `<option value="${a.id}">${a.name}</option>`;
-                    });
+                    // Fallback jika belum cocok: cocokkan dengan metadata artikel author
+                    if (!bestAuthId && metaAuthor) {
+                        const fallbackMatch = authorsList.find(a => {
+                            const aLow = (a.name || '').toLowerCase();
+                            return aLow === metaAuthor || aLow.includes(metaAuthor);
+                        });
+                        if (fallbackMatch) {
+                            bestAuthId = fallbackMatch.id;
+                            bestAuthName = fallbackMatch.name;
+                        }
+                    }
+
+                    // Jika masih belum ada, pilih author pertama di daftar
+                    if (!bestAuthId && authorsList.length > 0) {
+                        bestAuthId = authorsList[0].id;
+                        bestAuthName = authorsList[0].name;
+                    }
+
+                    if (bestAuthId) {
+                        authSelect.value = bestAuthId;
+                        if (authHint && authHintName) {
+                            authHint.style.display = 'inline-flex';
+                            authHintName.innerText = bestAuthName;
+                        }
+                    }
+
+                    authSelect.onchange = function() {
+                        const opt = authSelect.options[authSelect.selectedIndex];
+                        if (opt && opt.value && authHint && authHintName) {
+                            authHint.style.display = 'inline-flex';
+                            authHintName.innerText = opt.text.replace(/^[✨\s]+/, '').replace(/\s*\(.*?\)$/, '');
+                        } else if (authHint) {
+                            authHint.style.display = 'none';
+                        }
+                    };
+
+                    catSelect.onchange = function() {
+                        const opt = catSelect.options[catSelect.selectedIndex];
+                        if (opt && opt.value && catHint && catHintName) {
+                            catHint.style.display = 'inline-flex';
+                            catHintName.innerText = opt.text.replace(/^[✨\s]+/, '').replace(/\s*\(.*?\)$/, '');
+                        } else if (catHint) {
+                            catHint.style.display = 'none';
+                        }
+                    };
 
                     document.getElementById('wpMetaContainer').style.display = 'block';
                 } else {
-                    msgEl.style.color = 'var(--negative)';
-                    msgEl.innerText = data.message || 'WordPress connection failed.';
+                    if (!isSilent) {
+                        msgEl.style.display = 'block';
+                        msgEl.style.color = 'var(--negative)';
+                        msgEl.innerText = data.message || 'Koneksi ke WordPress gagal.';
+                    }
                 }
             } catch (e) {
-                msgEl.style.color = 'var(--negative)';
-                msgEl.innerText = 'Error: ' + e;
+                if (spinner) spinner.style.display = 'none';
+                if (!isSilent) {
+                    msgEl.style.display = 'block';
+                    msgEl.style.color = 'var(--negative)';
+                    msgEl.innerText = 'Error koneksi: ' + e;
+                }
             }
         }
 
         async function submitWordPressSync() {
+            // Auto-save current editor state to DB before syncing to WordPress
+            try {
+                if (typeof saveArticle === 'function') {
+                    await saveArticle();
+                }
+            } catch (saveErr) {
+                console.warn('Auto-save prior to WP sync encountered notice:', saveErr);
+            }
+
             const url = document.getElementById('wpUrl').value.trim();
             const username = document.getElementById('wpUsername').value.trim();
             const appPassword = document.getElementById('wpAppPassword').value.trim();
@@ -3294,8 +4748,11 @@
 
             msgEl.style.display = 'block';
             msgEl.style.color = 'var(--accent)';
-            msgEl.innerText = 'Syncing article to WordPress...';
+            msgEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sedang mempublikasikan artikel ke WordPress...';
             btn.disabled = true;
+
+            const includeBodyHero = document.getElementById('wpIncludeBodyHero') ? document.getElementById('wpIncludeBodyHero').checked : true;
+            const setFeaturedImage = document.getElementById('wpSetFeaturedImage') ? document.getElementById('wpSetFeaturedImage').checked : false;
 
             try {
                 const res = await fetch(`/inpartner/api/article/${articleId}/publish-wordpress`, {
@@ -3308,21 +4765,46 @@
                         status: status,
                         category_id: categoryId ? parseInt(categoryId) : null,
                         author_id: authorId ? parseInt(authorId) : null,
-                        lang: langParam
+                        lang: langParam,
+                        include_hero_in_body: includeBodyHero,
+                        set_featured_image: setFeaturedImage
                     })
                 });
 
-                const data = await res.json();
+                const resText = await res.text();
+                let data = null;
+                try {
+                    data = JSON.parse(resText);
+                } catch (jsonErr) {
+                    throw new Error(`Server ${res.status}: ${resText.slice(0, 150)}`);
+                }
                 btn.disabled = false;
 
-                if (data.status === 'success') {
+                if (res.ok && data.status === 'success') {
+                    const cleanWpUrl = (url || '').replace(/\/+$/, '');
+                    const editUrl = data.edit_link || `${cleanWpUrl}/wp-admin/post.php?post=${data.post_id}&action=edit`;
+                    const viewUrl = data.post_link || `${cleanWpUrl}/?p=${data.post_id}`;
+
                     msgEl.style.color = 'var(--positive)';
-                    msgEl.innerHTML = `✓ ${data.message}! <a href="${data.post_link}" target="_blank" style="color:var(--accent);">View Post &rarr;</a>`;
+                    msgEl.innerHTML = `
+                        <div style="display:flex; flex-direction:column; gap:6px;">
+                            <div style="font-weight:600;">✓ ${data.message}!</div>
+                            <div style="display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:4px; font-size:0.83rem;">
+                                <a href="${editUrl}" target="_blank" style="color:#21759b; font-weight:700; text-decoration:underline; display:inline-flex; align-items:center; gap:4px;">
+                                    <i class="fa-brands fa-wordpress"></i> Buka Editor WP Admin &rarr;
+                                </a>
+                                <span style="color:#cbd5e1;">|</span>
+                                <a href="${viewUrl}" target="_blank" style="color:var(--muted); text-decoration:underline;">
+                                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Lihat Postingan Publik
+                                </a>
+                            </div>
+                        </div>
+                    `;
                     document.getElementById('wpSyncStatusBadge').className = 'badge-status';
                     document.getElementById('wpSyncStatusBadge').innerText = 'WP ' + data.wordpress_status.toUpperCase();
                 } else {
                     msgEl.style.color = 'var(--negative)';
-                    msgEl.innerText = data.message || 'Sync to WordPress failed.';
+                    msgEl.innerText = data.message || 'Gagal sinkronisasi ke WordPress.';
                 }
             } catch (e) {
                 btn.disabled = false;
@@ -3392,6 +4874,7 @@
                 if (transOpt) transOpt.style.display = 'none';
                 if (langSelect) langSelect.value = 'original';
             }
+            renderWpAccountsDropdown();
             openModal('wpModal');
         }
 
@@ -3407,13 +4890,202 @@
             });
         });
 
-        // Prevent Accidental Unsaved Navigation
-        window.addEventListener('beforeunload', function (e) {
-            if (hasUnsavedChanges) {
-                e.preventDefault();
-                e.returnValue = '';
+        // -------------------------------------------------------------
+        // SEO & READABILITY WORKSPACE INTEGRATION
+        // -------------------------------------------------------------
+        const API_PREFIX = window.location.pathname.startsWith('/inpartner') ? '/inpartner' : '';
+
+        async function runArticleAudit(artId) {
+            const btn = document.getElementById('btnSideAudit');
+            const originalHtml = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Auditing...`;
             }
-        });
+
+            try {
+                const res = await fetch(`${API_PREFIX}/api/article/${artId}/seo-audit`, { method: 'POST' });
+                const data = await res.json();
+                const isSuccess = (data.success === true || data.status === 'success');
+                const audit = data.audit || data;
+
+                if (isSuccess && audit && (audit.seo_score !== undefined || audit.seo_status)) {
+                    const seoScore = audit.seo_score !== undefined ? audit.seo_score : 0;
+                    const seoStatus = (audit.seo_status || 'ok').toLowerCase();
+                    const readScore = audit.readability_score !== undefined ? audit.readability_score : 0;
+                    const readStatus = (audit.readability_status || 'ok').toLowerCase();
+
+                    // Update SEO score pill
+                    const seoPill = document.getElementById('sideSeoScorePill');
+                    if (seoPill) {
+                        seoPill.innerHTML = `
+                            <span class="score-pill score-${seoStatus}">
+                                <span class="yoast-bullet bullet-${seoStatus}"></span> ${seoScore}/100
+                            </span>
+                        `;
+                    }
+                    // Update Readability score pill
+                    const readPill = document.getElementById('sideReadScorePill');
+                    if (readPill) {
+                        readPill.innerHTML = `
+                            <span class="score-pill score-${readStatus}">
+                                <span class="yoast-bullet bullet-${readStatus}"></span> ${readScore}/100
+                            </span>
+                        `;
+                    }
+                    // Update focus keyphrase
+                    const fkEl = document.getElementById('sideFocusKeyphrase');
+                    const fkVal = audit.focus_keyphrase || (audit.seo_details && audit.seo_details.focus_keyphrase) || (audit.metrics && audit.metrics.seo && audit.metrics.seo.focus_keyphrase);
+                    if (fkEl && fkVal) {
+                        fkEl.textContent = fkVal;
+                    }
+
+                    // Update breakdown
+                    const rDet = audit.readability_details || (audit.metrics ? audit.metrics.readability : {}) || {};
+                    const sDet = audit.seo_details || (audit.metrics ? audit.metrics.seo : {}) || {};
+                    const breakdown = document.getElementById('sideAuditBreakdownContent');
+                    if (breakdown) {
+                        breakdown.innerHTML = `
+                            <div style="font-weight: 700; font-size: 0.75rem; color: var(--muted); text-transform: uppercase; margin-bottom: 4px;">Readability</div>
+                            <div class="seo-criteria-row">
+                                <span class="yoast-bullet bullet-${(rDet.sentence_length && rDet.sentence_length.status) || 'ok'}"></span>
+                                <div>
+                                    <div class="criteria-label">Sentence Length</div>
+                                    <div class="criteria-msg">${(rDet.sentence_length && (rDet.sentence_length.message || rDet.sentence_length.target)) || 'Target: <= 25% > 20 words'}</div>
+                                </div>
+                            </div>
+                            <div class="seo-criteria-row">
+                                <span class="yoast-bullet bullet-${(rDet.transition_words && rDet.transition_words.status) || 'ok'}"></span>
+                                <div>
+                                    <div class="criteria-label">Transition Words</div>
+                                    <div class="criteria-msg">${(rDet.transition_words && (rDet.transition_words.message || rDet.transition_words.target)) || 'Target: >= 30% of sentences'}</div>
+                                </div>
+                            </div>
+                            <div class="seo-criteria-row">
+                                <span class="yoast-bullet bullet-${(rDet.passive_voice && rDet.passive_voice.status) || 'ok'}"></span>
+                                <div>
+                                    <div class="criteria-label">Passive Voice</div>
+                                    <div class="criteria-msg">${(rDet.passive_voice && (rDet.passive_voice.message || rDet.passive_voice.target)) || 'Target: <= 10% of sentences'}</div>
+                                </div>
+                            </div>
+                            <div class="seo-criteria-row">
+                                <span class="yoast-bullet bullet-${(rDet.subheading_distribution && rDet.subheading_distribution.status) || 'ok'}"></span>
+                                <div>
+                                    <div class="criteria-label">Subheadings</div>
+                                    <div class="criteria-msg">${(rDet.subheading_distribution && (rDet.subheading_distribution.message || rDet.subheading_distribution.target)) || 'Sections <= 300 words'}</div>
+                                </div>
+                            </div>
+
+                            <div style="font-weight: 700; font-size: 0.75rem; color: var(--muted); text-transform: uppercase; margin: 8px 0 4px 0;">SEO &amp; Keyphrase</div>
+                            <div class="seo-criteria-row">
+                                <span class="yoast-bullet bullet-${(sDet.keyphrase_in_title && sDet.keyphrase_in_title.status) || 'ok'}"></span>
+                                <div>
+                                    <div class="criteria-label">Keyphrase in Title</div>
+                                    <div class="criteria-msg">${(sDet.keyphrase_in_title && (sDet.keyphrase_in_title.message || sDet.keyphrase_in_title.target)) || 'Title match'}</div>
+                                </div>
+                            </div>
+                            <div class="seo-criteria-row">
+                                <span class="yoast-bullet bullet-${(sDet.keyphrase_in_intro && sDet.keyphrase_in_intro.status) || 'ok'}"></span>
+                                <div>
+                                    <div class="criteria-label">Keyphrase in Intro</div>
+                                    <div class="criteria-msg">${(sDet.keyphrase_in_intro && (sDet.keyphrase_in_intro.message || sDet.keyphrase_in_intro.target)) || 'First paragraph'}</div>
+                                </div>
+                            </div>
+                            <div class="seo-criteria-row">
+                                <span class="yoast-bullet bullet-${(sDet.keyphrase_density && sDet.keyphrase_density.status) || 'ok'}"></span>
+                                <div>
+                                    <div class="criteria-label">Keyphrase Density</div>
+                                    <div class="criteria-msg">${(sDet.keyphrase_density && (sDet.keyphrase_density.message || sDet.keyphrase_density.target)) || 'Optimal 0.5% - 2.5%'}</div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    const detailsEl = document.getElementById('sideAuditDetails');
+                    if (detailsEl) detailsEl.open = true;
+
+                    alert(`✓ Audit complete!\nYoast SEO: ${seoScore}/100 (${seoStatus.toUpperCase()})\nReadability: ${readScore}/100 (${readStatus.toUpperCase()})`);
+                } else {
+                    alert('Gagal audit: ' + (data.message || data.error || 'Terjadi kesalahan saat memproses data'));
+                }
+            } catch (err) {
+                console.error('Audit error:', err);
+                alert('Gagal menjalankan audit: ' + err);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalHtml;
+                }
+            }
+        }
+
+        async function runArticleOptimize(artId) {
+            if (!confirm("Run automated iterative AI optimization on this article to improve Yoast SEO and readability scores?")) return;
+            const btn = document.getElementById('btnSideOptimize');
+            const originalHtml = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Optimizing... (15-20s)`;
+            }
+
+            try {
+                const res = await fetch(`${API_PREFIX}/api/article/${artId}/seo-optimize`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ max_iterations: 2 })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    const initSeo = (data.initial_scores && (data.initial_scores.seo !== undefined ? data.initial_scores.seo : data.initial_scores.seo_score)) || 0;
+                    const finSeo = (data.final_scores && (data.final_scores.seo !== undefined ? data.final_scores.seo : data.final_scores.seo_score)) || 0;
+                    const initRead = (data.initial_scores && (data.initial_scores.readability !== undefined ? data.initial_scores.readability : data.initial_scores.readability_score)) || 0;
+                    const finRead = (data.final_scores && (data.final_scores.readability !== undefined ? data.final_scores.readability : data.final_scores.readability_score)) || 0;
+                    alert(`✓ Optimization complete!\nSEO: ${initSeo} → ${finSeo}\nReadability: ${initRead} → ${finRead}\n\nPage will refresh to show revised content and updated metrics.`);
+                    window.location.reload();
+                } else {
+                    alert('Optimization failed: ' + (data.message || data.error || 'Unknown error'));
+                }
+            } catch (err) {
+                console.error('Optimization error:', err);
+                alert('Terjadi kesalahan saat optimasi: ' + err);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalHtml;
+                }
+            }
+        }
+
+        async function reSyncArticleWp(artId) {
+            if (!confirm("Re-sync this article to its existing WordPress post on blog.inpartner.id? This will safely update the post without creating duplicates.")) return;
+            const btn = document.getElementById('btnSideWpSync');
+            const originalHtml = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Syncing...`;
+            }
+
+            try {
+                const res = await fetch(`${API_PREFIX}/api/admin/seo/re-sync/${artId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ force_publish: false })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert(`✓ Successfully re-synced to WordPress Post #${data.post_id}!\nOperation: ${data.operation}\nYoast SEO metadata has been updated.`);
+                } else {
+                    alert('WordPress re-sync failed: ' + (data.error || 'Unknown error'));
+                }
+            } catch (err) {
+                console.error('Re-sync error:', err);
+                alert('Terjadi kesalahan saat re-sync WordPress: ' + err);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalHtml;
+                }
+            }
+        }
     </script>
 </body>
 </html>
