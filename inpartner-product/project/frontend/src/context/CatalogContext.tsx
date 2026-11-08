@@ -31,14 +31,14 @@ export const CatalogProvider: React.FC<{ children: ReactNode }> = ({ children })
     setLoading(true);
     try {
       const res = await api.get('/home');
-      const d = res.data;
-      setBanners(d.banners || []);
-      setPopular(d.popular || []);
-      setLatest(d.latest || []);
-      setFeatured(d.featured || []);
-      setCategories(d.categories || []);
-      setAuthors(d.authors || []);
-      setStats(d.stats || {});
+      const d = res.data || {};
+      setBanners(Array.isArray(d.banners) ? d.banners : []);
+      setPopular(Array.isArray(d.popular) ? d.popular : []);
+      setLatest(Array.isArray(d.latest) ? d.latest : []);
+      setFeatured(Array.isArray(d.featured) ? d.featured : []);
+      setCategories(Array.isArray(d.categories) ? d.categories : Array.isArray(d.data) ? d.data : []);
+      setAuthors(Array.isArray(d.authors) ? d.authors : []);
+      setStats(d.stats && typeof d.stats === 'object' ? d.stats : {});
       setFetched(true);
     } catch (e) {
       console.error('Fetch home catalog error', e);

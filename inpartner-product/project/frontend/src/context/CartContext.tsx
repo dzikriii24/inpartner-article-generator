@@ -34,7 +34,14 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setLoading(true);
     try {
       const res = await api.get('/cart');
-      setItems(res.data.items || res.data.data || []);
+      const list = Array.isArray(res.data?.items)
+        ? res.data.items
+        : Array.isArray(res.data?.data)
+        ? res.data.data
+        : Array.isArray(res.data)
+        ? res.data
+        : [];
+      setItems(list);
     } catch {
       setItems([]);
     } finally {

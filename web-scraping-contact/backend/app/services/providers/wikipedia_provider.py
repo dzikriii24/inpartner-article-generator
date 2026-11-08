@@ -21,7 +21,7 @@ class WikipediaProvider:
                 "srsearch": company_name,
                 "format": "json"
             }
-            resp = requests.get(self.BASE_URL, params=params, headers=self.HEADERS, timeout=8)
+            resp = requests.get(self.BASE_URL, params=params, headers=self.HEADERS, timeout=4)
             if resp.status_code != 200:
                 return None
             
@@ -59,7 +59,7 @@ class WikipediaProvider:
                 "titles": title,
                 "format": "json"
             }
-            p_resp = requests.get(self.BASE_URL, params=p_params, headers=self.HEADERS, timeout=8)
+            p_resp = requests.get(self.BASE_URL, params=p_params, headers=self.HEADERS, timeout=4)
             p_data = p_resp.json()
             pages = p_data.get("query", {}).get("pages", {})
             if not pages:
@@ -76,7 +76,7 @@ class WikipediaProvider:
                 "prop": "wikitext",
                 "format": "json"
             }
-            info_resp = requests.get(self.BASE_URL, params=info_params, headers=self.HEADERS, timeout=8)
+            info_resp = requests.get(self.BASE_URL, params=info_params, headers=self.HEADERS, timeout=4)
             wikitext = ""
             if info_resp.status_code == 200:
                 wikitext = info_resp.json().get("parse", {}).get("wikitext", {}).get("*", "")

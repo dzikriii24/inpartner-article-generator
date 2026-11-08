@@ -41,8 +41,8 @@ def list_companies(
     status: Optional[str] = None,
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),
-    sort_by: str = Query("updated_at", regex="^(created_at|updated_at|input_name|matching_confidence)$"),
-    sort_order: str = Query("desc", regex="^(asc|desc)$"),
+    sort_by: str = Query("updated_at", pattern="^(created_at|updated_at|input_name|matching_confidence)$"),
+    sort_order: str = Query("desc", pattern="^(asc|desc)$"),
     db: Session = Depends(get_db)
 ):
     query = db.query(Company)
@@ -94,6 +94,7 @@ def list_companies(
             "matching_confidence": comp.matching_confidence,
             "search_status": comp.search_status or ("COMPLETED" if len(comp.contacts) > 0 else "PARTIAL"),
             "total_contacts": len(comp.contacts),
+            "total_professionals": len(comp.professionals) if hasattr(comp, 'professionals') else 0,
             "created_at": comp.created_at.isoformat() if comp.created_at else None,
             "updated_at": comp.updated_at.isoformat() if comp.updated_at else None,
         })
@@ -105,6 +106,25 @@ def list_companies(
         "limit": limit,
         "total_pages": (total + limit - 1) // limit
     }
+
+@router.get("/autocomplete")
+def autocomplete(q: str = Query(..., min_length=1), db: Session = Depends(get_db)):
+    """Suggest companies based on previously stored entries."""
+    if not q or len(q.strip()) < 1:
+        return {"suggestions": []}
+    term = f"%{q.strip()}%"
+    matches = db.query(Company.input_name, Company.official_name, Company.domain)\
+        .filter(or_(Company.input_name.ilike(term), Company.official_name.ilike(term)))\
+        .limit(8).all()
+
+    suggestions = []
+    for m in matches:
+        suggestions.append({
+            "name": m.official_name or m.input_name,
+            "input_name": m.input_name,
+            "domain": m.domain
+        })
+    return {"suggestions": suggestions}
 
 @router.get("/{company_id}")
 def get_company(company_id: int, db: Session = Depends(get_db)):
@@ -138,6 +158,39 @@ def get_company(company_id: int, db: Session = Depends(get_db)):
             "created_at": c.created_at.isoformat() if c.created_at else None
         })
 
+    professionals = []
+    for p in (comp.professionals or []):
+        professionals.append({
+            "id": p.id,
+            "company_id": p.company_id,
+            "person_name": p.person_name,
+            "job_title": p.job_title,
+            "normalized_title": p.normalized_title,
+            "department": p.department,
+            "seniority_level": p.seniority_level,
+            "profile_url": p.profile_url,
+            "contact_email": p.contact_email,
+            "contact_phone": p.contact_phone,
+            "source_url": p.source_url,
+            "source_type": p.source_type,
+            "source_page_title": p.source_page_title,
+            "evidence_text": p.evidence_text,
+            "extraction_method": p.extraction_method,
+            "verification_status": p.verification_status,
+            "confidence_score": p.confidence_score,
+            "relevance_score": p.relevance_score,
+            "relevance_reason": p.relevance_reason,
+            "outreach_status": p.outreach_status,
+            "is_do_not_contact": bool(p.is_do_not_contact),
+            "outreach_notes": p.outreach_notes,
+            "last_contacted_at": p.last_contacted_at.isoformat() if p.last_contacted_at else None,
+            "next_followup_at": p.next_followup_at.isoformat() if p.next_followup_at else None,
+            "discovery_date": p.discovery_date.isoformat() if p.discovery_date else None,
+            "last_verified_at": p.last_verified_at.isoformat() if p.last_verified_at else None,
+            "created_at": p.created_at.isoformat() if p.created_at else None,
+            "updated_at": p.updated_at.isoformat() if p.updated_at else None
+        })
+
     return {
         "id": comp.id,
         "input_name": comp.input_name,
@@ -157,7 +210,10 @@ def get_company(company_id: int, db: Session = Depends(get_db)):
         "data_quality_notes": comp.data_quality_notes,
         "created_at": comp.created_at.isoformat() if comp.created_at else None,
         "updated_at": comp.updated_at.isoformat() if comp.updated_at else None,
-        "contacts": contacts
+        "total_contacts": len(contacts),
+        "total_professionals": len(professionals),
+        "contacts": contacts,
+        "professionals": professionals
     }
 
 @router.patch("/{company_id}")

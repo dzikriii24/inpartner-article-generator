@@ -29,6 +29,7 @@ class ExportService:
         
         # Styles
         navy_header_fill = PatternFill(start_color="0F172A", end_color="0F172A", fill_type="solid")
+        fuchsia_header_fill = PatternFill(start_color="581C87", end_color="581C87", fill_type="solid")
         blue_header_fill = PatternFill(start_color="1E3A8A", end_color="1E3A8A", fill_type="solid")
         slate_header_fill = PatternFill(start_color="334155", end_color="334155", fill_type="solid")
         
@@ -54,7 +55,7 @@ class ExportService:
         overview_headers = [
             "Company ID", "Input Name", "Official Name", "Website", "Domain",
             "Industry", "Primary Address", "Primary Email", "Primary Phone", "WhatsApp",
-            "Search Status", "Data Quality Summary", "Confidence", "Total Contacts", "Last Updated"
+            "Search Status", "Data Quality Summary", "Confidence", "Decision Makers", "Total Contacts", "Last Updated"
         ]
         ws_overview.append(overview_headers)
 
@@ -65,6 +66,8 @@ class ExportService:
             cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=False)
 
         total_contacts_count = 0
+        total_professionals_count = 0
+        all_professionals_rows = []
         all_contacts_rows = []
         audit_rows = []
 
@@ -75,6 +78,31 @@ class ExportService:
 
             verified_contacts_count = 0
             unverified_contacts_count = 0
+
+            # Gather professionals
+            profs = getattr(comp, "professionals", []) or []
+            for p in profs:
+                all_professionals_rows.append([
+                    comp.input_name,
+                    comp.official_name or comp.input_name,
+                    p.person_name,
+                    p.job_title,
+                    p.department or "-",
+                    p.seniority_level or "-",
+                    p.profile_url or "-",
+                    p.contact_email or "-",
+                    p.contact_phone or "-",
+                    (p.verification_status or "UNVERIFIED").replace("_", " ").title(),
+                    f"{int((p.relevance_score or 0.8) * 100)}%",
+                    p.relevance_reason or "-",
+                    p.outreach_status or "NEW_LEAD",
+                    "YES" if p.is_do_not_contact else "NO",
+                    p.outreach_notes or "-",
+                    p.source_url or comp.website or "-",
+                    p.evidence_text or "-",
+                    p.last_verified_at.strftime("%Y-%m-%d %H:%M") if p.last_verified_at else "-"
+                ])
+                total_professionals_count += 1
 
             for c in comp.contacts:
                 if c.email and not primary_email:
@@ -90,7 +118,7 @@ class ExportService:
                 else:
                     unverified_contacts_count += 1
 
-                # Collect row for Sheet 2: All Contacts
+                # Collect row for Sheet 3: General Contacts
                 contact_val = c.email or c.phone or c.address or c.url or c.raw_value or ""
                 all_contacts_rows.append([
                     comp.input_name,
@@ -110,7 +138,7 @@ class ExportService:
                 ])
                 total_contacts_count += 1
 
-            # Parse audit metadata for Sheet 3
+            # Parse audit metadata for Sheet 4
             meta = {}
             if comp.audit_metadata:
                 try:
@@ -157,6 +185,7 @@ class ExportService:
                 comp.search_status or ("COMPLETED" if len(comp.contacts) > 0 else "PARTIAL"),
                 quality_summary,
                 f"{int((comp.matching_confidence or 0.5) * 100)}%",
+                len(profs),
                 len(comp.contacts),
                 comp.updated_at.strftime("%Y-%m-%d %H:%M") if comp.updated_at else "-"
             ]
@@ -192,9 +221,55 @@ class ExportService:
             ws_overview.column_dimensions[col_letter].width = min(max(max_len + 3, 12), 40)
 
         # -------------------------------------------------------------
-        # SHEET 2: All Contacts (with Evidence)
+        # SHEET 2: HR & Decision Makers
         # -------------------------------------------------------------
-        ws_details = wb.create_sheet(title="All Contacts")
+        ws_profs = wb.create_sheet(title="HR & Decision Makers")
+        ws_profs.views.sheetView[0].showGridLines = True
+
+        prof_headers = [
+            "Company Input Name", "Official Company Name", "Person Name", "Job Title",
+            "Department", "Seniority Level", "Profile URL", "Business Email", "Business Phone",
+            "Verification Status", "Relevance Score", "Relevance Reason", "Outreach Status",
+            "Do Not Contact", "Outreach Notes", "Source URL", "Evidence Text", "Last Verified"
+        ]
+        ws_profs.append(prof_headers)
+
+        for col_idx in range(1, len(prof_headers) + 1):
+            cell = ws_profs.cell(row=1, column=col_idx)
+            cell.fill = fuchsia_header_fill
+            cell.font = header_font
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+
+        for r_idx, p_row in enumerate(all_professionals_rows, start=2):
+            ws_profs.append(p_row)
+            for c_idx in range(1, len(prof_headers) + 1):
+                cell = ws_profs.cell(row=r_idx, column=c_idx)
+                cell.font = regular_font
+                cell.border = thin_border
+                if r_idx % 2 == 0:
+                    cell.fill = zebra_fill
+                
+                # Clickable profile URL or source URL
+                if c_idx in [7, 16] and str(cell.value).startswith("http"):
+                    cell.hyperlink = str(cell.value)
+                    cell.font = link_font
+
+        ws_profs.freeze_panes = "A2"
+        ws_profs.auto_filter.ref = ws_profs.dimensions
+
+        for col in ws_profs.columns:
+            max_len = 0
+            col_letter = get_column_letter(col[0].column)
+            for cell in col:
+                val_str = str(cell.value or "")
+                if len(val_str) > max_len:
+                    max_len = len(val_str)
+            ws_profs.column_dimensions[col_letter].width = min(max(max_len + 3, 12), 45)
+
+        # -------------------------------------------------------------
+        # SHEET 3: General Contacts (with Evidence)
+        # -------------------------------------------------------------
+        ws_details = wb.create_sheet(title="Company Contacts")
         ws_details.views.sheetView[0].showGridLines = True
 
         detail_headers = [
@@ -237,12 +312,10 @@ class ExportService:
             col_letter = get_column_letter(col[0].column)
             for cell in col:
                 val_str = str(cell.value or "")
-                if len(val_str) > max_len:
-                    max_len = len(val_str)
             ws_details.column_dimensions[col_letter].width = min(max(max_len + 3, 12), 45)
 
         # -------------------------------------------------------------
-        # SHEET 3: Search Audit
+        # SHEET 4: Search Audit
         # -------------------------------------------------------------
         ws_audit = wb.create_sheet(title="Search Audit")
         ws_audit.views.sheetView[0].showGridLines = True

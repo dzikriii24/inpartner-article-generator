@@ -33,6 +33,15 @@ Artisan::command('store:expire-orders', function () {
     $this->info("{$count} order(s) expired.");
 })->purpose('Mark pending orders past their payment window as expired');
 
+/*
+| Seed Thematic Research Flagship Product.
+*/
+Artisan::command('store:seed-thematic', function () {
+    require_once database_path('seeders/ThematicProductSeeder.php');
+    (new \Database\Seeders\ThematicProductSeeder())->run();
+    $this->info('Thematic product seeded successfully.');
+})->purpose('Seed the flagship Thematic Research & Macro Outlook product');
+
 if (config('services.article_generator.auto_sync')) {
     Schedule::command('store:sync-articles --trigger=schedule')->everyFifteenMinutes()->withoutOverlapping();
 }

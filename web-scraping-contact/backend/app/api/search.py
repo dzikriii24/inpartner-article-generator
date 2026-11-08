@@ -43,10 +43,13 @@ def batch_search_companies(payload: BatchSearchRequest, db: Session = Depends(ge
     return {"results": results}
 
 @router.get("/companies/autocomplete")
-def autocomplete(q: str = Query(..., min_length=2), db: Session = Depends(get_db)):
+def autocomplete(q: str = Query(..., min_length=1), db: Session = Depends(get_db)):
     """Suggest companies based on previously stored entries."""
+    if not q or len(q.strip()) < 1:
+        return {"suggestions": []}
+    term = f"%{q.strip()}%"
     matches = db.query(Company.input_name, Company.official_name, Company.domain)\
-        .filter(Company.input_name.ilike(f"%{q}%"))\
+        .filter(Company.input_name.ilike(term))\
         .limit(8).all()
 
     suggestions = []

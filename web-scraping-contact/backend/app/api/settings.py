@@ -38,6 +38,24 @@ def get_system_settings(db: Session = Depends(get_db)) -> Dict[str, Any]:
         {"name": f"Gemini AI Grounded Synthesis ({ai_model})", "status": ai_status, "tier": "Priority 3"},
     ]
 
+    # 4. Lightweight Server Resource Metrics
+    resource_info = {}
+    try:
+        import resource
+        import os
+        usage = resource.getrusage(resource.RUSAGE_SELF)
+        mem_rss_mb = round(usage.ru_maxrss / 1024.0, 2)
+        load_avg = os.getloadavg() if hasattr(os, "getloadavg") else (0.0, 0.0, 0.0)
+        resource_info = {
+            "worker_rss_mb": mem_rss_mb,
+            "load_1m": round(load_avg[0], 2),
+            "load_5m": round(load_avg[1], 2),
+            "load_15m": round(load_avg[2], 2),
+            "pid": os.getpid()
+        }
+    except Exception:
+        resource_info = {"worker_rss_mb": None}
+
     return {
         "database": {
             "status": db_status,
@@ -46,6 +64,7 @@ def get_system_settings(db: Session = Depends(get_db)) -> Dict[str, Any]:
             "pool_pre_ping": True,
             "pool_recycle_sec": 3600
         },
+        "resources": resource_info,
         "ai_provider": {
             "provider": "Google Gemini AI",
             "status": ai_status,

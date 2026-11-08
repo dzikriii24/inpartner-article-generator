@@ -12,6 +12,12 @@ use Illuminate\Support\Str;
 class Product extends Model
 {
     public const TYPES = [
+        'thematic_research' => 'Thematic Research',
+        'insight' => 'Sector Insight',
+        'sector_insight' => 'Sector Insight',
+        'data' => 'Data Series & Stats',
+        'data_series' => 'Data Series & Stats',
+        'custom_analysis' => 'Custom Analysis',
         'article' => 'Article',
         'ebook' => 'Ebook',
         'journal' => 'Journal',
@@ -20,8 +26,18 @@ class Product extends Model
         'digital_file' => 'Digital File',
     ];
 
+    public const ACCESS_LEVELS = [
+        'free', 'entry', 'professional', 'enterprise',
+        // Admin aliases
+        'public_free', 'registered', 'individual_analyst', 'corporate_pro', 'enterprise_bespoke'
+    ];
+
     public const STATUSES = ['draft', 'published', 'unpublished', 'archived'];
-    public const ACCESS_TYPES = ['read', 'download', 'read_download'];
+    public const ACCESS_TYPES = [
+        'read', 'download', 'read_download',
+        // Admin aliases
+        'read_and_download', 'both'
+    ];
 
     public const SOURCE_MANUAL = 'manual';
     public const SOURCE_GENERATOR = 'article_generator';
@@ -34,6 +50,8 @@ class Product extends Model
             'tags' => 'array',
             'seo' => 'array',
             'sources' => 'array',
+            'chapters' => 'array',
+            'translations' => 'array',
             'is_featured' => 'boolean',
             'price' => 'integer',
             'sale_price' => 'integer',
@@ -86,6 +104,32 @@ class Product extends Model
         return $this->hasMany(OrderItem::class);
     }
 
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    public function wishlists(): HasMany
+    {
+        return $this->hasMany(Wishlist::class);
+    }
+
+    public function averageRating(): ?float
+    {
+        $avg = $this->reviews()->where('status', 'approved')->avg('rating');
+        return $avg !== null ? (float) round($avg, 1) : null;
+    }
+
+    public function reviewsCount(): int
+    {
+        return (int) $this->reviews()->where('status', 'approved')->count();
+    }
+
+    public function hasExcelFile(): bool
+    {
+        return !empty($this->excel_file_path);
+    }
+
     // ---------------------------------------------------------------- scopes
 
     public function scopePublished(Builder $q): Builder
@@ -124,9 +168,26 @@ class Product extends Model
         return $this->finalPrice() === 0;
     }
 
+    public function hasValidPdf(): bool
+    {
+        if (! empty($this->file_path) && Storage::disk('local')->exists($this->file_path)) {
+            return true;
+        }
+
+        if (! empty($this->external_pdf_url) && ! Str::contains($this->external_pdf_url, ['127.0.0.1', 'localhost'])) {
+            return true;
+        }
+
+        return false;
+    }
+
     public function canRead(): bool
     {
-        return in_array($this->access_type, ['read', 'read_download'], true) && ! empty($this->content_html);
+        if (! in_array($this->access_type, ['read', 'read_download'], true)) {
+            return false;
+        }
+
+        return ! empty($this->content_html) || $this->hasValidPdf();
     }
 
     public function canDownload(): bool
@@ -135,7 +196,7 @@ class Product extends Model
             return false;
         }
 
-        return ! empty($this->file_path) || ! empty($this->external_pdf_url);
+        return $this->hasValidPdf();
     }
 
     public function typeLabel(): string

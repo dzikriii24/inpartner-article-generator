@@ -25,7 +25,7 @@ COMMON_CONTACT_PATHS = [
 ]
 
 class WebScraperService:
-    def __init__(self, timeout: int = 12):
+    def __init__(self, timeout: int = 6):
         self.timeout = timeout
         self.session = requests.Session()
         self.session.headers.update(HEADERS)
@@ -70,6 +70,19 @@ class WebScraperService:
             if homepage_data["snippet"]:
                 page_snippets.append(f"Homepage [{homepage_data['title']}]: {homepage_data['snippet']}")
 
+        # Fast-fail if site is actively protected by WAF (Access Denied 403/401)
+        hp_status = homepage_data.get("status_code") if homepage_data else 0
+        if hp_status in [401, 403]:
+            logger.info(f"Target site {base_url} returned {hp_status} (WAF / Access Denied). Aborting subpage crawl to prevent latency.")
+            return {
+                "contacts": contacts,
+                "snippets": page_snippets,
+                "pages_scraped": [base_url],
+                "audit": crawled_pages_audit,
+                "browser_used": False,
+                "is_waf_blocked": True
+            }
+
         # Check if homepage is an empty JavaScript SPA shell or unreachable
         is_spa_shell = False
         if homepage_data:
@@ -78,7 +91,7 @@ class WebScraperService:
                 is_spa_shell = True
 
         # Tier 2 Fallback: If HTTP failed or returned 0 contacts with SPA indicators, run BrowserCrawler
-        if not homepage_data or is_spa_shell or (len(contacts) == 0 and homepage_data.get("status_code") == 200):
+        if not homepage_data or is_spa_shell or (len(contacts) == 0 and hp_status == 200):
             logger.info(f"Triggering Tier 2 BrowserCrawler for {base_url} (is_spa: {is_spa_shell})")
             rendered = browser_crawler.fetch_rendered_page(base_url)
             if rendered:
@@ -133,8 +146,8 @@ class WebScraperService:
                 except Exception:
                     continue
 
-        # If no explicit links discovered in homepage navigation, probe standard contact paths
-        if len(contact_candidates) < 2:
+        # If no explicit links discovered in homepage navigation, probe standard contact paths ONLY if homepage was reachable
+        if hp_status == 200 and len(contact_candidates) < 2:
             for p in COMMON_CONTACT_PATHS:
                 probe_url = urllib.parse.urljoin(root_url, p)
                 if probe_url not in discovered_urls:
@@ -174,7 +187,7 @@ class WebScraperService:
     def _fetch_and_parse(self, url: str, is_contact_page: bool = False) -> Optional[Dict[str, Any]]:
         """Fetch URL via HTTP, parse HTML, extract footer, structured JSON-LD, links, and text."""
         try:
-            resp = self.session.get(url, timeout=self.timeout, allow_redirects=True)
+            resp = self.session.get(url, timeout=self.timeout, allow_redirects=True, verify=False)
             if resp.status_code != 200:
                 return {"status_code": resp.status_code, "contacts": [], "links": [], "snippet": "", "title": "", "raw_html": ""}
 

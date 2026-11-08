@@ -41,6 +41,11 @@ class AuthorController extends Controller
             'slug' => ['nullable', 'string', 'max:170', Rule::unique('authors', 'slug')->ignore($author?->id)],
             'bio' => ['nullable', 'string'],
             'photo_url' => ['nullable', 'string', 'max:2000'],
+            'is_senior_partner' => ['sometimes', 'boolean'],
+            'position' => ['nullable', 'string', 'max:150'],
+            'affiliation' => ['nullable', 'string', 'max:150'],
+            'credentials' => ['nullable', 'string', 'max:255'],
+            'linkedin_url' => ['nullable', 'string', 'max:500'],
         ]);
         $data['slug'] = Str::slug($data['slug'] ?? '') ?: Str::slug($data['name']);
 

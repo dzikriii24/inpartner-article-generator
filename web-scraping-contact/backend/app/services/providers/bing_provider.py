@@ -4,6 +4,9 @@ import logging
 from typing import List
 import requests
 from bs4 import BeautifulSoup
+from app.core.dns_fallback import install_dns_fallback
+install_dns_fallback()
+
 from app.services.providers.base import BaseSearchProvider, SearchResultItem
 
 logger = logging.getLogger(__name__)
@@ -80,5 +83,22 @@ class BingSearchProvider(BaseSearchProvider):
                         ))
         except Exception as e:
             logger.error(f"Bing search error for '{query}': {e}")
+            # DuckDuckGo fallback when Bing is rate-limited or blocked
+            try:
+                from ddgs import DDGS
+                ddgs = DDGS()
+                ddg_results = ddgs.text(query, max_results=max_results)
+                for rank, r in enumerate(ddg_results, start=1):
+                    href = r.get("href") or r.get("link")
+                    if href and href.startswith("http"):
+                        results.append(SearchResultItem(
+                            title=r.get("title", ""),
+                            url=href,
+                            snippet=r.get("body", "") or r.get("snippet", ""),
+                            source_type="duckduckgo_fallback",
+                            rank=rank
+                        ))
+            except Exception as ddg_err:
+                logger.debug(f"DDG fallback also failed: {ddg_err}")
 
         return results

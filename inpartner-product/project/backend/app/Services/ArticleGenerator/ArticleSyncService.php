@@ -29,19 +29,47 @@ class ArticleSyncService
 {
     public function __construct(protected ArticleGeneratorClient $client) {}
 
+    protected array $categoryCache = [];
+    protected array $authorCache = [];
+
+    protected function resolveCategoryId(?string $name): ?int
+    {
+        $name = trim((string) $name);
+        if ($name === '') {
+            return null;
+        }
+        $slug = Str::slug($name);
+        if (! array_key_exists($slug, $this->categoryCache)) {
+            $this->categoryCache[$slug] = Category::resolveByName($name)?->id;
+        }
+
+        return $this->categoryCache[$slug];
+    }
+
+    protected function resolveAuthorId(?string $name): ?int
+    {
+        $name = trim((string) ($name ?: 'Inpartner Editorial Board'));
+        $slug = Str::slug($name);
+        if (! array_key_exists($slug, $this->authorCache)) {
+            $this->authorCache[$slug] = Author::resolveByName($name)?->id;
+        }
+
+        return $this->authorCache[$slug];
+    }
+
     /**
      * Create or update a product from a full article payload (pull detail or push webhook).
      *
      * @return array{action: string, product: ?Product, reason?: string}
      */
-    public function upsertFromPayload(array $a, bool $force = false): array
+    public function upsertFromPayload(array $a, bool $force = false, ?Product $existing = null): array
     {
         $externalId = (string) ($a['id'] ?? '');
         if ($externalId === '') {
             return ['action' => 'skipped', 'product' => null, 'reason' => 'missing id'];
         }
 
-        $product = Product::fromGenerator()->where('external_id', $externalId)->first();
+        $product = $existing ?? Product::fromGenerator()->where('external_id', $externalId)->first();
         $hash = (string) ($a['content_hash'] ?? '');
         $sellable = (bool) ($a['is_sellable'] ?? true);
 
@@ -94,8 +122,8 @@ class ArticleSyncService
             'status' => 'draft',
             'price' => (int) config('services.article_generator.default_price', 25000),
             'access_type' => ! empty($generatorFields['external_pdf_url']) ? 'read_download' : 'read',
-            'category_id' => Category::resolveByName($a['category'] ?? null)?->id,
-            'author_id' => Author::resolveByName($a['author'] ?? 'Inpartner Editorial Board')?->id,
+            'category_id' => $this->resolveCategoryId($a['category'] ?? null),
+            'author_id' => $this->resolveAuthorId($a['author'] ?? 'Inpartner Editorial Board'),
             'language' => 'en',
             'tags' => array_values(array_filter((array) ($a['seo']['keywords'] ?? []))),
         ]));
@@ -108,6 +136,8 @@ class ArticleSyncService
      */
     public function pullAll(string $trigger = 'manual'): SyncLog
     {
+        @set_time_limit(300);
+
         $log = SyncLog::create([
             'direction' => 'pull', 'trigger' => $trigger, 'status' => 'success', 'started_at' => now(),
         ]);
@@ -118,12 +148,16 @@ class ArticleSyncService
             $summaries = $this->client->allArticleSummaries();
             $remoteIds = [];
 
+            // Preload existing products in a single query to eliminate N+1 roundtrips
+            $existingProducts = Product::fromGenerator()->get()->keyBy('external_id');
+            $unchangedIds = [];
+
             foreach ($summaries as $summary) {
                 $remoteIds[] = (string) $summary['id'];
                 try {
-                    $existing = Product::fromGenerator()->where('external_id', (string) $summary['id'])->first();
+                    $existing = $existingProducts->get((string) $summary['id']);
                     if ($existing && $existing->external_hash === ($summary['content_hash'] ?? null)) {
-                        $existing->forceFill(['synced_at' => now(), 'sync_status' => 'synced', 'sync_error' => null])->save();
+                        $unchangedIds[] = $existing->id;
                         $counts['skipped']++;
 
                         continue;
@@ -134,13 +168,22 @@ class ArticleSyncService
 
                         continue;
                     }
-                    $res = $this->upsertFromPayload($full);
+                    $res = $this->upsertFromPayload($full, force: false, existing: $existing);
                     $counts[$res['action']]++;
                 } catch (Throwable $e) {
                     $counts['failed']++;
                     $errors[] = "#{$summary['id']}: ".$e->getMessage();
                     Log::warning('Article sync failed', ['id' => $summary['id'], 'error' => $e->getMessage()]);
                 }
+            }
+
+            // Bulk update unchanged items in 1 query instead of N queries
+            if (! empty($unchangedIds)) {
+                Product::whereIn('id', $unchangedIds)->update([
+                    'synced_at' => now(),
+                    'sync_status' => 'synced',
+                    'sync_error' => null,
+                ]);
             }
 
             // Products whose article is no longer available in the generator.
@@ -177,11 +220,18 @@ class ArticleSyncService
     /** Import / refresh specific generator article IDs (admin "Import selected"). */
     public function importIds(array $ids, string $trigger = 'import'): SyncLog
     {
+        @set_time_limit(300);
+
         $log = SyncLog::create(['direction' => 'pull', 'trigger' => $trigger, 'status' => 'success', 'started_at' => now()]);
         $counts = ['created' => 0, 'updated' => 0, 'skipped' => 0, 'failed' => 0];
         $errors = [];
+        $uniqueIds = array_unique($ids);
+        $existingProducts = Product::fromGenerator()
+            ->whereIn('external_id', array_map('strval', $uniqueIds))
+            ->get()
+            ->keyBy('external_id');
 
-        foreach (array_unique($ids) as $id) {
+        foreach ($uniqueIds as $id) {
             try {
                 $full = $this->client->getArticle($id);
                 if (! $full) {
@@ -190,7 +240,8 @@ class ArticleSyncService
 
                     continue;
                 }
-                $res = $this->upsertFromPayload($full, force: true);
+                $existing = $existingProducts->get((string) $id);
+                $res = $this->upsertFromPayload($full, force: true, existing: $existing);
                 $counts[$res['action']]++;
                 if ($res['action'] === 'skipped' && isset($res['reason'])) {
                     $errors[] = "#{$id}: {$res['reason']}";

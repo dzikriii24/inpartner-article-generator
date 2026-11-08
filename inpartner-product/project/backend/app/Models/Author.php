@@ -10,6 +10,13 @@ class Author extends Model
 {
     protected $guarded = ['id'];
 
+    protected function casts(): array
+    {
+        return [
+            'is_senior_partner' => 'boolean',
+        ];
+    }
+
     protected static function booted(): void
     {
         static::saving(function (Author $a) {

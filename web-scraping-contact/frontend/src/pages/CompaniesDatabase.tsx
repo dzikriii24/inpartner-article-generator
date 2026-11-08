@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Building2, 
   Search, 
@@ -18,9 +19,20 @@ import {
   AlertCircle,
   AlertTriangle,
   CheckCircle2,
-  Info
+  Info,
+  Users,
+  Sparkles,
+  Briefcase,
+  Ban,
+  Check
 } from 'lucide-react';
-import { api, CompanyItem, ContactItem } from '../services/api';
+import { api, CompanyItem, ContactItem, ProfessionalItem } from '../services/api';
+
+const LinkedinIcon = ({ className = "w-3.5 h-3.5" }: { className?: string }) => (
+  <svg className={`${className} text-[#0A66C2] fill-current`} viewBox="0 0 24 24">
+    <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/>
+  </svg>
+);
 
 export const CompaniesDatabase: React.FC = () => {
   const [companies, setCompanies] = useState<CompanyItem[]>([]);
@@ -35,12 +47,27 @@ export const CompaniesDatabase: React.FC = () => {
   const [industryFilter, setIndustryFilter] = useState('');
   const [sortBy, setSortBy] = useState('updated_at');
 
+  const navigate = useNavigate();
+
   // Selected company detail modal
   const [selectedCompany, setSelectedCompany] = useState<CompanyItem | null>(null);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
 
   // Evidence Drawer modal
   const [selectedEvidenceContact, setSelectedEvidenceContact] = useState<ContactItem | null>(null);
+
+  // Modal subtabs & decision maker states
+  const [modalTab, setModalTab] = useState<'decision_makers' | 'contacts' | 'audit'>('decision_makers');
+  const [isDiscoveringProfs, setIsDiscoveringProfs] = useState(false);
+  const [isAddingProf, setIsAddingProf] = useState(false);
+  const [newProf, setNewProf] = useState({
+    person_name: '',
+    job_title: '',
+    department: 'Human Resources',
+    seniority_level: 'Manager',
+    contact_email: '',
+    contact_phone: ''
+  });
 
   // Edit Company modal
   const [editCompanyData, setEditCompanyData] = useState<Partial<CompanyItem> | null>(null);
@@ -140,6 +167,60 @@ export const CompaniesDatabase: React.FC = () => {
       if (selectedCompany) handleOpenDetail(selectedCompany.id);
     } catch (err: any) {
       alert(`Delete failed: ${err.message}`);
+    }
+  };
+
+  const handleDiscoverProfessionals = async (companyId: number) => {
+    try {
+      setIsDiscoveringProfs(true);
+      await api.discoverCompanyProfessionals(companyId);
+      await handleOpenDetail(companyId);
+      loadCompanies();
+    } catch (err: any) {
+      alert(`Decision maker discovery failed: ${err.message}`);
+    } finally {
+      setIsDiscoveringProfs(false);
+    }
+  };
+
+  const handleSaveNewProf = async () => {
+    if (!selectedCompany || !newProf.person_name || !newProf.job_title) return;
+    try {
+      await api.addCompanyProfessional(selectedCompany.id, newProf);
+      setIsAddingProf(false);
+      setNewProf({ person_name: '', job_title: '', department: 'Human Resources', seniority_level: 'Manager', contact_email: '', contact_phone: '' });
+      await handleOpenDetail(selectedCompany.id);
+      loadCompanies();
+    } catch (err: any) {
+      alert(`Failed to add professional: ${err.message}`);
+    }
+  };
+
+  const handleProfStatusChange = async (profId: number, status: string) => {
+    try {
+      await api.updateProfessional(profId, { outreach_status: status });
+      if (selectedCompany) {
+        setSelectedCompany({
+          ...selectedCompany,
+          professionals: selectedCompany.professionals?.map(p => p.id === profId ? { ...p, outreach_status: status } : p)
+        });
+      }
+    } catch (err: any) {
+      alert(`Update status failed: ${err.message}`);
+    }
+  };
+
+  const handleProfDncToggle = async (profId: number, currentDnc: boolean) => {
+    try {
+      await api.updateProfessional(profId, { is_do_not_contact: !currentDnc });
+      if (selectedCompany) {
+        setSelectedCompany({
+          ...selectedCompany,
+          professionals: selectedCompany.professionals?.map(p => p.id === profId ? { ...p, is_do_not_contact: !currentDnc } : p)
+        });
+      }
+    } catch (err: any) {
+      alert(`Update DNC failed: ${err.message}`);
     }
   };
 
@@ -288,6 +369,7 @@ export const CompaniesDatabase: React.FC = () => {
                 <th className="p-4">Website</th>
                 <th className="p-4">Industry</th>
                 <th className="p-4">Quality Status</th>
+                <th className="p-4 text-center">HR & Leaders</th>
                 <th className="p-4 text-center">Contacts</th>
                 <th className="p-4 text-center">Confidence</th>
                 <th className="p-4 text-right">Actions</th>
@@ -296,14 +378,14 @@ export const CompaniesDatabase: React.FC = () => {
             <tbody className="divide-y divide-slate-100 bg-white/70">
               {isLoading ? (
                 <tr>
-                  <td colSpan={8} className="p-12 text-center text-slate-400">
+                  <td colSpan={9} className="p-12 text-center text-slate-400">
                     <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-fuchsia-600" />
                     <span>Loading companies...</span>
                   </td>
                 </tr>
               ) : companies.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="p-12 text-center text-slate-400">
+                  <td colSpan={9} className="p-12 text-center text-slate-400">
                     <Building2 className="w-8 h-8 text-slate-300 mx-auto mb-2" />
                     <p className="font-semibold text-slate-600">No companies found</p>
                     <p className="text-[11px] text-slate-400 mt-1">Try another filter or search keyword.</p>
@@ -312,7 +394,13 @@ export const CompaniesDatabase: React.FC = () => {
               ) : (
                 companies.map((comp) => (
                   <tr key={comp.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="p-4 font-bold text-slate-900">{comp.input_name}</td>
+                    <td 
+                      onClick={() => navigate(`/companies/${comp.id}`)}
+                      className="p-4 font-bold text-slate-900 cursor-pointer hover:text-blue-600 hover:underline"
+                      title="Open Company Intelligence Profile"
+                    >
+                      {comp.input_name}
+                    </td>
                     <td className="p-4 text-slate-700">{comp.official_name || '-'}</td>
                     <td className="p-4">
                       {comp.website ? (
@@ -340,7 +428,13 @@ export const CompaniesDatabase: React.FC = () => {
                       {renderStatusBadge(comp.search_status)}
                     </td>
                     <td className="p-4 text-center">
-                      <span className="px-2.5 py-0.5 rounded-full font-bold bg-fuchsia-50 text-fuchsia-700 border border-fuchsia-200">
+                      <span className="px-2.5 py-0.5 rounded-full font-bold bg-blue-50 text-blue-700 border border-blue-200 inline-flex items-center gap-1">
+                        <Users className="w-3 h-3 text-blue-600" />
+                        {comp.total_professionals || 0}
+                      </span>
+                    </td>
+                    <td className="p-4 text-center">
+                      <span className="px-2.5 py-0.5 rounded-full font-bold bg-slate-100 text-slate-700 border border-slate-200">
                         {comp.total_contacts}
                       </span>
                     </td>
@@ -348,12 +442,21 @@ export const CompaniesDatabase: React.FC = () => {
                       {Math.round((comp.matching_confidence || 0.5) * 100)}%
                     </td>
                     <td className="p-4 text-right">
-                      <button
-                        onClick={() => handleOpenDetail(comp.id)}
-                        className="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-white hover:border-fuchsia-300 transition-colors shadow-xs cursor-pointer"
-                      >
-                        Details
-                      </button>
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => navigate(`/companies/${comp.id}`)}
+                          className="px-2.5 py-1.5 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 text-xs font-semibold inline-flex items-center gap-1 transition-all shadow-xs cursor-pointer"
+                        >
+                          <span>Profile</span>
+                          <ExternalLink className="w-3 h-3 text-blue-500" />
+                        </button>
+                        <button
+                          onClick={() => handleOpenDetail(comp.id)}
+                          className="px-2.5 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-white hover:text-slate-900 transition-colors shadow-xs cursor-pointer"
+                        >
+                          Quick View
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -426,6 +529,18 @@ export const CompaniesDatabase: React.FC = () => {
                   <RefreshCw className="w-4 h-4" />
                 </button>
                 <button
+                  onClick={() => {
+                    const id = selectedCompany.id;
+                    setSelectedCompany(null);
+                    navigate(`/companies/${id}`);
+                  }}
+                  className="px-2.5 py-1 text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 hover:bg-blue-100 rounded-lg inline-flex items-center gap-1 cursor-pointer"
+                  title="Open Dedicated Full Page Profile"
+                >
+                  <span>Full Profile</span>
+                  <ExternalLink className="w-3 h-3 text-blue-500" />
+                </button>
+                <button
                   onClick={() => setSelectedCompany(null)}
                   className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg cursor-pointer"
                 >
@@ -460,105 +575,485 @@ export const CompaniesDatabase: React.FC = () => {
               </div>
             </div>
 
-            {/* Contacts List */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="text-sm font-bold text-slate-900">
-                  Grounded Contacts ({selectedCompany.contacts?.length || 0})
-                </h4>
-                <button
-                  onClick={() => setIsAddingContact(true)}
-                  className="text-xs font-semibold text-fuchsia-600 hover:text-fuchsia-800 flex items-center gap-1 cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Add Contact</span>
-                </button>
-              </div>
+            {/* Modal Tabs Navigation */}
+            <div className="flex border-b border-slate-200 gap-6 text-xs font-semibold">
+              <button
+                onClick={() => setModalTab('decision_makers')}
+                className={`pb-2.5 flex items-center gap-2 cursor-pointer transition-colors border-b-2 ${
+                  modalTab === 'decision_makers'
+                    ? 'border-fuchsia-600 text-fuchsia-600 font-bold'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <Users className="w-4 h-4" />
+                <span>HR & Decision Makers</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] ${
+                  modalTab === 'decision_makers' ? 'bg-fuchsia-100 text-fuchsia-700' : 'bg-slate-100 text-slate-600'
+                }`}>
+                  {selectedCompany.professionals?.length || 0}
+                </span>
+              </button>
 
-              {selectedCompany.contacts?.length === 0 ? (
-                <div className="p-6 text-center bg-slate-50 rounded-2xl text-xs text-slate-400">
-                  No verified contacts stored for this company.
+              <button
+                onClick={() => setModalTab('contacts')}
+                className={`pb-2.5 flex items-center gap-2 cursor-pointer transition-colors border-b-2 ${
+                  modalTab === 'contacts'
+                    ? 'border-fuchsia-600 text-fuchsia-600 font-bold'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <Briefcase className="w-4 h-4" />
+                <span>General Contacts</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] ${
+                  modalTab === 'contacts' ? 'bg-fuchsia-100 text-fuchsia-700' : 'bg-slate-100 text-slate-600'
+                }`}>
+                  {selectedCompany.contacts?.length || 0}
+                </span>
+              </button>
+
+              <button
+                onClick={() => setModalTab('audit')}
+                className={`pb-2.5 flex items-center gap-2 cursor-pointer transition-colors border-b-2 ${
+                  modalTab === 'audit'
+                    ? 'border-fuchsia-600 text-fuchsia-600 font-bold'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <Info className="w-4 h-4" />
+                <span>Audit & Metadata</span>
+              </button>
+            </div>
+
+            {/* Tab 1: HR & Decision Makers */}
+            {modalTab === 'decision_makers' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900">
+                      Target People & Leadership
+                    </h4>
+                    <p className="text-[11px] text-slate-500">
+                      Grounded professionals identified from official governance, team bios, and public business records.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleDiscoverProfessionals(selectedCompany.id)}
+                      disabled={isDiscoveringProfs}
+                      className="px-3 py-1.5 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-fuchsia-600 to-indigo-600 hover:from-fuchsia-700 hover:to-indigo-700 flex items-center gap-1.5 shadow-sm transition-all cursor-pointer disabled:opacity-50"
+                    >
+                      <Sparkles className={`w-3.5 h-3.5 ${isDiscoveringProfs ? 'animate-spin' : ''}`} />
+                      <span>{isDiscoveringProfs ? 'Discovering...' : 'Discover HR & Leaders'}</span>
+                    </button>
+                    <button
+                      onClick={() => setIsAddingProf(!isAddingProf)}
+                      className="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 flex items-center gap-1 transition-colors cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Add Person</span>
+                    </button>
+                  </div>
                 </div>
-              ) : (
-                <div className="space-y-2.5">
-                  {selectedCompany.contacts?.map((c) => {
-                    const val = c.email || c.phone || c.address || c.url || c.raw_value || '-';
-                    return (
-                      <div key={c.id} className="p-3.5 bg-white border border-slate-200 rounded-2xl flex flex-col justify-between text-xs space-y-2">
+
+                {/* Add Professional Inline Form */}
+                {isAddingProf && (
+                  <div className="p-4 bg-fuchsia-50/40 border border-fuchsia-200 rounded-2xl space-y-3 text-xs animate-in fade-in">
+                    <h5 className="font-bold text-slate-900">Add Professional Manually</h5>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="font-medium text-slate-600 block mb-0.5">Full Name *</label>
+                        <input
+                          type="text"
+                          value={newProf.person_name}
+                          onChange={(e) => setNewProf({ ...newProf, person_name: e.target.value })}
+                          placeholder="e.g. Budi Santoso"
+                          className="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs"
+                        />
+                      </div>
+                      <div>
+                        <label className="font-medium text-slate-600 block mb-0.5">Job Title *</label>
+                        <input
+                          type="text"
+                          value={newProf.job_title}
+                          onChange={(e) => setNewProf({ ...newProf, job_title: e.target.value })}
+                          placeholder="e.g. HR Manager / Direktur Utama"
+                          className="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs"
+                        />
+                      </div>
+                      <div>
+                        <label className="font-medium text-slate-600 block mb-0.5">Department</label>
+                        <select
+                          value={newProf.department}
+                          onChange={(e) => setNewProf({ ...newProf, department: e.target.value })}
+                          className="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs"
+                        >
+                          <option value="Human Resources">Human Resources</option>
+                          <option value="People & Culture">People & Culture</option>
+                          <option value="Talent Acquisition">Talent Acquisition</option>
+                          <option value="Leadership / Board">Leadership / Board</option>
+                          <option value="General Management">General Management</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="font-medium text-slate-600 block mb-0.5">Seniority</label>
+                        <select
+                          value={newProf.seniority_level}
+                          onChange={(e) => setNewProf({ ...newProf, seniority_level: e.target.value })}
+                          className="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs"
+                        >
+                          <option value="C-Level / Board">C-Level / Board</option>
+                          <option value="Director">Director</option>
+                          <option value="Vice President">Vice President</option>
+                          <option value="Head of Department">Head of Department</option>
+                          <option value="Manager">Manager</option>
+                          <option value="Lead">Lead</option>
+                          <option value="Specialist">Specialist</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="font-medium text-slate-600 block mb-0.5">Work Email</label>
+                        <input
+                          type="email"
+                          value={newProf.contact_email}
+                          onChange={(e) => setNewProf({ ...newProf, contact_email: e.target.value })}
+                          placeholder="e.g. name@company.co.id"
+                          className="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs"
+                        />
+                      </div>
+                      <div>
+                        <label className="font-medium text-slate-600 block mb-0.5">Phone / Ext</label>
+                        <input
+                          type="text"
+                          value={newProf.contact_phone}
+                          onChange={(e) => setNewProf({ ...newProf, contact_phone: e.target.value })}
+                          placeholder="e.g. +62 21 555-0199"
+                          className="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-2 pt-2 border-t border-fuchsia-200/50">
+                      <button
+                        onClick={() => setIsAddingProf(false)}
+                        className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleSaveNewProf}
+                        disabled={!newProf.person_name || !newProf.job_title}
+                        className="px-4 py-1.5 rounded-lg text-white btn-primary-gradient font-semibold cursor-pointer disabled:opacity-50"
+                      >
+                        Save Professional
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Professionals List */}
+                {(!selectedCompany.professionals || selectedCompany.professionals.length === 0) ? (
+                  <div className="p-8 text-center bg-slate-50 border border-slate-100 rounded-2xl text-xs text-slate-500 space-y-2">
+                    <Users className="w-8 h-8 mx-auto text-slate-300" />
+                    <p className="font-semibold text-slate-700">No HR or decision makers found yet</p>
+                    <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
+                      Click "Discover HR & Leaders" to analyze official governance pages, executive teams, and public business profiles.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {selectedCompany.professionals.map((prof) => (
+                      <div
+                        key={prof.id}
+                        className={`p-4 bg-white border rounded-2xl transition-all ${
+                          prof.is_do_not_contact
+                            ? 'border-rose-200 bg-rose-50/20'
+                            : 'border-slate-200 hover:border-fuchsia-200 shadow-sm'
+                        }`}
+                      >
                         <div className="flex items-start justify-between">
-                          <div>
+                          <div className="space-y-1">
                             <div className="flex items-center gap-2">
-                              <span className="font-bold text-slate-700 uppercase text-[10px] bg-slate-100 px-2 py-0.5 rounded">
-                                {c.contact_type.replace(/_/g, ' ')}
-                              </span>
-                              {c.source_section && (
-                                <span className="font-bold text-fuchsia-700 uppercase text-[10px] bg-fuchsia-50 px-2 py-0.5 rounded">
-                                  {c.source_section.replace(/_/g, ' ')}
+                              <span className="font-bold text-slate-900 text-sm">{prof.person_name}</span>
+                              {prof.is_do_not_contact && (
+                                <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-700">
+                                  <Ban className="w-3 h-3" />
+                                  <span>DNC</span>
                                 </span>
                               )}
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                {c.verification_status?.replace(/_/g, ' ')}
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-fuchsia-50 text-fuchsia-700 border border-fuchsia-200">
+                                {prof.seniority_level || 'Executive'}
+                              </span>
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-700">
+                                {prof.department || 'HR / Leadership'}
+                              </span>
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                prof.verification_status === 'VERIFIED'
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                  : 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                              }`}>
+                                {prof.verification_status}
                               </span>
                             </div>
 
-                            {c.contact_person_name && (
-                              <div className="font-semibold text-slate-900 mt-1">
-                                {c.contact_person_name}
-                                {c.job_title && <span className="text-slate-500 font-normal"> ({c.job_title})</span>}
+                            <div className="text-xs font-semibold text-fuchsia-950">
+                              {prof.job_title}
+                            </div>
+
+                            {prof.relevance_reason && (
+                              <div className="text-[11px] text-slate-600 flex items-center gap-1">
+                                <Sparkles className="w-3 h-3 text-fuchsia-500 shrink-0" />
+                                <span>{prof.relevance_reason}</span>
+                                {prof.relevance_score && (
+                                  <span className="font-bold text-fuchsia-700">
+                                    ({Math.round(prof.relevance_score * 100)}% match)
+                                  </span>
+                                )}
                               </div>
                             )}
 
-                            <div className="font-mono text-slate-900 font-bold text-sm mt-1">
-                              {val}
-                            </div>
-
-                            {/* Evidence snippet */}
-                            {c.evidence_text && (
-                              <p className="text-[11px] text-slate-500 italic mt-1 bg-slate-50 p-2 rounded-lg border border-slate-100">
-                                "{c.evidence_text}"
+                            {prof.evidence_text && (
+                              <p className="text-[11px] text-slate-500 italic bg-slate-50 p-2 rounded-lg border border-slate-100 mt-1 max-w-xl">
+                                "{prof.evidence_text}"
                               </p>
                             )}
+
+                            {/* Contact info if available */}
+                            <div className="flex flex-wrap items-center gap-3 pt-1 text-xs">
+                              {prof.contact_email && (
+                                <a
+                                  href={`mailto:${prof.contact_email}`}
+                                  className="text-blue-600 hover:underline font-mono"
+                                >
+                                  ✉ {prof.contact_email}
+                                </a>
+                              )}
+                              {prof.contact_phone && (
+                                <a
+                                  href={`tel:${prof.contact_phone}`}
+                                  className="text-emerald-700 hover:underline font-mono"
+                                >
+                                  📞 {prof.contact_phone}
+                                </a>
+                              )}
+                              {prof.profile_url?.includes('linkedin.com') ? (
+                                <a
+                                  href={prof.profile_url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1 text-[10px] font-bold text-[#0A66C2] hover:underline bg-sky-50 px-2 py-0.5 rounded-md border border-sky-200"
+                                  title="Open verified LinkedIn profile"
+                                >
+                                  <LinkedinIcon className="w-3 h-3" />
+                                  <span>LinkedIn Profile</span>
+                                  <ExternalLink className="w-2.5 h-2.5" />
+                                </a>
+                              ) : (
+                                <a
+                                  href={`https://www.linkedin.com/search/results/all/?keywords=${encodeURIComponent(prof.person_name + ' ' + (selectedCompany.official_name || selectedCompany.input_name))}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-500 hover:text-[#0A66C2] hover:bg-sky-50 bg-slate-100 px-2 py-0.5 rounded-md transition-colors"
+                                  title={`Find ${prof.person_name} on LinkedIn`}
+                                >
+                                  <LinkedinIcon className="w-3 h-3" />
+                                  <span>Find on LinkedIn</span>
+                                  <ExternalLink className="w-2.5 h-2.5 opacity-60" />
+                                </a>
+                              )}
+                            </div>
                           </div>
 
-                          <div className="flex items-center gap-1 shrink-0">
+                          {/* Outreach Status Selector & Actions */}
+                          <div className="flex flex-col items-end gap-2 shrink-0">
+                            <div className="flex items-center gap-1.5">
+                              <label className="text-[10px] font-bold text-slate-400 uppercase">Outreach:</label>
+                              <select
+                                value={prof.outreach_status || 'NEW_LEAD'}
+                                onChange={(e) => handleProfStatusChange(prof.id, e.target.value)}
+                                className="text-xs p-1.5 bg-slate-50 border border-slate-200 rounded-lg font-semibold text-slate-700 cursor-pointer"
+                              >
+                                <option value="NEW_LEAD">New Lead</option>
+                                <option value="TO_REVIEW">To Review</option>
+                                <option value="READY_TO_CONTACT">Ready to Contact</option>
+                                <option value="CONTACTED">Contacted</option>
+                                <option value="FOLLOW_UP">Follow Up</option>
+                                <option value="REPLIED">Replied</option>
+                                <option value="NOT_RELEVANT">Not Relevant</option>
+                              </select>
+                            </div>
+
                             <button
-                              onClick={() => setSelectedEvidenceContact(c)}
-                              className="p-1.5 text-fuchsia-600 hover:bg-fuchsia-50 rounded-lg transition-colors cursor-pointer"
-                              title="Inspect Full Evidence"
+                              onClick={() => handleProfDncToggle(prof.id, !!prof.is_do_not_contact)}
+                              className={`text-[11px] font-semibold flex items-center gap-1 px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${
+                                prof.is_do_not_contact
+                                  ? 'bg-rose-100 text-rose-700 hover:bg-rose-200'
+                                  : 'bg-slate-100 text-slate-500 hover:text-rose-600 hover:bg-rose-50'
+                              }`}
                             >
-                              <FileText className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => c.id && handleDeleteContact(c.id)}
-                              className="p-1.5 text-slate-300 hover:text-rose-500 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
-                              title="Delete Contact"
-                            >
-                              <Trash2 className="w-4 h-4" />
+                              <Ban className="w-3 h-3" />
+                              <span>{prof.is_do_not_contact ? 'Suppressed (DNC)' : 'Mark DNC'}</span>
                             </button>
                           </div>
                         </div>
 
                         {/* Attribution bar */}
-                        <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-slate-100">
-                          <span>Method: {(c.extraction_method || 'http_html').replace(/_/g, ' ')}</span>
-                          {c.source_url && (
+                        <div className="flex items-center justify-between text-[10px] text-slate-400 pt-2 mt-2 border-t border-slate-100">
+                          <span>Source: {prof.source_type?.replace(/_/g, ' ') || 'Official Governance'} • Verified: {prof.last_verified_at ? new Date(prof.last_verified_at).toLocaleDateString() : 'Recent'}</span>
+                          {prof.source_url && (
                             <a
-                              href={c.source_url}
+                              href={prof.source_url}
                               target="_blank"
                               rel="noreferrer"
                               className="text-blue-500 hover:underline flex items-center gap-0.5 font-semibold"
                             >
-                              <span>Open Source</span>
+                              <span>Open Source URL</span>
                               <ExternalLink className="w-2.5 h-2.5" />
                             </a>
                           )}
                         </div>
                       </div>
-                    );
-                  })}
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Tab 2: General Contacts List */}
+            {modalTab === 'contacts' && (
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-sm font-bold text-slate-900">
+                    Grounded Company Contacts ({selectedCompany.contacts?.length || 0})
+                  </h4>
+                  <button
+                    onClick={() => setIsAddingContact(true)}
+                    className="text-xs font-semibold text-fuchsia-600 hover:text-fuchsia-800 flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Contact</span>
+                  </button>
                 </div>
-              )}
-            </div>
+
+                {selectedCompany.contacts?.length === 0 ? (
+                  <div className="p-6 text-center bg-slate-50 rounded-2xl text-xs text-slate-400">
+                    No verified contacts stored for this company.
+                  </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    {selectedCompany.contacts?.map((c) => {
+                      const val = c.email || c.phone || c.address || c.url || c.raw_value || '-';
+                      return (
+                        <div key={c.id} className="p-3.5 bg-white border border-slate-200 rounded-2xl flex flex-col justify-between text-xs space-y-2">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-slate-700 uppercase text-[10px] bg-slate-100 px-2 py-0.5 rounded">
+                                  {c.contact_type.replace(/_/g, ' ')}
+                                </span>
+                                {c.source_section && (
+                                  <span className="font-bold text-fuchsia-700 uppercase text-[10px] bg-fuchsia-50 px-2 py-0.5 rounded">
+                                    {c.source_section.replace(/_/g, ' ')}
+                                  </span>
+                                )}
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                  {c.verification_status?.replace(/_/g, ' ')}
+                                </span>
+                              </div>
+
+                              {c.contact_person_name && (
+                                <div className="font-semibold text-slate-900 mt-1">
+                                  {c.contact_person_name}
+                                  {c.job_title && <span className="text-slate-500 font-normal"> ({c.job_title})</span>}
+                                </div>
+                              )}
+
+                              <div className="font-mono text-slate-900 font-bold text-sm mt-1">
+                                {val}
+                              </div>
+
+                              {/* Evidence snippet */}
+                              {c.evidence_text && (
+                                <p className="text-[11px] text-slate-500 italic mt-1 bg-slate-50 p-2 rounded-lg border border-slate-100">
+                                  "{c.evidence_text}"
+                                </p>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-1 shrink-0">
+                              <button
+                                onClick={() => setSelectedEvidenceContact(c)}
+                                className="p-1.5 text-fuchsia-600 hover:bg-fuchsia-50 rounded-lg transition-colors cursor-pointer"
+                                title="Inspect Full Evidence"
+                              >
+                                <FileText className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => c.id && handleDeleteContact(c.id)}
+                                className="p-1.5 text-slate-300 hover:text-rose-500 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
+                                title="Delete Contact"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Attribution bar */}
+                          <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-slate-100">
+                            <span>Method: {(c.extraction_method || 'http_html').replace(/_/g, ' ')}</span>
+                            {c.source_url && (
+                              <a
+                                href={c.source_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-blue-500 hover:underline flex items-center gap-0.5 font-semibold"
+                              >
+                                <span>Open Source</span>
+                                <ExternalLink className="w-2.5 h-2.5" />
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Tab 3: Search Audit & Metadata */}
+            {modalTab === 'audit' && (
+              <div className="p-4 bg-slate-50 rounded-2xl space-y-4 text-xs">
+                <h4 className="font-bold text-slate-900">System Audit & Grounding Metadata</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-3 bg-white border border-slate-200 rounded-xl space-y-1">
+                    <span className="text-slate-400 text-[10px] font-bold uppercase">Search Status</span>
+                    <div className="font-semibold text-slate-800">{selectedCompany.search_status}</div>
+                  </div>
+                  <div className="p-3 bg-white border border-slate-200 rounded-xl space-y-1">
+                    <span className="text-slate-400 text-[10px] font-bold uppercase">Confidence Score</span>
+                    <div className="font-semibold text-slate-800">
+                      {Math.round((selectedCompany.confidence_score || 0.9) * 100)}%
+                    </div>
+                  </div>
+                  <div className="p-3 bg-white border border-slate-200 rounded-xl space-y-1">
+                    <span className="text-slate-400 text-[10px] font-bold uppercase">Official Domain</span>
+                    <div className="font-semibold text-slate-800 font-mono">{selectedCompany.domain || '-'}</div>
+                  </div>
+                  <div className="p-3 bg-white border border-slate-200 rounded-xl space-y-1">
+                    <span className="text-slate-400 text-[10px] font-bold uppercase">Last Grounded Date</span>
+                    <div className="font-semibold text-slate-800">
+                      {selectedCompany.updated_at ? new Date(selectedCompany.updated_at).toLocaleString() : 'N/A'}
+                    </div>
+                  </div>
+                </div>
+
+                {selectedCompany.linkedin_url && (
+                  <div className="p-3 bg-white border border-slate-200 rounded-xl space-y-1">
+                    <span className="text-slate-400 text-[10px] font-bold uppercase">LinkedIn Company Identifier</span>
+                    <div className="font-mono text-[11px] text-blue-600 break-all">{selectedCompany.linkedin_url}</div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Edit Company Modal overlay if active */}
             {editCompanyData && (

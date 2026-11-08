@@ -1,26 +1,22 @@
-
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
 interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
-  /** Makes the card have a hover effect */
   hoverable?: boolean;
-  /** Makes the card have a bordered appearance */
   bordered?: boolean;
-  /** Renders the card with compact padding */
   compact?: boolean;
 }
 
 const Card = React.forwardRef<
   HTMLDivElement,
   CardProps
->(({ className, hoverable = false, bordered = false, compact = false, ...props }, ref) => (
+>(({ className, hoverable = false, bordered = true, compact = false, ...props }, ref) => (
   <div
     ref={ref}
     className={cn(
-      "rounded-2xl bg-white/80 dark:bg-zinc-900/60 text-card-foreground backdrop-blur-md border border-zinc-200/80 dark:border-zinc-800/80 shadow-xs transition-all duration-300",
-      bordered && "border border-zinc-200/80 dark:border-zinc-800/80",
-      hoverable ? "hover:shadow-xl hover:shadow-primarylw/5 hover:border-zinc-300 dark:hover:border-zinc-700/80 hover:-translate-y-0.5" : "",
+      "rounded-2xl bg-white text-slate-900 shadow-xs transition-all duration-200",
+      bordered && "border border-slate-200",
+      hoverable ? "hover:shadow-md hover:border-[#B2D1F0] hover:-translate-y-0.5" : "",
       compact ? "p-3 sm:p-4" : "p-0",
       className
     )}
@@ -30,7 +26,6 @@ const Card = React.forwardRef<
 Card.displayName = "Card";
 
 interface CardHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
-  /** Adjusts the spacing in the header */
   spacing?: "default" | "compact" | "relaxed";
 }
 
@@ -55,9 +50,7 @@ const CardHeader = React.forwardRef<
 CardHeader.displayName = "CardHeader";
 
 interface CardTitleProps extends React.HTMLAttributes<HTMLHeadingElement> {
-  /** HTML heading level to use */
   as?: "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
-  /** Adjusts the text size */
   size?: "sm" | "default" | "lg";
 }
 
@@ -68,15 +61,15 @@ const CardTitle = React.forwardRef<
   const Component = as;
   const sizeClasses = {
     sm: "text-lg",
-    default: "text-2xl",
-    lg: "text-3xl"
+    default: "text-xl",
+    lg: "text-2xl"
   };
 
   return (
     <Component
       ref={ref}
       className={cn(
-        "font-semibold leading-none tracking-tight",
+        "font-bold text-slate-900 leading-snug tracking-tight",
         sizeClasses[size],
         className
       )}
@@ -87,7 +80,6 @@ const CardTitle = React.forwardRef<
 CardTitle.displayName = "CardTitle";
 
 interface CardDescriptionProps extends React.HTMLAttributes<HTMLParagraphElement> {
-  /** Makes text smaller or larger */
   size?: "xs" | "sm" | "default";
 }
 
@@ -105,7 +97,7 @@ const CardDescription = React.forwardRef<
     <p
       ref={ref}
       className={cn(
-        "text-muted-foreground",
+        "text-slate-500",
         sizeClasses[size],
         className
       )}
@@ -116,9 +108,7 @@ const CardDescription = React.forwardRef<
 CardDescription.displayName = "CardDescription";
 
 interface CardContentProps extends React.HTMLAttributes<HTMLDivElement> {
-  /** Removes the top padding when used after CardHeader */
   removeTopPadding?: boolean;
-  /** Adjusts content padding */
   padding?: "none" | "sm" | "default" | "lg";
 }
 
@@ -148,9 +138,7 @@ const CardContent = React.forwardRef<
 CardContent.displayName = "CardContent";
 
 interface CardFooterProps extends React.HTMLAttributes<HTMLDivElement> {
-  /** Changes the alignment of footer items */
   align?: "start" | "center" | "end" | "between" | "around";
-  /** Changes the direction of footer items */
   direction?: "row" | "column";
 }
 

@@ -1,0 +1,85 @@
+<USER_REQUEST>
+# MASTER IMPROVEMENT PROMPT — INPARTNER WEB SCRAPING CONTACT
+## Backend Scraping Engine, HR & Decision Maker Discovery, Performance Optimization, dan UI/UX Redesign
+
+### PROJECT DIRECTORY
+
+Fokus pengerjaan pada repository berikut:
+
+- Backend: `C:\Users\dzikri\Downloads\Inpartner\web-scraping-contact\backend` @[c:\Users\dzikri\Downloads\Inpartner\web-scraping-contact\backend] 
+- Frontend: `C:\Users\dzikri\Downloads\Inpartner\web-scraping-contact\frontend` @[c:\Users\dzikri\Downloads\Inpartner\web-scraping-contact\frontend] 
+
+Project ini merupakan website internal Inpartner untuk mencari perusahaan, mengambil kontak umum perusahaan, dan menemukan profesional yang relevan untuk kebutuhan business development serta outreach.
+
+**Tugas utama: audit seluruh sistem, cari akar masalah, perbaiki implementasi backend dan frontend, lalu uji hasilnya secara nyata. Jangan hanya memberikan analisis atau rekomendasi.**
+
+---
+
+# 1. MASALAH YANG HARUS DISELESAIKAN
+
+Saat ini terdapat beberapa masalah serius.
+
+### A. HR & Decision Maker Discovery gagal
+
+Contoh perusahaan yang bermasalah:
+
+**PT Gudang Garam Tbk.**
+
+Log backend:
+
+```text
+Gemini generation with gemini-3.1-flash-lite failed:
+[Errno 11001] getaddrinfo failed
+
+No qualifying official website candidate found for
+'PT Gudang Garam Tbk'
+
+Bing search error for '"Gudang Garam" dewan direksi direktur utama':
+Failed to resolve 'www.bing.com'
+
+POST /api/companies/search HTTP/1.1" 200 OK
+```
+
+Sementara itu, kontak umum perusahaan berhasil ditemukan, tetapi bagian:
+
+`Target People & Leadership`
+
+menampilkan:
+
+`No HR or decision makers found yet`
+
+padahal perusahaan besar seperti Gudang Garam memiliki informasi perusahaan, manajemen, dan kemungkinan informasi profesional yang dapat ditelusuri melalui berbagai sumber publik.
+
+Investigasi mengapa data kontak umum berhasil, tetapi penemuan HR dan decision maker gagal. Jangan langsung menyimpulkan bahwa penyebabnya hanya Gemini atau LinkedIn.
+
+### B. Proses pencarian ter
+<truncated 24278 bytes>
+ dan menguji aplikasi secara lokal.
+
+Mulai dengan audit, lanjutkan ke implementasi, kemudian uji seluruh alur dari pencarian perusahaan sampai hasil profesional tampil di frontend.
+
+**DEFINITION OF DONE:** aplikasi dapat menjelaskan tahapan pencarian, menangani kegagalan provider tanpa merusak keseluruhan proses, menampilkan profesional yang relevan berdasarkan bukti yang dapat ditelusuri, memberikan feedback UI yang akurat, dan tetap mempertahankan fitur existing yang sudah berjalan.
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-24T09:11:16+07:00.
+
+The user's current state is as follows:
+Active Document: c:\Users\dzikri\Downloads\Inpartner\article-generator\project\.env (LANGUAGE_UNSPECIFIED)
+Cursor is on line: 12
+Other open documents:
+- c:\Users\dzikri\Downloads\Inpartner\article-generator\project\database.py (LANGUAGE_PYTHON)
+- c:\Users\dzikri\Downloads\Inpartner\scraper-company\idx_service.py (LANGUAGE_PYTHON)
+- c:\Users\dzikri\Downloads\Inpartner\web-scraping-contact\backend\app\models\schema.py (LANGUAGE_PYTHON)
+- c:\Users\dzikri\Downloads\Inpartner\web-scraping-contact\backend\app\services\search_engine.py (LANGUAGE_PYTHON)
+- c:\Users\dzikri\Downloads\Inpartner\web-scraping-contact\frontend\src\App.tsx (LANGUAGE_TSX)
+
+The user has mentioned some items in the form @[ITEM]. Here is extra information about the items that were mentioned by the user, in the order that they appear:
+
+@[c:\Users\dzikri\Downloads\Inpartner\web-scraping-contact\backend] is a [File]:
+c:\Users\dzikri\Downloads\Inpartner\web-scraping-contact\backend
+@[c:\Users\dzikri\Downloads\Inpartner\web-scraping-contact\frontend] is a [File]:
+c:\Users\dzikri\Downloads\Inpartner\web-scraping-contact\frontend
+</ADDITIONAL_METADATA>
+<USER_SETTINGS_CHANGE>
+The user changed setting `Model Selection` from None to Claude Opus 4.6 (Thinking). No need to comment on this change if the user doesn't ask about it. If reporting what model you are, please use a human readable name instead of the exact string.
+</USER_SETTINGS_CHANGE>

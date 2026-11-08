@@ -9,12 +9,14 @@ import {
   CheckCircle2, 
   AlertCircle, 
   RefreshCw,
-  Server
+  Server,
+  Users
 } from 'lucide-react';
 import { api } from '../services/api';
 
 export const Settings: React.FC = () => {
   const [config, setConfig] = useState<any>(null);
+  const [targetRoles, setTargetRoles] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -24,8 +26,12 @@ export const Settings: React.FC = () => {
   const loadSettings = async () => {
     try {
       setIsLoading(true);
-      const data = await api.getSettings();
-      setConfig(data);
+      const [settingsData, rolesData] = await Promise.all([
+        api.getSettings(),
+        api.getTargetRolesConfig().catch(() => null)
+      ]);
+      setConfig(settingsData);
+      setTargetRoles(rolesData);
     } catch (err) {
       console.error('Failed to load settings:', err);
     } finally {
@@ -186,6 +192,45 @@ export const Settings: React.FC = () => {
                 <span className="text-slate-500">Politeness Delay:</span>
                 <span className="font-semibold text-slate-800">{config?.batch_processing?.politeness_delay_seconds} seconds</span>
               </div>
+            </div>
+          </div>
+
+          {/* HR & Decision Makers Target Roles Config */}
+          <div className="glass-panel rounded-3xl p-6 border border-white/60 space-y-4 md:col-span-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 text-fuchsia-600" />
+                <h3 className="font-bold text-slate-900 text-sm">Configured Target Roles & Decision Maker Ontology</h3>
+              </div>
+              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-fuchsia-50 text-fuchsia-700 border border-fuchsia-200">
+                JSON Config Driven (target_roles.json)
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+              {(targetRoles?.categories || []).map((cat: any) => (
+                <div key={cat.id} className="p-3.5 bg-white/80 rounded-2xl border border-slate-200/80 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-slate-800 text-xs">{cat.name}</span>
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-fuchsia-100 text-fuchsia-800">
+                      {cat.roles?.length || 0} roles
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 line-clamp-1">{cat.description}</p>
+                  <div className="flex flex-wrap gap-1 pt-1">
+                    {cat.roles?.slice(0, 4).map((r: any, idx: number) => (
+                      <span key={idx} className="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 font-medium">
+                        {r.title}
+                      </span>
+                    ))}
+                    {cat.roles?.length > 4 && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded text-fuchsia-600 font-semibold bg-fuchsia-50">
+                        +{cat.roles.length - 4} more
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 

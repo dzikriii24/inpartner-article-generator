@@ -26,7 +26,7 @@ class CatalogController extends Controller
         return Product::published()->with(['category', 'author']);
     }
 
-    public function home()
+    public function home(Request $request)
     {
         $owned = $this->ownedIds();
         $card = fn ($p) => Present::productCard($p, $owned);
@@ -36,7 +36,28 @@ class CatalogController extends Controller
             $featured = $this->base()->latest('published_at')->take(4)->get();
         }
 
+        $lang = $request->input('lang', 'id');
+        $isPreview = $request->boolean('preview');
+        $sections = [];
+        $siteSettings = [];
+
+        try {
+            $q = \App\Models\CmsSection::with('translations')->orderBy('sort_order');
+            if (!$isPreview) $q->active()->published();
+            $sections = $q->get()->map(fn ($s) => $s->localized($lang, $isPreview));
+
+            $siteSettings = \App\Models\SiteSetting::where('is_public', true)->get()->mapWithKeys(function ($item) {
+                $decoded = json_decode($item->value, true);
+                $val = json_last_error() === JSON_ERROR_NONE ? $decoded : $item->value;
+                return [$item->key => $val];
+            });
+        } catch (\Throwable $th) {
+            // fallback if table does not exist yet
+        }
+
         return response()->json([
+            'sections' => $sections,
+            'site_settings' => $siteSettings,
             'banners' => Banner::where('is_active', true)->orderBy('sort_order')->get()->map(fn ($b) => Present::banner($b)),
             'featured' => $featured->map($card),
             'latest' => $this->base()->latest('published_at')->take(8)->get()->map($card),

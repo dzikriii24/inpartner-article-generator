@@ -2,11 +2,23 @@ import re
 import json
 import urllib.parse
 import logging
+import concurrent.futures
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 import requests
 from bs4 import BeautifulSoup
 from sqlalchemy.orm import Session
+
+try:
+    from ddgs import DDGS
+except Exception:
+    try:
+        from duckduckgo_search import DDGS
+    except Exception:
+        DDGS = None
+
+from app.core.dns_fallback import install_dns_fallback
+install_dns_fallback()
 
 from app.models.schema import Company, CompanyContact, SearchHistory
 from app.services.providers.bing_provider import BingSearchProvider
@@ -19,6 +31,9 @@ from app.services.contact_extractor import GroundedContactExtractor
 logger = logging.getLogger(__name__)
 
 class CompanySearchEngine:
+    _domain_cache: Dict[str, Dict[str, Any]] = {}
+    _cache_time: Dict[str, float] = {}
+
     def __init__(self):
         self.bing = BingSearchProvider()
         self.wiki = WikipediaProvider()
@@ -43,6 +58,19 @@ class CompanySearchEngine:
             return []
 
         candidates = []
+        
+        # 1. Primary brand token (e.g. "inpartner", "telkom", "astra", "gudanggaram")
+        primary = tokens[0]
+        candidates.extend([
+            f"https://{primary}.id",
+            f"https://www.{primary}.id",
+            f"https://{primary}.co.id",
+            f"https://www.{primary}.co.id",
+            f"https://{primary}.com",
+            f"https://www.{primary}.com",
+        ])
+
+        # 2. Combined all tokens (e.g. "inpartneroptimaintegra")
         all_tok = "".join(tokens)
         candidates.extend([
             f"https://www.{all_tok}.co.id",
@@ -52,6 +80,8 @@ class CompanySearchEngine:
             f"https://www.{all_tok}.com",
             f"https://{all_tok}.com",
         ])
+
+        # 3. First two tokens if company has multiple words
         if len(tokens) >= 2:
             two_tok = "".join(tokens[:2])
             candidates.extend([
@@ -65,13 +95,6 @@ class CompanySearchEngine:
                 f"https://{two_tok}indonesia.co.id",
                 f"https://www.{two_tok}indonesia.com",
                 f"https://{two_tok}indonesia.com",
-            ])
-        else:
-            candidates.extend([
-                f"https://www.{tokens[0]}.co.id",
-                f"https://{tokens[0]}.co.id",
-                f"https://www.{tokens[0]}.com",
-                f"https://{tokens[0]}.com",
             ])
 
         uniq = []
@@ -114,6 +137,23 @@ class CompanySearchEngine:
         started_at = datetime.utcnow()
         clean_name = self.normalize_company_name(company_name)
         logger.info(f"=== [SearchEngine] Starting grounded enrichment for: '{company_name}' (clean: '{clean_name}') ===")
+
+        # Check in-memory cache
+        cache_key = clean_name.lower().strip()
+        import time
+        now = time.time()
+        if cache_key in self._domain_cache:
+            cache_entry = self._domain_cache[cache_key]
+            cached_at = self._cache_time.get(cache_key, 0)
+            if (now - cached_at) < settings.CACHE_TTL_COMPANY:
+                logger.info(f"[SearchEngine] Returning in-memory cached result for '{company_name}'")
+                cached_res = dict(cache_entry)
+                cached_res["started_at"] = started_at
+                cached_res["completed_at"] = datetime.utcnow()
+                if db:
+                    company_obj = self._persist_to_db(db, cached_res, search_type=search_type)
+                    cached_res["company_id"] = company_obj.id
+                return cached_res
 
         evidence_snippets: List[str] = []
         candidate_urls: List[str] = []
@@ -209,51 +249,67 @@ class CompanySearchEngine:
                 evidence_snippets.append(f"Web Search [{res.title}]: {res.snippet} (URL: {res.url})")
 
         # -------------------------------------------------------------
-        # STEP 2.5: Direct Official Domain Probing
+        # STEP 2.5: Direct Official Domain Probing (Parallel Fast-Probe)
         # -------------------------------------------------------------
         if not website:
             domain_candidates = self.generate_candidate_domains(company_name)
-            probe_session = requests.Session()
-            probe_session.headers.update({
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-                "Accept-Language": "id-ID,id;q=0.9,en-US;q=0.8"
-            })
-            for probe_url in domain_candidates[:16]:
-                parsed_p = urllib.parse.urlparse(probe_url)
-                pd = parsed_p.netloc.lower()
-                if pd.startswith("www."):
-                    pd = pd[4:]
-                if pd in seen_domains:
-                    continue
+            
+            def _probe_single(probe_url: str) -> Optional[Dict[str, Any]]:
                 try:
-                    p_resp = probe_session.get(probe_url, timeout=3.0, allow_redirects=True, verify=False)
+                    s = requests.Session()
+                    s.headers.update({
+                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+                        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                        "Accept-Language": "id-ID,id;q=0.9,en-US;q=0.8"
+                    })
+                    p_resp = s.get(probe_url, timeout=(2.0, 4.0), allow_redirects=True, verify=False)
                     if p_resp.status_code == 200 and len(p_resp.text) > 100:
-                        seen_domains.add(pd)
+                        parsed_p = urllib.parse.urlparse(p_resp.url)
+                        pd = parsed_p.netloc.lower()
+                        if pd.startswith("www."):
+                            pd = pd[4:]
                         p_soup = BeautifulSoup(p_resp.text[:40000], "html.parser")
                         p_title = p_soup.title.string.strip() if p_soup.title and p_soup.title.string else ""
                         p_text = p_soup.get_text()[:2000]
-
-                        match_eval = CompanyMatcher.evaluate_website_match(
+                        m_eval = CompanyMatcher.evaluate_website_match(
                             company_name=company_name,
                             candidate_url=p_resp.url,
                             page_title=p_title,
                             page_text=p_text
                         )
-                        match_eval["domain"] = pd
-                        match_eval["url"] = p_resp.url
-                        match_eval["snippet"] = f"Direct Official Domain Probe ({p_title})"
-                        candidate_domain_evals.append(match_eval)
-
-                        if match_eval["is_match"] and match_eval["status"] != "REJECTED":
-                            candidate_urls.append(p_resp.url)
-                            evidence_snippets.append(f"Direct Domain [{p_title}]: {p_resp.url}")
-                            if match_eval["score"] >= 0.75:
-                                website = p_resp.url
-                                website_selection_reason = f"Direct verified domain probe (Score: {match_eval['score']}): {match_eval['reason']}"
-                                logger.info(f"Direct probe confirmed website for '{company_name}': {website}")
-                                break
+                        m_eval["domain"] = pd
+                        m_eval["url"] = p_resp.url
+                        m_eval["snippet"] = f"Direct Official Domain Probe ({p_title})"
+                        return m_eval
                 except Exception:
-                    continue
+                    return None
+                return None
+
+            # Filter candidates not seen yet
+            unseen_probes = []
+            for p_url in domain_candidates[:8]:
+                parsed_p = urllib.parse.urlparse(p_url)
+                pd = parsed_p.netloc.lower()
+                if pd.startswith("www."):
+                    pd = pd[4:]
+                if pd not in seen_domains:
+                    unseen_probes.append(p_url)
+
+            if unseen_probes:
+                with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+                    future_to_url = {executor.submit(_probe_single, u): u for u in unseen_probes}
+                    for future in concurrent.futures.as_completed(future_to_url):
+                        m_eval = future.result()
+                        if m_eval:
+                            candidate_domain_evals.append(m_eval)
+                            seen_domains.add(m_eval.get("domain", ""))
+                            if m_eval.get("is_match") and m_eval.get("status") != "REJECTED":
+                                candidate_urls.append(m_eval["url"])
+                                evidence_snippets.append(f"Direct Domain [{m_eval.get('domain')}]: {m_eval['url']}")
+                                if m_eval.get("score", 0) >= 0.60 and not website:
+                                    website = m_eval["url"]
+                                    website_selection_reason = f"Direct verified domain probe (Score: {m_eval['score']}): {m_eval['reason']}"
+                                    logger.info(f"Direct probe confirmed website for '{company_name}': {website}")
 
         # -------------------------------------------------------------
         # STEP 3: Select Official Website
@@ -273,20 +329,63 @@ class CompanySearchEngine:
         # STEP 4: Deep Website Crawling (Tier 1 HTTP + Tier 2 Browser)
         # -------------------------------------------------------------
         website_unreachable = False
+        is_waf_blocked = False
         if website:
             logger.info(f"Initiating crawling for target website: {website}")
             scraper_res = self.scraper.scrape_website_contacts(website)
             browser_used = scraper_res.get("browser_used", False)
             crawled_pages_audit = scraper_res.get("audit", [])
+            is_waf_blocked = scraper_res.get("is_waf_blocked", False)
 
             # Check if any page was successfully reached
             success_pages = [p for p in crawled_pages_audit if p.get("status_code") == 200]
             if not success_pages and crawled_pages_audit:
                 website_unreachable = True
-                logger.warning(f"Official website {website} was unreachable (all pages failed).")
+                if is_waf_blocked:
+                    logger.warning(f"Official website {website} is protected by CDN WAF (Access Denied / 403). Contacts will be reconciled from public records.")
+                else:
+                    logger.warning(f"Official website {website} was unreachable (all pages failed).")
 
             raw_contacts.extend(scraper_res.get("contacts", []))
             evidence_snippets.extend(scraper_res.get("snippets", []))
+
+        # Fallback: If contacts are empty or website is WAF-protected, enrich from public business records
+        if len(raw_contacts) == 0:
+            contact_queries = [
+                f'"{clean_name}" alamat kantor pusat telepon kontak',
+                f'"{clean_name}" email sekretariat corcomm kontak'
+            ]
+            ddgs_client = None
+            if DDGS is not None:
+                try:
+                    ddgs_client = DDGS()
+                except Exception:
+                    ddgs_client = None
+
+            for cq in contact_queries:
+                c_items = []
+                if ddgs_client:
+                    try:
+                        c_items = list(ddgs_client.text(cq, max_results=3))
+                    except Exception:
+                        pass
+                if not c_items:
+                    try:
+                        b_items = self.bing.search(cq, max_results=3)
+                        c_items = [{"title": b.title, "href": b.url, "body": b.snippet} for b in b_items]
+                    except Exception:
+                        pass
+                for ci in c_items:
+                    c_body = ci.get("body", "")
+                    c_url = ci.get("href", "")
+                    c_title = ci.get("title", "")
+                    if c_body:
+                        evidence_snippets.append(f"Public Contact Record [{c_title}]: {c_body}")
+                        c_soup = BeautifulSoup(f"<div>{c_body}</div>", "html.parser")
+                        pub_contacts = GroundedContactExtractor.extract_footer_and_page_contacts(
+                            c_soup, source_url=c_url, page_title=c_title, is_contact_page=True
+                        )
+                        raw_contacts.extend(pub_contacts)
 
         # -------------------------------------------------------------
         # STEP 5: AI Entity Reconciliation (Zero Hallucination Gate)
@@ -346,10 +445,12 @@ class CompanySearchEngine:
         # STEP 7: Status Classification & Confidence Scoring
         # -------------------------------------------------------------
         # Determine overall search status
-        if website_unreachable:
+        if website_unreachable and not is_waf_blocked and not wiki_data and len(unique_contacts) == 0:
             search_status = "WEBSITE_UNREACHABLE"
+        elif is_waf_blocked or (website_unreachable and (wiki_data or len(unique_contacts) > 0)):
+            # The company and website are verified, but automated HTTP is protected by WAF
+            search_status = "COMPLETED" if len(unique_contacts) > 0 else "PARTIAL"
         elif len(unique_contacts) > 0 and website:
-            # Check if domain was high confidence
             best_score = max([c.get("score", 0.0) for c in candidate_domain_evals], default=0.8)
             if best_score < 0.65 and not wiki_data:
                 search_status = "NEEDS_REVIEW"
@@ -363,14 +464,18 @@ class CompanySearchEngine:
             search_status = "NOT_FOUND"
 
         # Calculate confidence
-        confidence = 0.40
+        confidence = 0.50
         if wiki_data:
             confidence += 0.20
-        if website and not website_unreachable:
-            confidence += 0.20
+        if website and (not website_unreachable or is_waf_blocked):
+            confidence += 0.15
         if len(unique_contacts) > 0:
-            confidence += min(0.20, len(unique_contacts) * 0.05)
-        if search_status == "NEEDS_REVIEW":
+            confidence += min(0.15, len(unique_contacts) * 0.05)
+        if search_status == "COMPLETED":
+            confidence = max(confidence, 0.85)
+        elif search_status == "PARTIAL":
+            confidence = max(confidence, 0.70)
+        elif search_status == "NEEDS_REVIEW":
             confidence = min(confidence, 0.65)
         elif search_status == "WEBSITE_UNREACHABLE":
             confidence = 0.35
@@ -423,11 +528,50 @@ class CompanySearchEngine:
         # -------------------------------------------------------------
         # STEP 8: Database Persistence
         # -------------------------------------------------------------
+        company_obj = None
         if db:
             company_obj = self._persist_to_db(db, result_payload, search_type=search_type)
             result_payload["company_id"] = company_obj.id
 
-        logger.info(f"=== [SearchEngine] Completed '{company_name}' -> Status: {search_status}, Contacts: {len(unique_contacts)}, Confidence: {confidence} ===")
+        # -------------------------------------------------------------
+        # STEP 9: Grounded HR & Decision Maker Discovery
+        # -------------------------------------------------------------
+        professionals_res = []
+        try:
+            from app.services.professional_finder import professional_finder
+            prof_data = professional_finder.discover_professionals(
+                company_name=company_name,
+                website=website,
+                linkedin_url=None,
+                db=db,
+                company_id=company_obj.id if company_obj else None
+            )
+            professionals_res = prof_data.get("professionals", [])
+            audit_metadata["professionals_discovery"] = {
+                "total_found": prof_data.get("total_found", 0),
+                "department_breakdown": prof_data.get("department_breakdown", {}),
+                "seniority_breakdown": prof_data.get("seniority_breakdown", {}),
+                "sources_status": prof_data.get("sources_status", {})
+            }
+            if company_obj and db:
+                company_obj.audit_metadata = json.dumps(audit_metadata, default=str)
+                db.commit()
+        except Exception as e:
+            logger.warning(f"Professional discovery failed during search_and_enrich: {e}")
+
+        result_payload["professionals"] = professionals_res
+        result_payload["professionals_count"] = len(professionals_res)
+
+        # Store in class-level memory cache
+        if clean_name:
+            self._domain_cache[clean_name.lower().strip()] = result_payload
+            self._cache_time[clean_name.lower().strip()] = time.time()
+            if len(self._domain_cache) > 200:
+                oldest_key = min(self._cache_time, key=self._cache_time.get)
+                self._domain_cache.pop(oldest_key, None)
+                self._cache_time.pop(oldest_key, None)
+
+        logger.info(f"=== [SearchEngine] Completed '{company_name}' -> Status: {search_status}, Contacts: {len(unique_contacts)}, Professionals: {len(professionals_res)}, Confidence: {confidence} ===")
         return result_payload
 
     def _deduplicate_all_contacts(self, contacts: List[Dict[str, Any]]) -> List[Dict[str, Any]]:

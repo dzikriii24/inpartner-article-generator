@@ -25,7 +25,14 @@ class Present
             'excerpt' => $p->excerpt,
             'cover_url' => $p->coverPublicUrl(),
             'category' => $p->relationLoaded('category') && $p->category ? ['name' => $p->category->name, 'slug' => $p->category->slug] : null,
-            'author' => $p->relationLoaded('author') && $p->author ? ['name' => $p->author->name, 'slug' => $p->author->slug] : null,
+            'author' => $p->relationLoaded('author') && $p->author ? [
+                'name' => $p->author->name,
+                'slug' => $p->author->slug,
+                'is_senior_partner' => (bool) $p->author->is_senior_partner,
+                'position' => $p->author->position,
+            ] : null,
+            'senior_partner' => $p->senior_partner,
+            'access_level' => $p->access_level ?? 'entry',
             'price' => (int) $p->price,
             'final_price' => $p->finalPrice(),
             'discount_percent' => $p->discountPercent(),
@@ -33,6 +40,10 @@ class Present
             'reading_time' => $p->reading_time,
             'is_featured' => (bool) $p->is_featured,
             'sales_count' => (int) $p->sales_count,
+            'rating' => $p->averageRating(),
+            'reviews_count' => $p->reviewsCount(),
+            'has_excel' => $p->hasExcelFile(),
+            'has_pdf' => $p->hasValidPdf(),
             'published_at' => $p->published_at?->toIso8601String(),
             'is_owned' => in_array($p->id, $ownedIds, true),
         ];
@@ -41,21 +52,57 @@ class Present
     public static function productDetail(Product $p, bool $owned = false): array
     {
         return array_merge(self::productCard($p, $owned ? [$p->id] : []), [
+            'publisher' => $p->publisher,
             'description' => $p->description,
+            'methodology' => $p->methodology,
+            'chapters' => $p->chapters ?? [],
+            'translations' => $p->translations ?? [],
+            'sources' => $p->sources ?? [],
             'cover_caption' => $p->cover_caption,
             'preview_html' => $p->preview_html,
             'access_type' => $p->access_type,
             'can_read' => $p->canRead(),
             'can_download' => $p->canDownload(),
+            'has_excel' => $p->hasExcelFile(),
+            'excel_file_name' => $p->excel_file_name,
             'word_count' => $p->word_count,
-            'pages' => $p->pages,
+            'pages' => $p->pages ?? ($p->word_count ? max(1, (int) ceil($p->word_count / 300)) : 1),
             'language' => $p->language,
             'tags' => $p->tags ?? [],
             'seo' => $p->seo,
             'sources_count' => is_array($p->sources) ? count($p->sources) : 0,
             'source' => $p->source,
+            'view_count' => (int) $p->view_count,
+            'updated_at' => $p->updated_at?->toIso8601String(),
+            'buyers_count' => Entitlement::active()->where('product_id', $p->id)->count(),
+            'recent_buyers' => Entitlement::active()->where('product_id', $p->id)
+                ->with('user:id,name')
+                ->latest('granted_at')
+                ->take(5)
+                ->get()
+                ->map(function ($e) {
+                    $name = $e->user?->name ?? 'Verified Reader';
+                    $parts = preg_split('/\s+/', trim($name));
+                    $maskedName = count($parts) > 1
+                        ? $parts[0] . ' ' . mb_substr($parts[1], 0, 1) . '.'
+                        : $parts[0];
+                    return [
+                        'name' => $maskedName,
+                        'initials' => strtoupper(mb_substr($parts[0], 0, 1) . (isset($parts[1]) ? mb_substr($parts[1], 0, 1) : '')),
+                        'verified' => true,
+                        'purchased_at' => $e->granted_at?->toIso8601String() ?? $e->created_at?->toIso8601String(),
+                    ];
+                })->values(),
             'author' => $p->author ? [
-                'name' => $p->author->name, 'slug' => $p->author->slug, 'bio' => $p->author->bio, 'photo_url' => $p->author->photo_url,
+                'name' => $p->author->name,
+                'slug' => $p->author->slug,
+                'bio' => $p->author->bio,
+                'photo_url' => $p->author->photo_url,
+                'is_senior_partner' => (bool) $p->author->is_senior_partner,
+                'position' => $p->author->position,
+                'affiliation' => $p->author->affiliation,
+                'credentials' => $p->author->credentials,
+                'linkedin_url' => $p->author->linkedin_url,
             ] : null,
         ]);
     }
@@ -63,12 +110,20 @@ class Present
     public static function productAdmin(Product $p): array
     {
         return array_merge(self::productCard($p), [
+            'publisher' => $p->publisher,
             'status' => $p->status,
             'access_type' => $p->access_type,
+            'access_level' => $p->access_level ?? 'entry',
+            'senior_partner' => $p->senior_partner,
+            'methodology' => $p->methodology,
+            'chapters' => $p->chapters ?? [],
+            'translations' => $p->translations ?? [],
+            'seo' => $p->seo ?? [],
             'sale_price' => $p->sale_price,
             'category_id' => $p->category_id,
             'author_id' => $p->author_id,
             'description' => $p->description,
+            'sources' => $p->sources ?? [],
             'cover_raw' => $p->cover_url,
             'cover_caption' => $p->cover_caption,
             'word_count' => $p->word_count,
@@ -79,6 +134,8 @@ class Present
             'has_file' => ! empty($p->file_path),
             'file_name' => $p->file_name,
             'file_size' => $p->file_size,
+            'has_excel' => ! empty($p->excel_file_path),
+            'excel_file_name' => $p->excel_file_name,
             'source' => $p->source,
             'external_id' => $p->external_id,
             'external_status' => $p->external_status,
@@ -99,12 +156,19 @@ class Present
         $data = [
             'id' => $o->id,
             'order_number' => $o->order_number,
+            'number' => $o->order_number,
             'customer_name' => $o->customer_name,
             'customer_email' => $o->customer_email,
+            'user_name' => $o->customer_name,
+            'user_email' => $o->customer_email,
+            'corporate_name' => $o->corporate_name,
+            'tax_id' => $o->tax_id,
             'subtotal' => $o->subtotal,
             'discount' => $o->discount,
             'total' => $o->total,
+            'total_amount' => $o->total,
             'payment_status' => $o->payment_status,
+            'status' => $o->payment_status,
             'payment_provider' => $o->payment_provider,
             'payment_method' => $o->payment_method,
             'payment_url' => $o->isPending() ? $o->payment_url : null,
@@ -141,11 +205,19 @@ class Present
             'granted_at' => $e->granted_at?->toIso8601String(),
             'last_accessed_at' => $e->last_accessed_at?->toIso8601String(),
             'progress' => (int) $e->progress,
+            'last_read_page' => (int) ($e->last_read_page ?: 1),
+            'is_starred' => (bool) $e->is_starred,
+            'starred_at' => $e->starred_at?->toIso8601String(),
+            'hidden_from_history' => (bool) $e->hidden_from_history,
+            'bookmarks' => $e->bookmarks ?? [],
+            'notes' => $e->notes ?? [],
+            'highlights' => $e->highlights ?? [],
             'order_number' => $e->order?->order_number,
             'product' => $p ? array_merge(self::productCard($p, [$p->id]), [
                 'can_read' => $p->canRead(),
                 'can_download' => $p->canDownload(),
                 'access_type' => $p->access_type,
+                'has_pdf' => $p->hasValidPdf(),
             ]) : null,
         ];
     }
@@ -157,6 +229,19 @@ class Present
             'name' => $u->name,
             'email' => $u->email,
             'phone' => $u->phone,
+            'avatar_url' => $u->avatar_url,
+            'bio' => $u->bio,
+            'job_title' => $u->job_title,
+            'organization' => $u->organization,
+            'department' => $u->department,
+            'country' => $u->country,
+            'timezone' => $u->timezone ?? 'Asia/Jakarta',
+            'preferred_language' => $u->preferred_language ?? 'id',
+            'reading_goals' => $u->reading_goals ?? [
+                'daily_minutes' => 30,
+                'weekly_hours' => 5,
+                'monthly_docs' => 3,
+            ],
             'role' => $u->role,
             'status' => $u->status,
             'is_admin' => $u->isAdmin(),

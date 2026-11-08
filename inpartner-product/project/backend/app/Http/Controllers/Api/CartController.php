@@ -20,6 +20,7 @@ class CartController extends Controller
 
         $rows = $items->map(fn (CartItem $i) => [
             'id' => $i->id,
+            'product_id' => $i->product_id,
             'available' => $i->product->status === 'published' && ! in_array($i->product_id, $owned, true),
             'product' => Present::productCard($i->product, $owned),
         ])->values();
@@ -54,9 +55,13 @@ class CartController extends Controller
         ], 201);
     }
 
-    public function destroy(Request $request, int $productId)
+    public function destroy(Request $request, int $id)
     {
-        $request->user()->cartItems()->where('product_id', $productId)->delete();
+        $request->user()->cartItems()
+            ->where(function ($q) use ($id) {
+                $q->where('product_id', $id)->orWhere('id', $id);
+            })
+            ->delete();
 
         return response()->json(['cart_count' => $request->user()->cartItems()->count()]);
     }

@@ -2,9 +2,13 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Base directory of web-scraping-contact
-BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
-ENV_PATH = BASE_DIR / ".env"
+# Base directory of backend
+BACKEND_DIR = Path(__file__).resolve().parent.parent.parent
+BASE_DIR = BACKEND_DIR.parent
+
+ENV_PATH = BACKEND_DIR / ".env"
+if not ENV_PATH.exists():
+    ENV_PATH = BASE_DIR / ".env"
 
 if ENV_PATH.exists():
     load_dotenv(ENV_PATH, override=True)
@@ -13,7 +17,7 @@ else:
 
 class Settings:
     PROJECT_NAME: str = "Inpartner Company Contact Intelligence"
-    VERSION: str = "1.0.0"
+    VERSION: str = "2.0.0"
     API_V1_STR: str = "/api"
     
     # Database
@@ -22,10 +26,10 @@ class Settings:
         "mysql+pymysql://u1zh8984_inpartner:Inpartner*@194.233.65.45:3306/u1zh8984_article?charset=utf8mb4"
     )
     
-    # AI Provider
+    # AI Provider — use active valid Gemini model names (Gemini 2.0 retired by Google in 2026)
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
-    DEFAULT_GEMINI_MODEL: str = "gemini-3.1-flash-lite"
-    FALLBACK_GEMINI_MODEL: str = "gemini-3.7-flash"
+    DEFAULT_GEMINI_MODEL: str = os.getenv("DEFAULT_GEMINI_MODEL", "gemini-3.5-flash-lite")
+    FALLBACK_GEMINI_MODEL: str = os.getenv("FALLBACK_GEMINI_MODEL", "gemini-3.8-flash")
     
     # Server & CORS
     HOST: str = os.getenv("HOST", "127.0.0.1")
@@ -39,13 +43,27 @@ class Settings:
     ]
     
     # Storage paths
-    UPLOAD_DIR: Path = BASE_DIR / "backend" / "uploads"
-    EXPORT_DIR: Path = BASE_DIR / "backend" / "exports"
+    UPLOAD_DIR: Path = BACKEND_DIR / "uploads"
+    EXPORT_DIR: Path = BACKEND_DIR / "exports"
     
-    # Processing configs
-    DEFAULT_BATCH_CONCURRENCY: int = 3
+    # Processing configs (conservative for CloudLinux shared hosting)
+    DEFAULT_BATCH_CONCURRENCY: int = 1
     DEFAULT_MAX_RETRIES: int = 2
-    REQUEST_TIMEOUT_SECONDS: int = 15
+    REQUEST_TIMEOUT_SECONDS: int = 10
+    
+    # Search provider timeouts
+    SEARCH_CONNECT_TIMEOUT: float = 3.0
+    SEARCH_READ_TIMEOUT: float = 8.0
+    PAGE_FETCH_TIMEOUT: float = 6.0
+    
+    # Discovery settings
+    MAX_LEADERSHIP_PAGES: int = 8
+    MAX_SEARCH_QUERIES: int = 5
+    MAX_ARTICLE_FETCHES: int = 2
+    
+    # Cache TTL (seconds)
+    CACHE_TTL_COMPANY: int = 3600  # 1 hour
+    CACHE_TTL_SEARCH: int = 1800   # 30 minutes
 
 settings = Settings()
 

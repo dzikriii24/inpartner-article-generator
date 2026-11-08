@@ -70,12 +70,20 @@ class ProductController extends Controller
             'sale_price' => ['nullable', 'integer', 'min:0', 'max:100000000'],
             'status' => ['sometimes', Rule::in(Product::STATUSES)],
             'access_type' => ['sometimes', Rule::in(Product::ACCESS_TYPES)],
+            'access_level' => ['sometimes', Rule::in(Product::ACCESS_LEVELS)],
+            'senior_partner' => ['nullable', 'string', 'max:150'],
+            'methodology' => ['nullable', 'string'],
+            'sources' => ['nullable', 'array'],
             'reading_time' => ['nullable', 'integer', 'min:0', 'max:2000'],
             'pages' => ['nullable', 'integer', 'min:0'],
             'language' => ['nullable', 'string', 'max:10'],
             'is_featured' => ['sometimes', 'boolean'],
             'tags' => ['nullable', 'array'],
             'tags.*' => ['string', 'max:50'],
+            'publisher' => ['nullable', 'string', 'max:150'],
+            'chapters' => ['nullable', 'array'],
+            'translations' => ['nullable', 'array'],
+            'seo' => ['nullable', 'array'],
             'published_at' => ['nullable', 'date'],
         ];
     }
@@ -108,6 +116,36 @@ class ProductController extends Controller
 
     protected function prepare(array $data, ?Product $product = null): array
     {
+        // Normalize access_type aliases
+        if (isset($data['access_type'])) {
+            if ($data['access_type'] === 'read_and_download' || $data['access_type'] === 'both') {
+                $data['access_type'] = 'read_download';
+            }
+        }
+
+        // Normalize access_level aliases
+        if (isset($data['access_level'])) {
+            $levelMap = [
+                'public_free' => 'free',
+                'registered' => 'entry',
+                'individual_analyst' => 'entry',
+                'corporate_pro' => 'professional',
+                'enterprise_bespoke' => 'enterprise',
+            ];
+            if (isset($levelMap[$data['access_level']])) {
+                $data['access_level'] = $levelMap[$data['access_level']];
+            }
+        }
+
+        // Normalize type aliases
+        if (isset($data['type'])) {
+            if ($data['type'] === 'sector_insight') {
+                $data['type'] = 'insight';
+            } elseif ($data['type'] === 'data_series') {
+                $data['type'] = 'data';
+            }
+        }
+
         if (array_key_exists('content_html', $data)) {
             $data['content_html'] = Html::sanitize($data['content_html']);
             $data['word_count'] = Html::wordCount($data['content_html']);
@@ -190,14 +228,51 @@ class ProductController extends Controller
             Storage::disk('local')->delete($product->file_path);
         }
         $path = $file->store('products', 'local');
-        $product->update([
+        $pageCount = null;
+        if (strtolower($file->getClientOriginalExtension()) === 'pdf') {
+            try {
+                $rawContent = file_get_contents($file->getRealPath());
+                $count = preg_match_all("/\/Type\s*\/Page\b/", $rawContent, $matches);
+                if ($count > 0) {
+                    $pageCount = $count;
+                }
+            } catch (\Throwable $th) {}
+        }
+
+        $updateData = [
             'file_path' => $path,
             'file_name' => $file->getClientOriginalName(),
             'file_size' => $file->getSize(),
             'access_type' => $product->access_type === 'read' ? 'read_download' : $product->access_type,
-        ]);
+        ];
+        if ($pageCount !== null) {
+            $updateData['pages'] = $pageCount;
+        }
+
+        $product->update($updateData);
 
         return response()->json(['product' => Present::productAdmin($product->fresh(['category', 'author']))]);
+    }
+
+    public function uploadExcel(Request $request, Product $product)
+    {
+        $request->validate([
+            'file' => ['required', 'file', 'max:51200'], // 50MB
+        ]);
+
+        $file = $request->file('file');
+        $name = $file->getClientOriginalName();
+        $path = $file->store('products', 'local');
+
+        $product->update([
+            'excel_file_path' => $path,
+            'excel_file_name' => $name,
+        ]);
+
+        return response()->json([
+            'message' => 'Berkas data excel berhasil diunggah.',
+            'product' => Present::productAdmin($product->fresh(['category', 'author'])),
+        ]);
     }
 
     public function resync(Product $product, ArticleSyncService $sync)

@@ -198,12 +198,19 @@ def api_admin_login(req: LoginRequest, request: Request, response: Response, db:
     resp = JSONResponse({
         "status": "success",
         "message": f"Welcome back, {admin.username}!",
+        "token": token,
         "admin": {
             "id": admin.id,
             "username": admin.username,
             "role": admin.role
         }
     })
+
+    # Detect if request is over HTTPS (directly or via reverse proxy like ngrok/Cloudflare)
+    is_secure = (
+        request.url.scheme == "https"
+        or request.headers.get("x-forwarded-proto", "").lower() == "https"
+    )
 
     # Set secure HTTP-only cookie
     resp.set_cookie(
@@ -214,7 +221,7 @@ def api_admin_login(req: LoginRequest, request: Request, response: Response, db:
         path="/",
         httponly=True,
         samesite="lax",
-        secure=False # Set to True in production with HTTPS
+        secure=is_secure
     )
     return resp
 

@@ -1,6 +1,6 @@
 from datetime import datetime
 from sqlalchemy import (
-    Column, Integer, String, Text, Float, DateTime, ForeignKey, Index
+    Column, Integer, String, Text, Float, DateTime, ForeignKey, Index, Boolean
 )
 from sqlalchemy.orm import relationship
 from app.core.database import Base
@@ -29,7 +29,9 @@ class Company(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     contacts = relationship("CompanyContact", back_populates="company", cascade="all, delete-orphan", lazy="joined")
+    professionals = relationship("CompanyProfessional", back_populates="company", cascade="all, delete-orphan", lazy="selectin")
     batch_items = relationship("ImportBatchItem", back_populates="company")
+    discovery_jobs = relationship("DiscoveryJob", back_populates="company", cascade="all, delete-orphan")
 
     __table_args__ = (
         Index("idx_company_normalized", "normalized_name"),
@@ -66,6 +68,90 @@ class CompanyContact(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     company = relationship("Company", back_populates="contacts")
+
+class CompanyProfessional(Base):
+    __tablename__ = "company_professionals"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    company_id = Column(Integer, ForeignKey("companies.id", ondelete="CASCADE"), nullable=False, index=True)
+    person_name = Column(String(255), nullable=False, index=True)
+    job_title = Column(String(255), nullable=False)
+    normalized_title = Column(String(255), nullable=True)
+    department = Column(String(100), nullable=True, index=True)  # Human Resources, Human Capital, Talent Acquisition, People & Culture, Leadership
+    seniority_level = Column(String(50), nullable=True, index=True)  # C-Level, Director, VP, Head, Manager, Lead, Specialist, Staff
+    profile_url = Column(String(500), nullable=True)
+    contact_email = Column(String(255), nullable=True, index=True)
+    contact_phone = Column(String(100), nullable=True, index=True)
+    source_url = Column(Text, nullable=True)
+    source_type = Column(String(100), default="official_website")  # official_website, linkedin_public, public_web_search, annual_report, manual_entry
+    source_page_title = Column(String(255), nullable=True)
+    evidence_text = Column(Text, nullable=True)
+    extraction_method = Column(String(100), default="website_scraper")  # website_scraper, search_snippet, json_ld, ai_grounded_parser, manual_entry
+    verification_status = Column(String(50), default="UNVERIFIED")  # VERIFIED, PARTIALLY_VERIFIED, UNVERIFIED, OUTDATED, REJECTED
+    confidence_score = Column(Float, default=0.5)
+    relevance_score = Column(Float, default=0.5)
+    relevance_reason = Column(Text, nullable=True)
+    outreach_status = Column(String(50), default="NEW_LEAD")  # NEW_LEAD, TO_REVIEW, READY_TO_CONTACT, CONTACTED, FOLLOW_UP, REPLIED, NOT_RELEVANT
+    is_do_not_contact = Column(Boolean, default=False, nullable=False)
+    outreach_notes = Column(Text, nullable=True)
+    last_contacted_at = Column(DateTime, nullable=True)
+    next_followup_at = Column(DateTime, nullable=True)
+    discovery_date = Column(DateTime, default=datetime.utcnow, nullable=False)
+    last_verified_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    company = relationship("Company", back_populates="professionals")
+
+    __table_args__ = (
+        Index("idx_prof_company_name", "company_id", "person_name"),
+        Index("idx_prof_dept_seniority", "department", "seniority_level"),
+        Index("idx_prof_outreach", "outreach_status"),
+    )
+
+
+class DiscoveryJob(Base):
+    """Tracks background discovery jobs for HR & leadership professionals."""
+    __tablename__ = "discovery_jobs"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    company_id = Column(Integer, ForeignKey("companies.id", ondelete="CASCADE"), nullable=False, index=True)
+    
+    # Job lifecycle
+    status = Column(String(50), default="QUEUED", nullable=False, index=True)
+    # QUEUED, RUNNING, COMPLETED, PARTIAL_SUCCESS, FAILED
+    
+    # Current stage tracking
+    current_stage = Column(String(100), nullable=True)
+    # resolving_company, finding_website, searching_sources, discovering_candidates, verifying_professionals, saving_results
+    
+    # Stage details as JSON
+    stages_detail = Column(Text, nullable=True)  # JSON: list of {stage, status, duration_ms, message}
+    
+    # Results summary
+    total_candidates_raw = Column(Integer, default=0)
+    total_candidates_unique = Column(Integer, default=0)
+    total_verified = Column(Integer, default=0)
+    sources_succeeded = Column(Integer, default=0)
+    sources_failed = Column(Integer, default=0)
+    
+    # Error info
+    error_message = Column(Text, nullable=True)  # User-friendly error
+    error_detail = Column(Text, nullable=True)   # Technical detail (not exposed to frontend)
+    
+    # Timing
+    duration_seconds = Column(Float, nullable=True)
+    started_at = Column(DateTime, nullable=True)
+    completed_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    company = relationship("Company", back_populates="discovery_jobs")
+
+    __table_args__ = (
+        Index("idx_discovery_company_status", "company_id", "status"),
+    )
+
 
 class SearchHistory(Base):
     __tablename__ = "search_histories"

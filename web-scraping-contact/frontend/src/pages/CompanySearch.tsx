@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Search, 
   Sparkles, 
@@ -19,9 +20,19 @@ import {
   Info,
   X,
   CheckCircle2,
-  AlertTriangle
+  AlertTriangle,
+  Users,
+  Briefcase,
+  Ban
 } from 'lucide-react';
-import { api, type ContactItem } from '../services/api';
+import { api, type ContactItem, type ProfessionalItem } from '../services/api';
+
+interface StageItem {
+  stage: string;
+  status: string;
+  message?: string;
+  duration_ms: number;
+}
 
 const LinkedinIcon = () => (
   <svg className="w-4 h-4 text-sky-600 fill-current" viewBox="0 0 24 24">
@@ -54,6 +65,7 @@ interface CompanySearchProps {
 }
 
 export const CompanySearch: React.FC<CompanySearchProps> = ({ initialQuery = '' }) => {
+  const navigate = useNavigate();
   const [query, setQuery] = useState(initialQuery);
   const [isMultiSearch, setIsMultiSearch] = useState(false);
   const [multiQuery, setMultiQuery] = useState('');
@@ -84,6 +96,16 @@ export const CompanySearch: React.FC<CompanySearchProps> = ({ initialQuery = '' 
     job_title: '',
     notes: ''
   });
+
+  const [isDiscoveringProfs, setIsDiscoveringProfs] = useState(false);
+  const [activeJob, setActiveJob] = useState<any>(null);
+  const pollTimerRef = useRef<any>(null);
+
+  useEffect(() => {
+    return () => {
+      if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (initialQuery) {
@@ -169,6 +191,59 @@ export const CompanySearch: React.FC<CompanySearchProps> = ({ initialQuery = '' 
       setSearchResult((prev: any) => ({ ...prev, contacts: updated.contacts }));
     } catch (err: any) {
       alert(`Failed to add contact: ${err.message}`);
+    }
+  };
+
+  const startPollingJob = (jobId: number, companyId: number) => {
+    setIsDiscoveringProfs(true);
+    if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+
+    pollTimerRef.current = setInterval(async () => {
+      try {
+        const jobStatus = await api.getDiscoveryJobStatus(jobId);
+        setActiveJob(jobStatus);
+
+        if (jobStatus.status === 'COMPLETED' || jobStatus.status === 'FAILED') {
+          clearInterval(pollTimerRef.current);
+          setIsDiscoveringProfs(false);
+          const updated = await api.getCompany(companyId);
+          setSearchResult((prev: any) => ({ ...prev, professionals: updated.professionals }));
+        }
+      } catch (err) {
+        console.error('Error polling discovery job:', err);
+        clearInterval(pollTimerRef.current);
+        setIsDiscoveringProfs(false);
+      }
+    }, 1500);
+  };
+
+  const handleDiscoverProfs = async () => {
+    if (!searchResult?.company_id) return;
+    try {
+      setIsDiscoveringProfs(true);
+      const res = await api.discoverCompanyProfessionals(searchResult.company_id);
+      if (res.job_id) {
+        startPollingJob(res.job_id, searchResult.company_id);
+      } else {
+        const updated = await api.getCompany(searchResult.company_id);
+        setSearchResult((prev: any) => ({ ...prev, professionals: updated.professionals }));
+        setIsDiscoveringProfs(false);
+      }
+    } catch (err: any) {
+      alert(`Decision maker discovery failed: ${err.message}`);
+      setIsDiscoveringProfs(false);
+    }
+  };
+
+  const handleUpdateProfStatus = async (profId: number, status: string) => {
+    try {
+      await api.updateProfessional(profId, { outreach_status: status });
+      setSearchResult((prev: any) => ({
+        ...prev,
+        professionals: prev.professionals?.map((p: any) => p.id === profId ? { ...p, outreach_status: status } : p)
+      }));
+    } catch (err: any) {
+      alert(`Failed to update status: ${err.message}`);
     }
   };
 
@@ -279,15 +354,15 @@ export const CompanySearch: React.FC<CompanySearchProps> = ({ initialQuery = '' 
                   }}
                   onFocus={() => setShowSuggestions(true)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                  placeholder="e.g. Bundamedik Tbk, Triniti Dinamik Tbk, NexAI Digital Infrastruktur Tbk..."
-                  className="w-full pl-12 pr-4 py-3.5 bg-white border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-fuchsia-500/30 focus:border-fuchsia-500 shadow-xs font-medium text-slate-800 placeholder-slate-400"
+                  placeholder="e.g. PT Gudang Garam Tbk, Bundamedik Tbk, Triniti Dinamik Tbk..."
+                  className="w-full pl-12 pr-4 py-3.5 bg-white border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 shadow-xs font-medium text-slate-800 placeholder-slate-400"
                 />
               </div>
 
               <button
                 onClick={() => handleSearch()}
                 disabled={isLoading || !query.trim()}
-                className="px-6 py-3.5 rounded-2xl text-sm font-semibold text-white btn-primary-gradient shadow-md shadow-fuchsia-500/25 disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+                className="px-6 py-3.5 rounded-2xl text-sm font-semibold text-white btn-primary-gradient shadow-md shadow-blue-500/20 disabled:opacity-50 flex items-center gap-2 cursor-pointer"
               >
                 {isLoading ? (
                   <>
@@ -329,14 +404,14 @@ export const CompanySearch: React.FC<CompanySearchProps> = ({ initialQuery = '' 
               rows={4}
               value={multiQuery}
               onChange={(e) => setMultiQuery(e.target.value)}
-              placeholder="Enter one company name per line (max 10):&#10;Bundamedik Tbk&#10;Triniti Dinamik Tbk&#10;PT Telkom Indonesia"
-              className="w-full p-4 bg-white border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-fuchsia-500/30 focus:border-fuchsia-500 shadow-xs font-medium text-slate-800 placeholder-slate-400"
+              placeholder="Enter one company name per line (max 10):&#10;PT Gudang Garam Tbk&#10;Bundamedik Tbk&#10;Triniti Dinamik Tbk&#10;PT Telkom Indonesia"
+              className="w-full p-4 bg-white border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 shadow-xs font-medium text-slate-800 placeholder-slate-400"
             />
             <div className="flex justify-end">
               <button
                 onClick={() => handleSearch()}
                 disabled={isLoading || !multiQuery.trim()}
-                className="px-6 py-3 rounded-2xl text-sm font-semibold text-white btn-primary-gradient shadow-md shadow-fuchsia-500/25 disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+                className="px-6 py-3 rounded-2xl text-sm font-semibold text-white btn-primary-gradient shadow-md shadow-blue-500/20 disabled:opacity-50 flex items-center gap-2 cursor-pointer"
               >
                 {isLoading ? (
                   <>
@@ -355,16 +430,16 @@ export const CompanySearch: React.FC<CompanySearchProps> = ({ initialQuery = '' 
         )}
 
         {/* Suggestions */}
-        <div className="flex items-center gap-2 mt-4 text-xs text-slate-500">
-          <span className="font-medium text-slate-400">Excel Pipeline Samples:</span>
-          {['Bundamedik Tbk.', 'Triniti Dinamik Tbk.', 'NexAI Digital Infrastruktur Tb', 'PT Telkom Indonesia (Persero) Tbk'].map((name, i) => (
+        <div className="flex items-center gap-2 mt-4 text-xs text-slate-500 flex-wrap">
+          <span className="font-medium text-slate-400">Quick Test Samples:</span>
+          {['PT Gudang Garam Tbk', 'Bundamedik Tbk.', 'Triniti Dinamik Tbk.', 'PT Telkom Indonesia (Persero) Tbk'].map((name, i) => (
             <button
               key={i}
               onClick={() => {
                 setQuery(name);
                 handleSearch(name);
               }}
-              className="px-2.5 py-1 bg-white/70 hover:bg-white border border-slate-200/80 rounded-lg text-slate-600 hover:text-fuchsia-600 hover:border-fuchsia-200 transition-colors"
+              className="px-2.5 py-1 bg-white/70 hover:bg-white border border-slate-200/80 rounded-lg text-slate-600 hover:text-blue-600 hover:border-blue-200 transition-colors cursor-pointer"
             >
               {name}
             </button>
@@ -374,16 +449,16 @@ export const CompanySearch: React.FC<CompanySearchProps> = ({ initialQuery = '' 
 
       {/* Loading Progress State */}
       {isLoading && (
-        <div className="glass-panel rounded-3xl p-8 border border-fuchsia-200/50 text-center animate-in fade-in">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-fuchsia-500 to-indigo-600 flex items-center justify-center text-white mx-auto shadow-lg shadow-fuchsia-500/25 animate-bounce">
+        <div className="glass-panel rounded-3xl p-8 border border-blue-200/60 text-center animate-in fade-in">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white mx-auto shadow-lg shadow-blue-500/20 animate-bounce">
             <Sparkles className="w-7 h-7" />
           </div>
           <h3 className="text-base font-bold text-slate-900 mt-4">Scraping Official Website & Verifying Contacts...</h3>
-          <p className="text-xs text-fuchsia-600 font-medium mt-1 animate-pulse">
+          <p className="text-xs text-blue-600 font-medium mt-1 animate-pulse">
             {loadingStep || 'Visiting official website and inspecting footers...'}
           </p>
           <div className="w-64 bg-slate-200 rounded-full h-1.5 mx-auto mt-4 overflow-hidden">
-            <div className="bg-gradient-to-r from-fuchsia-500 via-indigo-500 to-orange-400 h-1.5 rounded-full animate-pulse w-3/4" />
+            <div className="bg-gradient-to-r from-blue-600 via-sky-500 to-indigo-600 h-1.5 rounded-full animate-pulse w-3/4" />
           </div>
         </div>
       )}
@@ -490,9 +565,20 @@ export const CompanySearch: React.FC<CompanySearchProps> = ({ initialQuery = '' 
                 </div>
 
                 <div className="flex items-center gap-2">
+                  {searchResult.company_id && (
+                    <button
+                      onClick={() => navigate(`/companies/${searchResult.company_id}`)}
+                      className="p-2.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+                      title="Open Dedicated Full Profile Page"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Open Full Profile</span>
+                    </button>
+                  )}
+
                   <button
                     onClick={() => setShowAddContact(true)}
-                    className="p-2.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-slate-700 text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors"
+                    className="p-2.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-slate-700 text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
                     title="Add Contact Manually"
                   >
                     <Plus className="w-3.5 h-3.5" />
@@ -501,7 +587,7 @@ export const CompanySearch: React.FC<CompanySearchProps> = ({ initialQuery = '' 
 
                   <button
                     onClick={handleExportSingle}
-                    className="p-2.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-slate-700 text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors"
+                    className="p-2.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-slate-700 text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
                     title="Export 3-Sheet Excel"
                   >
                     <Download className="w-3.5 h-3.5" />
@@ -512,12 +598,238 @@ export const CompanySearch: React.FC<CompanySearchProps> = ({ initialQuery = '' 
             </div>
           </div>
 
+          {/* Discovery Pipeline Stage Tracker Banner (Active / Completed) */}
+          {activeJob && (
+            <div className={`p-4 rounded-2xl border transition-all ${
+              activeJob.status === 'RUNNING' || activeJob.status === 'QUEUED'
+                ? 'bg-blue-50/90 border-blue-200 text-blue-900 shadow-sm'
+                : activeJob.status === 'COMPLETED'
+                ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900'
+                : 'bg-rose-50/70 border-rose-200 text-rose-900'
+            }`}>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Sparkles className={`w-4 h-4 ${activeJob.status === 'RUNNING' ? 'text-blue-600 animate-spin' : 'text-emerald-600'}`} />
+                  <span className="text-xs font-bold uppercase tracking-wider">
+                    Discovery Engine Progress ({activeJob.status})
+                  </span>
+                </div>
+                {activeJob.duration_seconds && (
+                  <span className="text-xs font-medium text-slate-500">
+                    Duration: {activeJob.duration_seconds}s
+                  </span>
+                )}
+              </div>
+
+              {/* Stages Visual Progression */}
+              {activeJob.stages && activeJob.stages.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 pt-1">
+                  {activeJob.stages.map((st: StageItem, idx: number) => {
+                    const isRunning = st.status === 'RUNNING';
+                    const isCompleted = st.status === 'COMPLETED';
+                    return (
+                      <div 
+                        key={idx}
+                        className={`p-2.5 rounded-xl border text-xs transition-all ${
+                          isRunning 
+                            ? 'bg-blue-100/90 border-blue-300 text-blue-900 font-semibold animate-pulse shadow-xs'
+                            : isCompleted
+                            ? 'bg-white/90 border-emerald-200 text-slate-800'
+                            : 'bg-white/40 border-slate-200 text-slate-400'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[10px] uppercase font-bold text-slate-400">Step {idx + 1}</span>
+                          {isCompleted && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />}
+                          {isRunning && <RefreshCw className="w-3.5 h-3.5 text-blue-600 animate-spin" />}
+                        </div>
+                        <div className="font-semibold truncate">{st.message || st.stage}</div>
+                        {st.duration_ms > 0 && (
+                          <div className="text-[10px] text-slate-500 mt-1">{(st.duration_ms / 1000).toFixed(1)}s</div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* HR & Key Decision Makers Section */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <Users className="w-5 h-5 text-blue-600" />
+                  <span>HR & Key Decision Makers</span>
+                  <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800">
+                    {searchResult.professionals?.length || 0}
+                  </span>
+                </h4>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Target professionals in Human Resources, Human Capital, Talent Acquisition, and Strategic Leadership.
+                </p>
+              </div>
+
+              {searchResult.company_id && (
+                <button
+                  onClick={handleDiscoverProfs}
+                  disabled={isDiscoveringProfs}
+                  className="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 flex items-center gap-1.5 shadow-sm transition-all cursor-pointer disabled:opacity-50"
+                >
+                  <Sparkles className={`w-3.5 h-3.5 ${isDiscoveringProfs ? 'animate-spin' : ''}`} />
+                  <span>{isDiscoveringProfs ? 'Discovering...' : 'Discover HR & Leaders'}</span>
+                </button>
+              )}
+            </div>
+
+            {(!searchResult.professionals || searchResult.professionals.length === 0) ? (
+              <div className="p-6 text-center bg-white/60 rounded-3xl border border-dashed border-slate-200">
+                <Users className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                <p className="text-xs text-slate-600 font-semibold">No decision makers loaded yet</p>
+                <p className="text-[11px] text-slate-400 mt-1 max-w-md mx-auto">
+                  Click "Discover HR & Leaders" to analyze official governance subpages, dewan direksi/komisaris, and verified public profiles.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {searchResult.professionals.map((prof: ProfessionalItem) => (
+                  <div
+                    key={prof.id}
+                    className="p-4 bg-white/90 hover:bg-white border border-slate-200 hover:border-blue-200 rounded-2xl shadow-xs transition-all flex flex-col justify-between space-y-3"
+                  >
+                    <div>
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-bold text-slate-900 text-sm">{prof.person_name}</span>
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                              {prof.seniority_level || 'Leader'}
+                            </span>
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-600">
+                              {prof.department || 'HR / Leadership'}
+                            </span>
+                          </div>
+                          <div className="text-xs font-semibold text-slate-800 mt-0.5">
+                            {prof.job_title}
+                          </div>
+                        </div>
+
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
+                          prof.verification_status === 'VERIFIED'
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            : 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                        }`}>
+                          {prof.verification_status}
+                        </span>
+                      </div>
+
+                      {prof.relevance_reason && (
+                        <div className="text-[11px] text-slate-600 flex items-center gap-1 mt-1.5">
+                          <Sparkles className="w-3 h-3 text-blue-500 shrink-0" />
+                          <span>{prof.relevance_reason}</span>
+                          {prof.relevance_score && (
+                            <span className="font-bold text-blue-700">
+                              ({Math.round(prof.relevance_score * 100)}%)
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      {prof.evidence_text && (
+                        <p className="text-[11px] text-slate-500 italic bg-slate-50 p-2 rounded-lg border border-slate-100 mt-2 line-clamp-2">
+                          "{prof.evidence_text}"
+                        </p>
+                      )}
+
+                      {/* Contact Channels */}
+                      <div className="flex flex-wrap items-center gap-3 mt-2 text-xs">
+                        {prof.contact_email && (
+                          <a
+                            href={`mailto:${prof.contact_email}`}
+                            className="text-blue-600 hover:underline font-mono"
+                          >
+                            ✉ {prof.contact_email}
+                          </a>
+                        )}
+                        {prof.contact_phone && (
+                          <a
+                            href={`tel:${prof.contact_phone}`}
+                            className="text-emerald-700 hover:underline font-mono"
+                          >
+                            📞 {prof.contact_phone}
+                          </a>
+                        )}
+                        {prof.profile_url?.includes('linkedin.com') ? (
+                          <a
+                            href={prof.profile_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 text-[11px] font-bold text-[#0A66C2] hover:underline bg-sky-50 px-2 py-0.5 rounded-md border border-sky-200"
+                            title="Open verified LinkedIn profile"
+                          >
+                            <LinkedinIcon />
+                            <span>LinkedIn Profile</span>
+                            <ExternalLink className="w-2.5 h-2.5" />
+                          </a>
+                        ) : (
+                          <a
+                            href={`https://www.linkedin.com/search/results/all/?keywords=${encodeURIComponent(prof.person_name + ' ' + (searchResult.official_name || searchResult.input_name))}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 hover:text-[#0A66C2] hover:bg-sky-50 bg-slate-100 px-2 py-0.5 rounded-md transition-colors"
+                            title={`Search ${prof.person_name} on LinkedIn`}
+                          >
+                            <LinkedinIcon />
+                            <span>Find on LinkedIn</span>
+                            <ExternalLink className="w-2.5 h-2.5 opacity-60" />
+                          </a>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-slate-400 text-[10px] uppercase font-bold">Outreach:</span>
+                        <select
+                          value={prof.outreach_status || 'NEW_LEAD'}
+                          onChange={(e) => handleUpdateProfStatus(prof.id, e.target.value)}
+                          className="text-[11px] p-1 bg-slate-50 border border-slate-200 rounded font-semibold text-slate-700 cursor-pointer"
+                        >
+                          <option value="NEW_LEAD">New Lead</option>
+                          <option value="TO_REVIEW">To Review</option>
+                          <option value="READY_TO_CONTACT">Ready to Contact</option>
+                          <option value="CONTACTED">Contacted</option>
+                          <option value="FOLLOW_UP">Follow Up</option>
+                          <option value="REPLIED">Replied</option>
+                          <option value="NOT_RELEVANT">Not Relevant</option>
+                        </select>
+                      </div>
+
+                      {prof.source_url && (
+                        <a
+                          href={prof.source_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-blue-500 hover:underline flex items-center gap-0.5 font-semibold text-[10px]"
+                        >
+                          <span>Open Source</span>
+                          <ExternalLink className="w-2.5 h-2.5" />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Contacts Section */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h4 className="text-base font-bold text-slate-900 flex items-center gap-2">
                 <span>Grounded Contacts with Verified Source Evidence</span>
-                <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-fuchsia-100 text-fuchsia-800">
+                <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800">
                   {searchResult.contacts?.length || 0}
                 </span>
               </h4>
@@ -532,7 +844,7 @@ export const CompanySearch: React.FC<CompanySearchProps> = ({ initialQuery = '' 
                 </p>
                 <button
                   onClick={() => setShowAddContact(true)}
-                  className="mt-3 text-xs font-semibold text-fuchsia-600 hover:underline"
+                  className="mt-3 text-xs font-semibold text-blue-600 hover:underline cursor-pointer"
                 >
                   + Add contact manually
                 </button>
@@ -544,7 +856,7 @@ export const CompanySearch: React.FC<CompanySearchProps> = ({ initialQuery = '' 
                   return (
                     <div
                       key={idx}
-                      className="p-4 bg-white/80 hover:bg-white border border-slate-200/80 hover:border-fuchsia-200 rounded-2xl transition-all shadow-xs flex flex-col justify-between"
+                      className="p-4 bg-white/80 hover:bg-white border border-slate-200/80 hover:border-blue-200 rounded-2xl transition-all shadow-xs flex flex-col justify-between"
                     >
                       <div>
                         <div className="flex items-center justify-between mb-2">
@@ -600,7 +912,7 @@ export const CompanySearch: React.FC<CompanySearchProps> = ({ initialQuery = '' 
 
                             <button
                               onClick={() => setSelectedEvidenceContact(c)}
-                              className="p-1.5 text-fuchsia-600 hover:bg-fuchsia-50 rounded-lg transition-colors"
+                              className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
                               title="Inspect Evidence & Source"
                             >
                               <FileText className="w-3.5 h-3.5" />
@@ -701,7 +1013,7 @@ export const CompanySearch: React.FC<CompanySearchProps> = ({ initialQuery = '' 
 
               <div>
                 <div className="text-[10px] font-bold uppercase text-slate-400 mb-1">Verbatim Ground-Truth Evidence</div>
-                <div className="p-3 bg-fuchsia-50/50 border border-fuchsia-100 rounded-xl text-slate-800 leading-relaxed italic font-mono text-[11px]">
+                <div className="p-3 bg-blue-50/50 border border-blue-100 rounded-xl text-slate-800 leading-relaxed italic font-mono text-[11px]">
                   "{selectedEvidenceContact.evidence_text || 'Extracted directly from page structure.'}"
                 </div>
               </div>

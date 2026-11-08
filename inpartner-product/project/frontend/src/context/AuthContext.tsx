@@ -5,8 +5,22 @@ export interface User {
   id: number;
   name: string;
   email: string;
+  phone?: string;
   role?: string;
   avatar_url?: string;
+  bio?: string;
+  job_title?: string;
+  organization?: string;
+  department?: string;
+  country?: string;
+  timezone?: string;
+  preferred_language?: string;
+  reading_goals?: {
+    daily_minutes?: number;
+    weekly_hours?: number;
+    monthly_docs?: number;
+  };
+  created_at?: string;
 }
 
 interface AuthContextType {

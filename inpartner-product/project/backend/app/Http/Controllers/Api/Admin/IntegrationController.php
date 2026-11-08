@@ -55,6 +55,7 @@ class IntegrationController extends Controller
 
     public function sync()
     {
+        @set_time_limit(300);
         $log = $this->sync->pullAll('manual');
 
         return response()->json(['log' => $log], $log->status === 'failed' ? 502 : 200);

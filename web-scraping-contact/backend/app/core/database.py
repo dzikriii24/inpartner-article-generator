@@ -4,7 +4,9 @@ from app.core.config import settings
 
 engine = create_engine(
     settings.DATABASE_URL,
-    pool_recycle=3600,
+    pool_size=3,
+    max_overflow=3,
+    pool_recycle=300,
     pool_pre_ping=True,
     echo=False
 )

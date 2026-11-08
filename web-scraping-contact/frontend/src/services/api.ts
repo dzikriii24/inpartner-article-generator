@@ -24,6 +24,40 @@ export interface ContactItem {
   created_at?: string;
 }
 
+export interface ProfessionalItem {
+  id: number;
+  company_id: number;
+  company_name?: string;
+  company_website?: string | null;
+  company_domain?: string | null;
+  person_name: string;
+  job_title: string;
+  normalized_title?: string | null;
+  department?: string | null;
+  seniority_level?: string | null;
+  profile_url?: string | null;
+  contact_email?: string | null;
+  contact_phone?: string | null;
+  source_url?: string | null;
+  source_type?: string;
+  source_page_title?: string | null;
+  evidence_text?: string | null;
+  extraction_method?: string | null;
+  verification_status?: string;
+  confidence_score?: number;
+  relevance_score?: number;
+  relevance_reason?: string | null;
+  outreach_status?: string;
+  is_do_not_contact?: boolean;
+  outreach_notes?: string | null;
+  last_contacted_at?: string | null;
+  next_followup_at?: string | null;
+  discovery_date?: string;
+  last_verified_at?: string | null;
+  created_at: string;
+  updated_at?: string;
+}
+
 export interface CompanyItem {
   id: number;
   input_name: string;
@@ -38,10 +72,14 @@ export interface CompanyItem {
   search_status?: string | null;
   audit_metadata?: string | null;
   matching_confidence?: number;
+  confidence_score?: number;
+  linkedin_url?: string | null;
   total_contacts: number;
+  total_professionals?: number;
   created_at: string;
   updated_at: string;
   contacts?: ContactItem[];
+  professionals?: ProfessionalItem[];
 }
 
 export interface SearchHistoryItem {
@@ -191,6 +229,48 @@ export const api = {
     return request<any>(`/api/exports?${qs}`);
   },
   getDownloadUrl: (id: number) => `${API_BASE}/api/exports/${id}/download`,
+
+  // HR & Decision Makers
+  getProfessionals: (params: Record<string, any> = {}) => {
+    const qs = new URLSearchParams();
+    Object.entries(params).forEach(([key, val]) => {
+      if (val !== undefined && val !== null && val !== '') {
+        qs.append(key, String(val));
+      }
+    });
+    return request<any>(`/api/professionals?${qs.toString()}`);
+  },
+  getProfessional: (id: number) => request<any>(`/api/professionals/${id}`),
+  updateProfessional: (id: number, data: any) => request<any>(`/api/professionals/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data)
+  }),
+  deleteProfessional: (id: number) => request<any>(`/api/professionals/${id}`, {
+    method: 'DELETE'
+  }),
+  discoverCompanyProfessionals: (companyId: number) => request<any>(`/api/professionals/companies/${companyId}/discover`, {
+    method: 'POST'
+  }),
+  getDiscoveryJobStatus: (jobId: number) => request<any>(`/api/professionals/discovery-jobs/${jobId}`),
+  getLatestDiscoveryJob: (companyId: number) => request<any>(`/api/professionals/companies/${companyId}/latest-job`),
+  addCompanyProfessional: (companyId: number, data: any) => request<any>(`/api/professionals/companies/${companyId}`, {
+    method: 'POST',
+    body: JSON.stringify(data)
+  }),
+  getTargetRolesConfig: () => request<any>('/api/professionals/config/target-roles'),
+  updateTargetRolesConfig: (data: any) => request<any>('/api/professionals/config/target-roles', {
+    method: 'PUT',
+    body: JSON.stringify(data)
+  }),
+  getProfessionalsCsvExportUrl: (params: Record<string, any> = {}) => {
+    const qs = new URLSearchParams();
+    Object.entries(params).forEach(([key, val]) => {
+      if (val !== undefined && val !== null && val !== '') {
+        qs.append(key, String(val));
+      }
+    });
+    return `${API_BASE}/api/professionals/export/csv?${qs.toString()}`;
+  },
 
   // Settings
   getSettings: () => request<any>('/api/settings'),

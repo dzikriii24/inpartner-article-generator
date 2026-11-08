@@ -1038,6 +1038,13 @@
     <script>
         const BASE_PREFIX = "{{ base_prefix }}";
 
+        document.addEventListener("DOMContentLoaded", function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get("expired") === "1") {
+                showToast("Sesi login Anda telah berakhir. Silakan masuk kembali.", "error");
+            }
+        });
+
         async function handleLoginSubmit(e) {
             e.preventDefault();
             const btn = document.getElementById("btnLoginSubmit");
@@ -1051,6 +1058,7 @@
                 const res = await fetch(`${BASE_PREFIX}/api/admin/login`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
+                    credentials: "include",
                     body: JSON.stringify({
                         username: userInp.value.trim(),
                         password: pwdInp.value.trim()
@@ -1059,6 +1067,9 @@
 
                 const data = await res.json();
                 if (res.ok && data.status === "success") {
+                    if (data.token) {
+                        localStorage.setItem("inpartner_admin_token", data.token);
+                    }
                     showToast("Login successful! Redirecting...", "success");
                     setTimeout(() => {
                         window.location.href = `${BASE_PREFIX}/admin`;
@@ -2221,6 +2232,43 @@
     <!-- ----------------------------------------------------------- -->
     <script>
         const BASE_PREFIX = "{{ base_prefix }}";
+        let pollingIntervalId = null;
+        let isRedirectingToLogin = false;
+
+        // Global fetch interceptor: attaches auth token, ensures credentials include,
+        // and safely handles 401 Unauthorized by stopping polling and redirecting to login.
+        const _nativeFetch = window.fetch.bind(window);
+        window.fetch = async function(url, options = {}) {
+            options = { ...options };
+            options.credentials = options.credentials || "include";
+            options.headers = { ...(options.headers || {}) };
+
+            const token = localStorage.getItem("inpartner_admin_token");
+            if (token && !options.headers["Authorization"]) {
+                options.headers["Authorization"] = `Bearer ${token}`;
+            }
+
+            try {
+                const res = await _nativeFetch(url, options);
+                if (res.status === 401) {
+                    if (pollingIntervalId) {
+                        clearInterval(pollingIntervalId);
+                        pollingIntervalId = null;
+                    }
+                    if (!isRedirectingToLogin) {
+                        isRedirectingToLogin = true;
+                        showToast("Sesi login admin telah berakhir. Mengalihkan ke login...", "error");
+                        setTimeout(() => {
+                            window.location.href = `${BASE_PREFIX}/admin/login?expired=1`;
+                        }, 1200);
+                    }
+                }
+                return res;
+            } catch (err) {
+                throw err;
+            }
+        };
+
         let currentTab = "overview";
         let allTopicsList = [];
         let selectedTopics = [];
@@ -2706,13 +2754,14 @@
                 const res = await fetch(`${BASE_PREFIX}/api/admin/automation/run-now`, { method: "POST" });
                 const data = await res.json();
 
-                if (data.status === "started") {
+                if (res.ok && data.status === "started") {
                     showToast(data.message, "success");
                     loadOverviewData();
                 } else if (data.status === "already_running") {
                     showToast("Automation is already in progress.", "error");
                 } else {
-                    showToast(data.message || "Could not start run.", "error");
+                    const errMsg = data.message || data.detail || (res.status === 401 ? "Sesi login admin telah berakhir. Silakan login kembali." : "Could not start run.");
+                    showToast(errMsg, "error");
                 }
             } catch (err) {
                 showToast("Error triggering run now.", "error");
@@ -3290,10 +3339,17 @@
         // Polling running status
         // -------------------------------------------------------------
         function startPollingStatus() {
-            setInterval(async () => {
+            if (pollingIntervalId) clearInterval(pollingIntervalId);
+            pollingIntervalId = setInterval(async () => {
                 try {
                     const res = await fetch(`${BASE_PREFIX}/api/admin/automation/running-status`);
-                    if (!res.ok) return;
+                    if (!res.ok) {
+                        if (res.status === 401 && pollingIntervalId) {
+                            clearInterval(pollingIntervalId);
+                            pollingIntervalId = null;
+                        }
+                        return;
+                    }
                     const data = await res.json();
                     const badge = document.getElementById("automationBadge");
                     const badgeText = document.getElementById("automationBadgeText");
@@ -4278,6 +4334,7 @@
             try {
                 await fetch(`${BASE_PREFIX}/api/admin/logout`, { method: "POST" });
             } finally {
+                localStorage.removeItem("inpartner_admin_token");
                 window.location.href = `${BASE_PREFIX}/admin/login`;
             }
         }

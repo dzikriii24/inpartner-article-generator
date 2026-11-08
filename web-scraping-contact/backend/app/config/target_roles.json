@@ -1,0 +1,67 @@
+{
+  "categories": [
+    {
+      "id": "human_resources",
+      "name": "Human Resources & Human Capital",
+      "department": "Human Resources",
+      "description": "Manajer, Direktur, dan pimpinan divisi HR dan Human Capital",
+      "roles": [
+        {"title": "Chief Human Resources Officer", "aliases": ["CHRO", "Chief HR Officer"], "seniority": "C-Level", "weight": 1.0},
+        {"title": "HR Director", "aliases": ["Human Resources Director", "Direktur HR", "Direktur SDM"], "seniority": "Director", "weight": 0.98},
+        {"title": "Director of Human Capital", "aliases": ["Human Capital Director", "Direktur Human Capital"], "seniority": "Director", "weight": 0.98},
+        {"title": "Head of Human Resources", "aliases": ["Head of HR", "Kepala Divisi HR", "Kepala Bagian SDM"], "seniority": "Head", "weight": 0.95},
+        {"title": "Head of Human Capital", "aliases": ["Head of HC", "Kepala Human Capital"], "seniority": "Head", "weight": 0.95},
+        {"title": "HR Vice President", "aliases": ["VP HR", "VP Human Capital", "Vice President Human Resources"], "seniority": "VP", "weight": 0.95},
+        {"title": "General Manager of Human Resources", "aliases": ["GM HR", "GM Human Capital"], "seniority": "Head", "weight": 0.92},
+        {"title": "Human Resources Manager", "aliases": ["HR Manager", "Manajer HR", "Manajer SDM"], "seniority": "Manager", "weight": 0.90},
+        {"title": "Human Capital Manager", "aliases": ["HC Manager", "Manajer Human Capital"], "seniority": "Manager", "weight": 0.90},
+        {"title": "Strategic Human Capital", "aliases": ["Strategic HC Manager", "Strategic HR"], "seniority": "Manager", "weight": 0.88},
+        {"title": "Human Resources Business Partner", "aliases": ["HRBP", "HR Business Partner", "Human Capital Business Partner"], "seniority": "Lead", "weight": 0.88},
+        {"title": "HR Specialist", "aliases": ["Human Resources Specialist", "Senior HR Specialist"], "seniority": "Specialist", "weight": 0.80}
+      ]
+    },
+    {
+      "id": "people_and_culture",
+      "name": "People & Culture / People Operations",
+      "department": "People & Culture",
+      "description": "Pemimpin People Operations, Culture, and Employee Experience",
+      "roles": [
+        {"title": "Chief People Officer", "aliases": ["CPO"], "seniority": "C-Level", "weight": 1.0},
+        {"title": "Head of People", "aliases": ["Head of People & Culture", "Head of People Operations"], "seniority": "Head", "weight": 0.95},
+        {"title": "People & Culture Manager", "aliases": ["People and Culture Manager", "Culture Manager"], "seniority": "Manager", "weight": 0.90},
+        {"title": "People Operations Manager", "aliases": ["People Ops Manager"], "seniority": "Manager", "weight": 0.90},
+        {"title": "People Experience Lead", "aliases": ["Employee Experience Lead", "People Lead"], "seniority": "Lead", "weight": 0.85}
+      ]
+    },
+    {
+      "id": "talent_acquisition",
+      "name": "Recruitment & Talent Acquisition",
+      "department": "Talent Acquisition",
+      "description": "Spesialis dan manajer akuisisi talenta, rekrutmen, dan pengembangan organisasi",
+      "roles": [
+        {"title": "Head of Recruitment", "aliases": ["Head of Talent Acquisition", "Head of Talent"], "seniority": "Head", "weight": 0.95},
+        {"title": "Talent Acquisition Manager", "aliases": ["TA Manager", "Recruitment Manager", "Manajer Rekrutmen"], "seniority": "Manager", "weight": 0.92},
+        {"title": "Talent Acquisition Lead", "aliases": ["Recruitment Lead", "Lead Recruiter"], "seniority": "Lead", "weight": 0.88},
+        {"title": "Talent Management Manager", "aliases": ["Talent Manager"], "seniority": "Manager", "weight": 0.88},
+        {"title": "Learning & Development Manager", "aliases": ["L&D Manager", "Training Manager", "Manajer Pelatihan"], "seniority": "Manager", "weight": 0.85},
+        {"title": "Organization Development Manager", "aliases": ["OD Manager", "Organization Development"], "seniority": "Manager", "weight": 0.85},
+        {"title": "Recruitment Specialist", "aliases": ["Talent Acquisition Specialist", "Senior Recruiter", "Recruiter"], "seniority": "Specialist", "weight": 0.82}
+      ]
+    },
+    {
+      "id": "leadership_decision_makers",
+      "name": "Leadership & Executive Decision Makers",
+      "department": "Leadership",
+      "description": "Direksi, Presiden Direktur, dan Eksekutif puncak pembuat keputusan strategis",
+      "roles": [
+        {"title": "President Director", "aliases": ["Presiden Direktur", "Direktur Utama", "CEO", "Chief Executive Officer", "Wakil Presiden Direktur"], "seniority": "C-Level", "weight": 0.92},
+        {"title": "President Commissioner", "aliases": ["Presiden Komisaris", "Komisaris Utama", "President Commissioner", "Chairman of the Board"], "seniority": "C-Level", "weight": 0.92},
+        {"title": "Managing Director", "aliases": ["Managing Director", "MD"], "seniority": "C-Level", "weight": 0.90},
+        {"title": "Director", "aliases": ["Direktur", "Executive Director", "Board of Directors", "Anggota Direksi", "Direktur Independen"], "seniority": "Director", "weight": 0.88},
+        {"title": "Commissioner", "aliases": ["Komisaris", "Komisaris Independen", "Independent Commissioner", "Dewan Komisaris", "Board of Commissioners"], "seniority": "Director", "weight": 0.86},
+        {"title": "Vice President", "aliases": ["VP", "Senior Vice President", "SVP"], "seniority": "VP", "weight": 0.85},
+        {"title": "Corporate Secretary", "aliases": ["Sekretaris Perusahaan", "Corsec"], "seniority": "Head", "weight": 0.82}
+      ]
+    }
+  ]
+}

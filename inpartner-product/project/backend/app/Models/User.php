@@ -17,6 +17,8 @@ class User extends Authenticatable
 
     protected $fillable = [
         'name', 'email', 'phone', 'password', 'role', 'status', 'last_login_at',
+        'avatar_url', 'bio', 'job_title', 'organization', 'department', 'country',
+        'timezone', 'preferred_language', 'reading_goals',
     ];
 
     protected $hidden = ['password', 'remember_token'];
@@ -27,6 +29,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'last_login_at' => 'datetime',
             'password' => 'hashed',
+            'reading_goals' => 'array',
         ];
     }
 
@@ -53,6 +56,36 @@ class User extends Authenticatable
     public function entitlements(): HasMany
     {
         return $this->hasMany(Entitlement::class);
+    }
+
+    public function wishlists(): HasMany
+    {
+        return $this->hasMany(Wishlist::class);
+    }
+
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    public function customRequests(): HasMany
+    {
+        return $this->hasMany(CustomRequest::class);
+    }
+
+    public function readingSchedules(): HasMany
+    {
+        return $this->hasMany(ReadingSchedule::class);
+    }
+
+    public function readingActivities(): HasMany
+    {
+        return $this->hasMany(ReadingActivity::class);
+    }
+
+    public function researchCollections(): HasMany
+    {
+        return $this->hasMany(ResearchCollection::class);
     }
 
     /** Does the user currently have valid access to the product? */

@@ -21,6 +21,17 @@ class Entitlement extends Model
             'revoked_at' => 'datetime',
             'last_accessed_at' => 'datetime',
             'progress' => 'integer',
+            'last_read_page' => 'integer',
+            'is_starred' => 'boolean',
+            'starred_at' => 'datetime',
+            'hidden_from_history' => 'boolean',
+            'bookmarks' => 'array',
+            'notes' => 'array',
+            'highlights' => 'array',
+            'ai_chats' => 'array',
+            'page_summaries' => 'array',
+            'pipeline_deadline' => 'date',
+            'pipeline_order' => 'integer',
         ];
     }
 
