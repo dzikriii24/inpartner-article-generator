@@ -5,6 +5,7 @@ import { LanguageProvider } from './context/LanguageContext';
 import { CartProvider } from './context/CartContext';
 import { CatalogProvider } from './context/CatalogContext';
 import { WishlistProvider } from './context/WishlistContext';
+import { SiteConfigProvider, useSiteConfig } from './context/SiteConfigContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import QuickCartDrawer from './components/QuickCartDrawer';
@@ -31,10 +32,16 @@ import Wishlist from './views/Wishlist';
 import Admin from './views/Admin';
 
 const StoreLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { theme } = useSiteConfig();
+  const containerMax = theme?.layout?.container_width || 'max-w-7xl';
+
   return (
-    <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-[#334155] font-sans selection:bg-[#D1E4F6] selection:text-[#0C3B69]">
+    <div
+      style={{ backgroundColor: theme?.colors?.canvas || '#F8FAFC', color: theme?.colors?.text_body || '#334155' }}
+      className="min-h-screen flex flex-col font-sans selection:bg-[#D1E4F6] selection:text-[#0C3B69]"
+    >
       <Navbar />
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8">
+      <main className={`flex-1 ${containerMax} w-full mx-auto px-4 sm:px-6 lg:px-8`}>
         {children}
       </main>
       <Footer />
@@ -96,13 +103,15 @@ export const App: React.FC = () => {
     <BrowserRouter>
       <LanguageProvider>
         <AuthProvider>
-          <CatalogProvider>
-            <CartProvider>
-              <WishlistProvider>
-                <AppRoutes />
-              </WishlistProvider>
-            </CartProvider>
-          </CatalogProvider>
+          <SiteConfigProvider>
+            <CatalogProvider>
+              <CartProvider>
+                <WishlistProvider>
+                  <AppRoutes />
+                </WishlistProvider>
+              </CartProvider>
+            </CatalogProvider>
+          </SiteConfigProvider>
         </AuthProvider>
       </LanguageProvider>
     </BrowserRouter>

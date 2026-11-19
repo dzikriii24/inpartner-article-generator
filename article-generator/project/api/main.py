@@ -16,9 +16,15 @@ from fastapi.concurrency import run_in_threadpool
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from database import SessionLocal
+from database import SessionLocal, engine
 from models import Topic, Source, GeneratedArticle, NewsContent, ArticleStatus, ArticleAudit
-from services.generator import generate_article_for_topic, update_article_step
+from services.generator import (
+    generate_article_for_topic,
+    update_article_step,
+    get_active_generation_jobs,
+    register_generation_job,
+    MAX_GENERATION_SECONDS
+)
 from services.aggregator import run_aggregation, FETCH_PROGRESS, update_fetch_progress
 from services.clustering import cluster_topics, filter_relevant_sources_for_prompt
 from services.export_service import export_markdown, export_html, export_docx, export_pdf, get_editorial_sources
@@ -29,6 +35,7 @@ from services.seo_engine import run_article_audit
 from services.optimizer_service import optimize_article_and_create_revision
 from api.store_routes import store_router
 from api.admin_routes import admin_router
+from api.slabs_routes import slabs_router
 from services.auth_service import ensure_initial_admin
 from services.topic_service import ensure_default_topics
 from services.scheduler_service import get_or_create_automation_settings, init_scheduler
@@ -57,6 +64,7 @@ uploads_dir = os.path.join(static_dir, "uploads")
 os.makedirs(uploads_dir, exist_ok=True)
 
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
+app.mount("/inpartner/static", StaticFiles(directory=static_dir), name="inpartner_static")
 
 templates = Jinja2Templates(directory=os.path.join(current_dir, "templates"))
 
@@ -265,15 +273,105 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
         }
     )
 
+import subprocess
+import json
+import time
+
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_JOB_RUNNER_PATH = os.path.join(_PROJECT_ROOT, "job_runner.py")
+_LOCK_DIR = "/tmp" if os.path.isdir("/tmp") else os.path.join(_PROJECT_ROOT, "tmp")
+
+
+def _spawn_detached_job(args_list: list[str], fallback_fn=None, fallback_args: tuple = ()):
+    """
+    Launches job_runner.py in a detached OS session so LiteSpeed lswsgi / Passenger
+    worker recycling never kills an in-flight article generation job.
+    """
+    try:
+        kwargs = {
+            "cwd": _PROJECT_ROOT,
+            "stdout": subprocess.DEVNULL,
+            "stderr": subprocess.DEVNULL,
+            "stdin": subprocess.DEVNULL,
+        }
+        if os.name == "nt":
+            kwargs["creationflags"] = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0x00000200)
+        else:
+            kwargs["start_new_session"] = True
+            kwargs["close_fds"] = True
+        subprocess.Popen([sys.executable, _JOB_RUNNER_PATH] + args_list, **kwargs)
+    except Exception as e:
+        print(f"[JobSpawner] Detached Popen failed ({e}), falling back to thread...")
+        if fallback_fn:
+            t = threading.Thread(target=fallback_fn, args=fallback_args, daemon=True)
+            t.start()
+
+
+def _get_db_active_job_count(db: Session) -> int:
+    cutoff = datetime.utcnow() - timedelta(seconds=MAX_GENERATION_SECONDS)
+    return db.query(GeneratedArticle).filter(
+        GeneratedArticle.generated_at >= cutoff,
+        GeneratedArticle.status.in_([ArticleStatus.RESEARCHING, ArticleStatus.GENERATING, ArticleStatus.FACT_CHECKING])
+    ).count()
+
+
+@router.get("/health")
+@router.get("/api/health")
+def health_check():
+    db_ok = False
+    active_count = 0
+    db = SessionLocal()
+    try:
+        db.execute(text("SELECT 1"))
+        db_ok = True
+        active_count = _get_db_active_job_count(db)
+    except Exception:
+        db_ok = False
+    finally:
+        db.close()
+
+    jobs_info = get_active_generation_jobs()
+    return {
+        "status": "ok" if db_ok else "degraded",
+        "service": "inpartner-article-generator",
+        "database": "connected" if db_ok else "disconnected",
+        "generation_queue": {
+            "active_jobs": active_count,
+            "max_concurrent": jobs_info["max_concurrent"]
+        },
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
 @router.get("/api/usage/status")
 def get_usage_status(db: Session = Depends(get_db)):
     return get_usage_and_model_status(db)
 
 @router.post("/api/generate/prompt")
 def api_generate_from_prompt(req: GeneratePromptRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
-    prompt_text = req.prompt.strip()
-    if not prompt_text:
-        return JSONResponse({"status": "error", "message": "Prompt cannot be empty."}, status_code=400)
+    prompt_text = (req.prompt or "").strip()
+    if not prompt_text or len(prompt_text) < 3:
+        return JSONResponse({"status": "error", "message": "Prompt must be at least 3 characters."}, status_code=400)
+    if len(prompt_text) > 2000:
+        return JSONResponse({"status": "error", "message": "Prompt exceeds maximum allowed length (2000 characters)."}, status_code=400)
+
+    # Prevent duplicate simultaneous generation of the exact same prompt within last 3 minutes
+    recent_cutoff = datetime.utcnow() - timedelta(minutes=3)
+    existing_in_progress = db.query(GeneratedArticle).filter(
+        GeneratedArticle.user_prompt == prompt_text,
+        GeneratedArticle.generated_at >= recent_cutoff,
+        GeneratedArticle.status.in_([ArticleStatus.RESEARCHING, ArticleStatus.GENERATING, ArticleStatus.FACT_CHECKING])
+    ).first()
+    if existing_in_progress:
+        return {"status": "success", "article_id": existing_in_progress.id, "deduplicated": True}
+
+    # Check queue capacity
+    queue_info = get_active_generation_jobs()
+    active_db_jobs = _get_db_active_job_count(db)
+    if active_db_jobs >= queue_info["max_concurrent"] * 3:
+        return JSONResponse(
+            {"status": "error", "message": "Generation queue is currently full. Please wait for active jobs to complete."},
+            status_code=429
+        )
         
     article = GeneratedArticle(
         title=f"Generating: {prompt_text[:60]}...",
@@ -289,10 +387,11 @@ def api_generate_from_prompt(req: GeneratePromptRequest, background_tasks: Backg
     
     record_article_generation(db)
     
-    # Use threading.Thread instead of FastAPI BackgroundTasks for WSGI/cPanel
-    thread = threading.Thread(target=background_generate_prompt, args=(article.id, prompt_text))
-    thread.daemon = True
-    thread.start()
+    _spawn_detached_job(
+        ["--mode", "prompt", "--article-id", str(article.id)],
+        fallback_fn=background_generate_prompt,
+        fallback_args=(article.id, prompt_text)
+    )
     
     return {"status": "success", "article_id": article.id}
 
@@ -301,6 +400,23 @@ def api_generate_article(topic_id: int, background_tasks: BackgroundTasks, db: S
     topic = db.query(Topic).filter(Topic.id == topic_id).first()
     if not topic:
         return JSONResponse({"status": "error", "message": "Topic not found"}, status_code=404)
+
+    recent_cutoff = datetime.utcnow() - timedelta(minutes=3)
+    existing_in_progress = db.query(GeneratedArticle).filter(
+        GeneratedArticle.topic_id == topic.id,
+        GeneratedArticle.generated_at >= recent_cutoff,
+        GeneratedArticle.status.in_([ArticleStatus.RESEARCHING, ArticleStatus.GENERATING, ArticleStatus.FACT_CHECKING])
+    ).first()
+    if existing_in_progress:
+        return {"status": "success", "article_id": existing_in_progress.id, "deduplicated": True}
+
+    queue_info = get_active_generation_jobs()
+    active_db_jobs = _get_db_active_job_count(db)
+    if active_db_jobs >= queue_info["max_concurrent"] * 3:
+        return JSONResponse(
+            {"status": "error", "message": "Generation queue is currently full. Please wait for active jobs to complete."},
+            status_code=429
+        )
         
     article = GeneratedArticle(
         topic_id=topic.id,
@@ -317,10 +433,11 @@ def api_generate_article(topic_id: int, background_tasks: BackgroundTasks, db: S
     
     record_article_generation(db)
     
-    # Use threading.Thread instead of FastAPI BackgroundTasks for WSGI/cPanel
-    thread = threading.Thread(target=background_generate_topic, args=(article.id, topic.id))
-    thread.daemon = True
-    thread.start()
+    _spawn_detached_job(
+        ["--mode", "topic", "--article-id", str(article.id), "--topic-id", str(topic.id)],
+        fallback_fn=background_generate_topic,
+        fallback_args=(article.id, topic.id)
+    )
     
     return {"status": "success", "article_id": article.id}
 
@@ -329,6 +446,18 @@ def get_article_status(article_id: int, db: Session = Depends(get_db)):
     article = db.query(GeneratedArticle).filter(GeneratedArticle.id == article_id).first()
     if not article:
         return JSONResponse({"status": "error", "message": "Article not found"}, status_code=404)
+
+    # Detect orphaned/timed-out jobs
+    if article.status in (ArticleStatus.RESEARCHING, ArticleStatus.GENERATING, ArticleStatus.FACT_CHECKING):
+        age_sec = (datetime.utcnow() - article.generated_at).total_seconds() if article.generated_at else 0
+        if age_sec > (MAX_GENERATION_SECONDS + 30):
+            update_article_step(
+                db,
+                article,
+                "failed",
+                ArticleStatus.FAILED,
+                "Generation timed out. Please try again."
+            )
         
     return {
         "status": article.status.value if hasattr(article.status, "value") else str(article.status),
@@ -353,19 +482,27 @@ def background_fetch_job():
 
 @router.post("/api/fetch")
 def api_fetch_news(background_tasks: BackgroundTasks):
-    if FETCH_PROGRESS.get("is_fetching", False):
+    status_now = get_fetch_status()
+    if status_now.get("is_fetching", False):
         return {"status": "in_progress", "message": "News discovery is already running."}
         
     update_fetch_progress("rss", "Starting news discovery & RSS aggregation...", is_fetching=True)
-    
-    thread = threading.Thread(target=background_fetch_job)
-    thread.daemon = True
-    thread.start()
-    
+    _spawn_detached_job(["--mode", "fetch"], fallback_fn=background_fetch_job)
     return {"status": "started"}
 
 @router.get("/api/fetch/status")
 def get_fetch_status():
+    progress_file = os.path.join(_LOCK_DIR, "inpartner_fetch_progress.json")
+    if os.path.exists(progress_file):
+        try:
+            with open(progress_file, "r") as f:
+                data = json.load(f)
+            if data.get("is_fetching") and time.time() - data.get("updated_at", 0) > 180:
+                data["is_fetching"] = False
+                data["step"] = "done"
+            return data
+        except Exception:
+            pass
     return FETCH_PROGRESS
 
 @router.get("/topic/{topic_id}")
@@ -870,31 +1007,45 @@ async def auto_fetch_loop():
 
 from sqlalchemy import text
 
+_app_initialized = False
+_init_lock = threading.Lock()
+
 def ensure_schema_updates():
+    db = SessionLocal()
     try:
-        db = SessionLocal()
         db.execute(text("ALTER TABLE generated_articles ADD COLUMN translations JSON NULL"))
         db.commit()
-        db.close()
-    except Exception as e:
+    except Exception:
         pass
+    finally:
+        db.close()
 
 def init_application_state():
-    try:
-        ensure_schema_updates()
+    global _app_initialized
+    if _app_initialized:
+        return
+    with _init_lock:
+        if _app_initialized:
+            return
         db = SessionLocal()
-        ensure_initial_admin(db)
-        ensure_default_topics(db)
-        get_or_create_automation_settings(db)
-        db.close()
-        init_scheduler()
-    except Exception as e:
-        print(f"[Startup Warning] Error initializing application state: {e}")
+        try:
+            ensure_schema_updates()
+            ensure_initial_admin(db)
+            ensure_default_topics(db)
+            get_or_create_automation_settings(db)
+            if os.getenv("ENABLE_SCHEDULER", "true").lower() == "true":
+                init_scheduler()
+            _app_initialized = True
+        except Exception as e:
+            print(f"[Startup Warning] Error initializing application state: {e}")
+        finally:
+            db.close()
 
 @app.on_event("startup")
 async def on_app_startup():
     await run_in_threadpool(init_application_state)
-    asyncio.create_task(auto_fetch_loop())
+    if os.getenv("ENABLE_AUTO_FETCH_LOOP", "false").lower() == "true":
+        asyncio.create_task(auto_fetch_loop())
 
 app.include_router(router)
 app.include_router(router, prefix="/inpartner")
@@ -905,6 +1056,7 @@ app.include_router(store_router, prefix="/inpartner")
 
 # Inpartner Admin Dashboard & Daily Article Automation
 app.include_router(admin_router)
+app.include_router(slabs_router)
 app.include_router(admin_router, prefix="/inpartner")
 
 if __name__ == "__main__":

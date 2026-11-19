@@ -1,0 +1,1436 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PORTAL RISET & INTELIJEN SEKTORAL INDONESIA — Prototipe Evaluasi</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f8fafc;
+      color: #0f172a;
+    }
+    /* Custom scrollbar for split screen */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    .draggable-card {
+      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    }
+    .draggable-card[draggable="true"]:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px -6px rgba(15, 23, 42, 0.08);
+    }
+    .draggable-card.dragging {
+      opacity: 0.55;
+      transform: scale(0.98);
+      border-color: #2563eb;
+    }
+    .drop-zone-active {
+      background-color: #eff6ff !important;
+      border-color: #2563eb !important;
+      transform: scale(1.01);
+    }
+    .bar-transition {
+      transition: height 0.35s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease, transform 0.15s ease;
+    }
+    .interactive-bar:hover {
+      filter: brightness(1.08);
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- TOP RESEARCH STIMULUS NAVIGATION BAR (STICKY) -->
+  <header class="sticky top-0 z-40 bg-slate-900 text-white shadow-md border-b border-slate-800">
+    <div class="max-w-[1600px] mx-auto px-4 sm:px-6 py-3 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+      
+      <!-- Neutral Platform Identity -->
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center font-extrabold text-sm tracking-wider shadow-inner">
+            PR
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-bold tracking-tight text-sm sm:text-base text-white">PORTAL RISET &amp; INTELIJEN SEKTORAL INDONESIA</span>
+              <span class="hidden sm:inline-block text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-800 text-blue-300 border border-slate-700">
+                Dokumen Evaluasi Antarmuka
+              </span>
+            </div>
+            <p class="text-xs text-slate-400">Repositori Kajian Industri, Makroekonomi, &amp; Transportasi Nasional</p>
+          </div>
+        </div>
+
+        <!-- Mobile Scenario Toggle -->
+        <button onclick="toggleTaskBanner()" class="lg:hidden text-xs px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">
+          Skenario Tugas
+        </button>
+      </div>
+
+      <!-- Version Switcher (Versi A vs Versi B) & Task Banner Control -->
+      <div class="flex flex-wrap items-center justify-between lg:justify-end gap-2 sm:gap-3">
+        <!-- Main Version Toggle Tabs -->
+        <div class="inline-flex p-1 rounded-xl bg-slate-800 border border-slate-700" role="tablist">
+          <button
+            id="btn-versi-a"
+            onclick="switchVersion('A')"
+            class="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 bg-blue-600 text-white shadow"
+          >
+            <span class="w-2 h-2 rounded-full bg-white" id="dot-versi-a"></span>
+            Versi A: Laporan Konten Statis
+          </button>
+          <button
+            id="btn-versi-b"
+            onclick="switchVersion('B')"
+            class="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 text-slate-300 hover:text-white"
+          >
+            <span class="w-2 h-2 rounded-full bg-slate-500" id="dot-versi-b"></span>
+            Versi B: Laporan + Tab Dasbor Interaktif
+          </button>
+        </div>
+
+        <!-- Toggle Think-Aloud Task Box -->
+        <button
+          id="btn-toggle-task"
+          onclick="toggleTaskBanner()"
+          class="hidden lg:inline-flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 transition"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+          </svg>
+          <span id="task-toggle-label">Sembunyikan Tugas Think-Aloud</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Collapsible Think-Aloud Scenario Banner -->
+    <div id="task-banner" class="bg-amber-950/90 border-t border-amber-800/70 text-amber-100 transition-all">
+      <div class="max-w-[1600px] mx-auto px-4 sm:px-6 py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div class="flex items-start sm:items-center gap-2.5">
+          <span class="shrink-0 mt-0.5 sm:mt-0 px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-amber-400 text-slate-950">
+            Skenario Tugas Informan (Think-Aloud)
+          </span>
+          <p class="text-xs sm:text-sm font-medium leading-relaxed text-amber-50">
+            <strong>Tugas:</strong> Bandingkan prospek, konsentrasi wilayah, dan struktur armada antara <strong>(1) Subsektor Kendaraan Penumpang (Mobil &amp; Sepeda Motor)</strong> dan <strong>(2) Subsektor Kendaraan Komersial/Logistik (Truk &amp; Bus)</strong> di Indonesia pada periode <strong>2021–2026</strong>. Ucapkan secara lisan apa yang Anda perhatikan dan pikirkan saat mengeksplorasi halaman ini.
+          </p>
+        </div>
+        <span id="active-mode-pill" class="shrink-0 text-[11px] font-semibold px-2.5 py-1 rounded-md bg-amber-900/80 border border-amber-700 text-amber-200">
+          Mode Aktif: Versi A (Statis)
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN WORKSPACE CONTAINER -->
+  <main class="flex-1 max-w-[1600px] w-full mx-auto px-4 sm:px-6 py-6">
+    
+    <!-- Dynamic Layout Grid: Single Column Centered in Versi A, 2-Column Split-Screen in Versi B -->
+    <div id="workspace-grid" class="max-w-4xl mx-auto transition-all duration-300">
+
+      <!-- =================================================================== -->
+      <!-- LEFT COLUMN (OR FULL COLUMN IN VERSI A): THEMATIC RESEARCH REPORT   -->
+      <!-- =================================================================== -->
+      <section id="report-column" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        
+        <!-- Report Credibility Header (Identical in Versi A & Versi B per Aziz et al., 2024) -->
+        <div class="p-6 sm:p-8 border-b border-slate-200 bg-gradient-to-b from-slate-50 to-white">
+          <div class="flex flex-wrap items-center gap-2 mb-3">
+            <span class="px-2.5 py-1 rounded-md text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+              Laporan Tematik Sektoral
+            </span>
+            <span class="px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+              <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+              </svg>
+              Sumber Terverifikasi: BPS &amp; Statista (2021–2026)
+            </span>
+            <span class="text-xs text-slate-500 ml-auto">Kode Dokumen: SR-OTM-2026-Q4</span>
+          </div>
+
+          <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900 leading-snug mb-4">
+            Laporan Analisis Sektoral Otomotif &amp; Transportasi Indonesia (2021–2026): Perbandingan Subsektor Kendaraan Penumpang vs. Kendaraan Komersial &amp; Logistik
+          </h1>
+
+          <!-- Standardized Metadata Bar -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 border-t border-slate-200/80 text-xs">
+            <div>
+              <span class="text-slate-400 block">Tanggal Publikasi</span>
+              <span class="font-semibold text-slate-700">November 2026 (Data Mutakhir)</span>
+            </div>
+            <div>
+              <span class="text-slate-400 block">Penyusun Riset</span>
+              <span class="font-semibold text-slate-700">Tim Riset Sektoral Nasional</span>
+            </div>
+            <div>
+              <span class="text-slate-400 block">Cakupan Geografis</span>
+              <span class="font-semibold text-slate-700">Nasional &amp; 4 Koridor Pulau Utama</span>
+            </div>
+            <div>
+              <span class="text-slate-400 block">Indikator Kualitas Data</span>
+              <span class="font-semibold text-emerald-700">Akurasi &amp; Kelengkapan Terstandar</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Report Body Content -->
+        <div class="p-6 sm:p-8 space-y-8">
+          
+          <!-- Narrative Section 1 -->
+          <article class="prose max-w-none space-y-4 text-sm sm:text-base text-slate-700 leading-relaxed">
+            <h2 class="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+              <span class="w-1.5 h-5 rounded-full bg-blue-600 inline-block"></span>
+              1. Ringkasan Eksekutif &amp; Struktur Fundamental Sektoral
+            </h2>
+            <p>
+              Industri otomotif dan transportasi darat Indonesia pada periode <strong>2021 hingga 2026</strong> memperlihatkan divergensi struktural yang nyata antara dua subsektor utamanya: <strong>Subsektor Kendaraan Penumpang</strong> (mencakup mobil penumpang pribadi dan sepeda motor) serta <strong>Subsektor Kendaraan Komersial dan Logistik</strong> (mencakup armada truk angkutan barang dan bus antarkota/industri). Meskipun secara volume agregat nasional kendaraan penumpang mendominasi hingga <strong>90%</strong> dari total populasi kendaraan bermotor aktif, dinamika pertumbuhan dan konsentrasi geografis kedua subsektor ini digerakkan oleh faktor fundamental ekonomi yang sangat berbeda.
+            </p>
+            <p>
+              <strong>Subsektor Kendaraan Penumpang</strong> sangat sensitif terhadap daya beli konsumsi rumah tangga perkotaan, suku bunga pembiayaan konsumen (<em>multifinance</em>), serta kepadatan komuter di koridor megapolitan Pulau Jawa. Sebaliknya, <strong>Subsektor Kendaraan Komersial &amp; Logistik</strong> memiliki korelasi langsung dengan arus distribusi barang <em>e-commerce</em>, pembangunan infrastruktur jalan tol trans-pulau, serta ekspansi industri ekstraktif, pertambangan, dan perkebunan komoditas (kelapa sawit, batu bara, dan hilirisasi mineral) yang terkonsentrasi di <strong>Pulau Sumatera, Kalimantan, dan Sulawesi</strong>.
+            </p>
+          </article>
+
+          <!-- =============================================================== -->
+          <!-- VISUALIZATION CARD 1: PROPORSI ARMADA (40% MOBIL, 50% MOTOR, 10% TRUK/BUS) -->
+          <!-- =============================================================== -->
+          <div
+            id="card-proporsi"
+            draggable="false"
+            ondragstart="handleDragStart(event, 'proporsi')"
+            ondragend="handleDragEnd(event)"
+            class="draggable-card rounded-2xl border border-slate-200 bg-slate-50/70 p-5 sm:p-6 relative"
+          >
+            <!-- Top Bar of Visualization Card -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 mb-4 border-b border-slate-200">
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-blue-100 text-blue-800">
+                    Visualisasi 1 • Komposisi Armada
+                  </span>
+                  <span class="versi-a-badge text-[11px] font-medium text-slate-500">
+                    (Diagram Statis)
+                  </span>
+                </div>
+                <h3 class="text-base font-bold text-slate-900 mt-1">
+                  Diagram Proporsi &amp; Komposisi Kendaraan Bermotor di Indonesia (2025–2026)
+                </h3>
+              </div>
+
+              <!-- Versi B Interactive Action Trigger (Hidden in Versi A) -->
+              <div class="versi-b-control hidden shrink-0 flex items-center gap-2">
+                <span class="hidden xl:inline-block text-[11px] text-slate-500 italic">
+                  Tarik kartu ke kanan atau klik:
+                </span>
+                <button
+                  onclick="loadCardToDashboard('proporsi')"
+                  class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-sm flex items-center gap-1.5 transition"
+                >
+                  <span>Buka di Tab Dasbor</span>
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Static Bar Chart Display inside the Report -->
+            <div class="bg-white rounded-xl p-4 sm:p-5 border border-slate-200">
+              <div class="flex items-center justify-between text-xs text-slate-500 mb-4">
+                <span>Basis Populasi: Estimasi Agregat Nasional (2025–2026)</span>
+                <span class="font-medium text-slate-700">Total Proporsi = 100%</span>
+              </div>
+
+              <!-- 3-Bar Vertical Chart (40% Mobil, 50% Motor, 10% Truk/Bus) -->
+              <div class="grid grid-cols-3 gap-4 sm:gap-8 items-end h-52 pt-6 pb-2 px-4 sm:px-8 border-b border-slate-200 bg-slate-50/50 rounded-t-lg">
+                
+                <!-- Bar 1: 40% Mobil Penumpang -->
+                <div class="flex flex-col items-center h-full justify-end">
+                  <span class="text-sm sm:text-base font-extrabold text-blue-700 mb-1">40%</span>
+                  <div class="w-full max-w-[96px] bg-blue-600 rounded-t-lg shadow-sm" style="height: 68%;"></div>
+                </div>
+
+                <!-- Bar 2: 50% Sepeda Motor -->
+                <div class="flex flex-col items-center h-full justify-end">
+                  <span class="text-sm sm:text-base font-extrabold text-indigo-700 mb-1">50%</span>
+                  <div class="w-full max-w-[96px] bg-indigo-500 rounded-t-lg shadow-sm" style="height: 85%;"></div>
+                </div>
+
+                <!-- Bar 3: 10% Truk & Bus -->
+                <div class="flex flex-col items-center h-full justify-end">
+                  <span class="text-sm sm:text-base font-extrabold text-amber-700 mb-1">10%</span>
+                  <div class="w-full max-w-[96px] bg-amber-500 rounded-t-lg shadow-sm" style="height: 22%;"></div>
+                </div>
+              </div>
+
+              <!-- X-Axis Labels -->
+              <div class="grid grid-cols-3 gap-4 sm:gap-8 pt-3 text-center">
+                <div>
+                  <p class="text-xs sm:text-sm font-bold text-slate-800">Mobil Penumpang</p>
+                  <p class="text-[11px] text-slate-500">Subsektor Penumpang</p>
+                </div>
+                <div>
+                  <p class="text-xs sm:text-sm font-bold text-slate-800">Sepeda Motor</p>
+                  <p class="text-[11px] text-slate-500">Subsektor Penumpang</p>
+                </div>
+                <div>
+                  <p class="text-xs sm:text-sm font-bold text-slate-800">Truk &amp; Bus</p>
+                  <p class="text-[11px] text-slate-500">Subsektor Komersial/Logistik</p>
+                </div>
+              </div>
+
+              <p class="text-xs text-slate-500 mt-4 pt-3 border-t border-slate-100">
+                <strong>Catatan Laporan:</strong> Pada tampilan laporan dasar ini, angka disajikan sebagai proporsi agregat nasional (40% mobil, 50% sepeda motor, dan 10% truk/bus). Rincian unit absolut per lembaga sumber dan variasi struktur armada antar-pulau dibahas pada bagian analisis wilayah.
+              </p>
+            </div>
+          </div>
+
+          <!-- Narrative Section 2 -->
+          <article class="prose max-w-none space-y-4 text-sm sm:text-base text-slate-700 leading-relaxed">
+            <h2 class="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+              <span class="w-1.5 h-5 rounded-full bg-blue-600 inline-block"></span>
+              2. Perbandingan Tren Pertumbuhan Tahunan (2021–2026)
+            </h2>
+            <p>
+              Pasca-pemulihan mobilitas pada tahun 2021–2022, pertumbuhan tahunan (<em>Year-on-Year</em>) <strong>Subsektor Kendaraan Penumpang</strong> cenderung mengalami normalisasi dan bergerak moderat pada kisaran <strong>4,8% hingga 5,4% per tahun</strong> menjelang 2025–2026. Jenuhnya kepemilikan kendaraan pribadi di kota-kota besar Pulau Jawa menyebabkan pertumbuhan kendaraan penumpang lebih banyak ditopang oleh siklus penggantian unit (<em>replacement demand</em>).
+            </p>
+            <p>
+              Sebaliknya, <strong>Subsektor Kendaraan Komersial &amp; Logistik (Truk &amp; Bus)</strong> mencatat akselerasi pertumbuhan yang lebih tinggi dan persisten pada kisaran <strong>6,8% hingga 8,4% per tahun</strong> sepanjang periode 2022–2026. Lonjakan permintaan armada truk medium dan berat didorong oleh desentralisasi gudang logistik ritel modern serta peningkatan volume angkut komoditas sumber daya alam di luar Pulau Jawa.
+            </p>
+          </article>
+
+          <!-- =============================================================== -->
+          <!-- VISUALIZATION CARD 2: TREN PERTUMBUHAN TAHUNAN 2021-2026        -->
+          <!-- =============================================================== -->
+          <div
+            id="card-tren"
+            draggable="false"
+            ondragstart="handleDragStart(event, 'tren')"
+            ondragend="handleDragEnd(event)"
+            class="draggable-card rounded-2xl border border-slate-200 bg-slate-50/70 p-5 sm:p-6 relative"
+          >
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 mb-4 border-b border-slate-200">
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-indigo-100 text-indigo-800">
+                    Visualisasi 2 • Dinamika Seri Waktu
+                  </span>
+                  <span class="versi-a-badge text-[11px] font-medium text-slate-500">
+                    (Diagram Statis)
+                  </span>
+                </div>
+                <h3 class="text-base font-bold text-slate-900 mt-1">
+                  Diagram Tren Pertumbuhan Tahunan Subsektor Penumpang vs. Komersial (2021–2026)
+                </h3>
+              </div>
+
+              <!-- Versi B Action Trigger -->
+              <div class="versi-b-control hidden shrink-0 flex items-center gap-2">
+                <button
+                  onclick="loadCardToDashboard('tren')"
+                  class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-sm flex items-center gap-1.5 transition"
+                >
+                  <span>Buka di Tab Dasbor</span>
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Static Multi-Year Trend Comparison inside Report -->
+            <div class="bg-white rounded-xl p-4 sm:p-5 border border-slate-200">
+              <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600 mb-4">
+                <span>Laju Pertumbuhan Armada Tahunan (% YoY Nasional)</span>
+                <div class="flex items-center gap-4">
+                  <span class="flex items-center gap-1.5 font-medium">
+                    <span class="w-3 h-3 rounded-sm bg-blue-600 inline-block"></span> Subsektor Penumpang (Mobil &amp; Motor)
+                  </span>
+                  <span class="flex items-center gap-1.5 font-medium">
+                    <span class="w-3 h-3 rounded-sm bg-amber-500 inline-block"></span> Subsektor Komersial (Truk &amp; Bus)
+                  </span>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-6 gap-2 sm:gap-4 items-end h-44 pt-6 pb-2 px-2 sm:px-4 border-b border-slate-200 bg-slate-50/50 rounded-t-lg">
+                <!-- 2021 -->
+                <div class="flex flex-col items-center h-full justify-end">
+                  <div class="flex items-end gap-1 w-full justify-center h-full">
+                    <div class="w-3 sm:w-5 bg-blue-600 rounded-t" style="height: 38%;" title="Penumpang 2021: 3.8%"></div>
+                    <div class="w-3 sm:w-5 bg-amber-500 rounded-t" style="height: 45%;" title="Komersial 2021: 4.5%"></div>
+                  </div>
+                </div>
+                <!-- 2022 -->
+                <div class="flex flex-col items-center h-full justify-end">
+                  <div class="flex items-end gap-1 w-full justify-center h-full">
+                    <div class="w-3 sm:w-5 bg-blue-600 rounded-t" style="height: 52%;"></div>
+                    <div class="w-3 sm:w-5 bg-amber-500 rounded-t" style="height: 68%;"></div>
+                  </div>
+                </div>
+                <!-- 2023 -->
+                <div class="flex flex-col items-center h-full justify-end">
+                  <div class="flex items-end gap-1 w-full justify-center h-full">
+                    <div class="w-3 sm:w-5 bg-blue-600 rounded-t" style="height: 56%;"></div>
+                    <div class="w-3 sm:w-5 bg-amber-500 rounded-t" style="height: 74%;"></div>
+                  </div>
+                </div>
+                <!-- 2024 -->
+                <div class="flex flex-col items-center h-full justify-end">
+                  <div class="flex items-end gap-1 w-full justify-center h-full">
+                    <div class="w-3 sm:w-5 bg-blue-600 rounded-t" style="height: 50%;"></div>
+                    <div class="w-3 sm:w-5 bg-amber-500 rounded-t" style="height: 78%;"></div>
+                  </div>
+                </div>
+                <!-- 2025 -->
+                <div class="flex flex-col items-center h-full justify-end">
+                  <div class="flex items-end gap-1 w-full justify-center h-full">
+                    <div class="w-3 sm:w-5 bg-blue-600 rounded-t" style="height: 51%;"></div>
+                    <div class="w-3 sm:w-5 bg-amber-500 rounded-t" style="height: 81%;"></div>
+                  </div>
+                </div>
+                <!-- 2026 -->
+                <div class="flex flex-col items-center h-full justify-end">
+                  <div class="flex items-end gap-1 w-full justify-center h-full">
+                    <div class="w-3 sm:w-5 bg-blue-600 rounded-t" style="height: 53%;"></div>
+                    <div class="w-3 sm:w-5 bg-amber-500 rounded-t" style="height: 84%;"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-6 gap-2 sm:gap-4 pt-2 text-center text-xs font-semibold text-slate-700">
+                <div>2021<span class="block text-[10px] font-normal text-slate-500">3,8% | 4,5%</span></div>
+                <div>2022<span class="block text-[10px] font-normal text-slate-500">5,2% | 6,8%</span></div>
+                <div>2023<span class="block text-[10px] font-normal text-slate-500">5,6% | 7,4%</span></div>
+                <div>2024<span class="block text-[10px] font-normal text-slate-500">5,0% | 7,8%</span></div>
+                <div>2025<span class="block text-[10px] font-normal text-slate-500">5,1% | 8,1%</span></div>
+                <div>2026<span class="block text-[10px] font-normal text-slate-500">5,3% | 8,4%</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Narrative Section 3 -->
+          <article class="prose max-w-none space-y-4 text-sm sm:text-base text-slate-700 leading-relaxed">
+            <h2 class="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+              <span class="w-1.5 h-5 rounded-full bg-blue-600 inline-block"></span>
+              3. Konsentrasi Wilayah &amp; Ketimpangan Struktur Armada Antar-Pulau
+            </h2>
+            <p>
+              Apabila dibedah menurut wilayah kepulauan, terlihat jelas bahwa struktur armada nasional (40% mobil, 50% sepeda motor, 10% truk/bus) tidak tersebar secara seragam. <strong>Pulau Jawa</strong> menyerap sekitar 60% dari total kendaraan nasional dengan kecondongan kuat pada mobil penumpang (44%) dan sepeda motor (48%), sedangkan porsi truk dan bus hanya mencapai 8%.
+            </p>
+            <p>
+              Sebaliknya, di <strong>Pulau Sumatera</strong> serta <strong>Kalimantan dan Sulawesi</strong>, proporsi kendaraan komersial (truk dan bus) meningkat hampir dua hingga lebih dari dua kali lipat rata-rata nasional (mencapai <strong>18% di Sumatera</strong> dan <strong>22% di Kalimantan &amp; Sulawesi</strong> pada periode 2025–2026). Hal ini menegaskan bahwa ekspansi pembiayaan, suku cadang, dan layanan armada komersial memiliki potensi pertumbuhan pasar yang jauh lebih prospektif di koridor ekonomi luar Jawa.
+            </p>
+          </article>
+
+          <!-- =============================================================== -->
+          <!-- VISUALIZATION CARD 3: TABEL PERBANDINGAN INDIKATOR PER PULAU    -->
+          <!-- =============================================================== -->
+          <div
+            id="card-wilayah"
+            draggable="false"
+            ondragstart="handleDragStart(event, 'wilayah')"
+            ondragend="handleDragEnd(event)"
+            class="draggable-card rounded-2xl border border-slate-200 bg-slate-50/70 p-5 sm:p-6 relative"
+          >
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 mb-4 border-b border-slate-200">
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
+                    Visualisasi 3 • Matriks Regional
+                  </span>
+                  <span class="versi-a-badge text-[11px] font-medium text-slate-500">
+                    (Tabel Statis)
+                  </span>
+                </div>
+                <h3 class="text-base font-bold text-slate-900 mt-1">
+                  Tabel Perbandingan Indikator Kinerja Sektoral per Pulau (Periode 2025–2026)
+                </h3>
+              </div>
+
+              <!-- Versi B Action Trigger -->
+              <div class="versi-b-control hidden shrink-0 flex items-center gap-2">
+                <button
+                  onclick="loadCardToDashboard('wilayah')"
+                  class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-sm flex items-center gap-1.5 transition"
+                >
+                  <span>Buka di Tab Dasbor</span>
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="overflow-x-auto bg-white rounded-xl border border-slate-200">
+              <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                <thead>
+                  <tr class="bg-slate-100 text-slate-700 border-b border-slate-200">
+                    <th class="py-3 px-4 font-bold">Wilayah Kepulauan</th>
+                    <th class="py-3 px-4 font-bold">Proporsi Mobil</th>
+                    <th class="py-3 px-4 font-bold">Proporsi Motor</th>
+                    <th class="py-3 px-4 font-bold">Proporsi Truk &amp; Bus</th>
+                    <th class="py-3 px-4 font-bold">Pendorong Ekonomi Utama</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200 text-slate-700">
+                  <tr class="hover:bg-slate-50">
+                    <td class="py-3 px-4 font-semibold text-slate-900">Nasional (Indonesia)</td>
+                    <td class="py-3 px-4 font-semibold text-blue-700">40%</td>
+                    <td class="py-3 px-4 font-semibold text-indigo-700">50%</td>
+                    <td class="py-3 px-4 font-semibold text-amber-700">10%</td>
+                    <td class="py-3 px-4 text-xs text-slate-600">Kombinasi konsumsi domestik &amp; logistik antarpulau</td>
+                  </tr>
+                  <tr class="hover:bg-slate-50">
+                    <td class="py-3 px-4 font-semibold text-slate-900">Pulau Jawa</td>
+                    <td class="py-3 px-4">44%</td>
+                    <td class="py-3 px-4">48%</td>
+                    <td class="py-3 px-4">8%</td>
+                    <td class="py-3 px-4 text-xs text-slate-600">Mobilitas komuter perkotaan, jasa, &amp; ritel manufaktur</td>
+                  </tr>
+                  <tr class="hover:bg-slate-50">
+                    <td class="py-3 px-4 font-semibold text-slate-900">Pulau Sumatera</td>
+                    <td class="py-3 px-4">32%</td>
+                    <td class="py-3 px-4">50%</td>
+                    <td class="py-3 px-4 font-semibold text-amber-700">18%</td>
+                    <td class="py-3 px-4 text-xs text-slate-600">Angkutan komoditas perkebunan (sawit/karet) &amp; lintas tol</td>
+                  </tr>
+                  <tr class="hover:bg-slate-50">
+                    <td class="py-3 px-4 font-semibold text-slate-900">Kalimantan &amp; Sulawesi</td>
+                    <td class="py-3 px-4">30%</td>
+                    <td class="py-3 px-4">48%</td>
+                    <td class="py-3 px-4 font-semibold text-amber-700">22%</td>
+                    <td class="py-3 px-4 text-xs text-slate-600">Logistik pertambangan, smelter hilirisasi, &amp; konstruksi</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Bottom Section: Related Sectoral Report Archive (Identical in Versi A & B) -->
+          <div class="pt-6 border-t border-slate-200">
+            <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 mb-4">
+              Arsip Laporan Sektoral Terkait (Teks Statis)
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/60">
+                <span class="text-[11px] font-semibold text-blue-700">SR-OTM-2026-Q3 • Agustus 2026</span>
+                <h4 class="text-sm font-bold text-slate-800 mt-1">Evaluasi Rantai Pasok Kendaraan Niaga &amp; Logistik Ritel</h4>
+                <p class="text-xs text-slate-500 mt-1">Kajian permintaan armada truk ringan pada koridor distribusi e-commerce Jawa–Sumatera.</p>
+              </div>
+              <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/60">
+                <span class="text-[11px] font-semibold text-blue-700">SR-INF-2026-Q2 • Mei 2026</span>
+                <h4 class="text-sm font-bold text-slate-800 mt-1">Dampak Konektivitas Tol Trans-Sumatera terhadap Biaya Angkut</h4>
+                <p class="text-xs text-slate-500 mt-1">Analisis efisiensi waktu tempuh angkutan komoditas perkebunan dan industri pengolahan.</p>
+              </div>
+              <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/60">
+                <span class="text-[11px] font-semibold text-blue-700">SR-MKR-2026-Q1 • Februari 2026</span>
+                <h4 class="text-sm font-bold text-slate-800 mt-1">Tinjauan Pembiayaan Konsumen Kendaraan Roda Dua &amp; Roda Empat</h4>
+                <p class="text-xs text-slate-500 mt-1">Sensitivitas suku bunga kredit terhadap daya serap pasar kendaraan penumpang perkotaan.</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- =================================================================== -->
+      <!-- RIGHT COLUMN (ONLY VISIBLE IN VERSI B): INTERACTIVE DASHBOARD TAB   -->
+      <!-- =================================================================== -->
+      <aside
+        id="dashboard-column"
+        class="hidden flex-col bg-white rounded-2xl shadow-sm border-2 border-blue-200 overflow-hidden lg:sticky lg:top-28 lg:max-h-[calc(100vh-8rem)]"
+      >
+        <!-- Dashboard Header -->
+        <div class="p-4 sm:p-5 bg-slate-900 text-white border-b border-slate-800 flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-2.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <div>
+              <h2 class="text-sm sm:text-base font-bold text-white">Tab Dasbor Analisis Interaktif (Versi B)</h2>
+              <p class="text-[11px] text-slate-400">Fitur Inspect Source BPS/Statista, Filter Sumbu X/Y, &amp; Ekspor Dataset</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button
+              id="btn-reset-dashboard"
+              onclick="resetDashboard()"
+              class="hidden text-xs px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition"
+            >
+              Kosongkan Tab
+            </button>
+            <button
+              onclick="downloadCSV('all')"
+              class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white shadow flex items-center gap-1.5 transition"
+              title="Unduh seluruh dataset seri waktu 2021-2026 dalam format CSV/Excel"
+            >
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+              </svg>
+              <span>Unduh Dataset (.CSV / Excel)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Scrollable Dashboard Body -->
+        <div class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5">
+
+          <!-- =============================================================== -->
+          <!-- STATE 1: EMPTY DROP ZONE (INITIAL VERSI B STATE)                -->
+          <!-- =============================================================== -->
+          <div
+            id="dashboard-empty-state"
+            ondragover="handleDragOver(event)"
+            ondragleave="handleDragLeave(event)"
+            ondrop="handleDrop(event)"
+            class="border-2 border-dashed border-blue-300 rounded-2xl bg-blue-50/40 p-8 text-center transition-all flex flex-col items-center justify-center min-h-[420px]"
+          >
+            <div class="w-16 h-16 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center mb-4 shadow-inner">
+              <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+              </svg>
+            </div>
+            <h3 class="text-base sm:text-lg font-bold text-slate-800 mb-2">
+              Area Tab Dasbor Kosong
+            </h3>
+            <p class="text-xs sm:text-sm text-slate-600 max-w-md leading-relaxed mb-6">
+              Tarik (<strong>Drag &amp; Drop</strong>) diagram atau tabel dari laporan di sebelah kiri ke area ini (atau klik tombol <strong>"Buka di Tab Dasbor"</strong>) untuk mengaktifkan fitur <strong>Inspect Source</strong>, <strong>Filter Referensi Sumbu X/Y</strong>, dan <strong>Unduh CSV</strong>.
+            </p>
+
+            <!-- Quick-Load Buttons for Smooth Screen-Sharing -->
+            <div class="w-full max-w-md bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+              <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-2.5">
+                Pintasan Muat Cepat ke Tab Dasbor:
+              </p>
+              <div class="flex flex-col sm:flex-row gap-2 justify-center">
+                <button
+                  onclick="loadCardToDashboard('proporsi')"
+                  class="px-3 py-2 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition"
+                >
+                  + Muat Diagram 1 (Proporsi 40/50/10)
+                </button>
+                <button
+                  onclick="loadCardToDashboard('tren')"
+                  class="px-3 py-2 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition"
+                >
+                  + Muat Diagram 2 (Tren 2021–2026)
+                </button>
+                <button
+                  onclick="loadCardToDashboard('wilayah')"
+                  class="px-3 py-2 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition"
+                >
+                  + Muat Tabel 3 (Pulau)
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- =============================================================== -->
+          <!-- STATE 2: ACTIVE INTERACTIVE DASHBOARD WORKSPACE                 -->
+          <!-- =============================================================== -->
+          <div
+            id="dashboard-active-workspace"
+            ondragover="handleDragOver(event)"
+            ondrop="handleDrop(event)"
+            class="hidden space-y-5"
+          >
+            <!-- Loaded Module Indicator Banner -->
+            <div class="flex flex-wrap items-center justify-between gap-2 bg-blue-50 border border-blue-200 rounded-xl px-3.5 py-2.5">
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-blue-600 text-white">AKTIF</span>
+                <span id="loaded-card-title" class="text-xs sm:text-sm font-bold text-slate-800">
+                  Visualisasi 1: Proporsi &amp; Komposisi Kendaraan Bermotor
+                </span>
+              </div>
+              <span class="text-[11px] text-blue-700 font-medium">
+                Tarik kartu lain ke sini kapan saja
+              </span>
+            </div>
+
+            <!-- 1. FILTER REFERENSI SUMBU Y (WILAYAH) & SUMBU X (TAHUN) -->
+            <div class="bg-slate-50 rounded-xl p-4 border border-slate-200 space-y-4">
+              <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-700">
+                  1. Pengaturan Referensi Sumbu Y (Wilayah) &amp; Sumbu X (Tahun)
+                </span>
+                <button
+                  onclick="setFilter('Nasional', '2025-2026')"
+                  class="text-[11px] font-semibold text-blue-600 hover:underline"
+                >
+                  Reset ke Default (Nasional 2025–2026)
+                </button>
+              </div>
+
+              <!-- Sumbu Y: Wilayah Kepulauan -->
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1.5">
+                  Pilih Referensi Sumbu Y (Cakupan Wilayah Statistik):
+                </label>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2" id="region-buttons">
+                  <button
+                    onclick="setRegion('Nasional')"
+                    data-region="Nasional"
+                    class="region-btn px-3 py-2 rounded-lg text-xs font-bold border transition bg-blue-600 text-white border-blue-600 shadow-sm"
+                  >
+                    Nasional (Indonesia)
+                  </button>
+                  <button
+                    onclick="setRegion('Jawa')"
+                    data-region="Jawa"
+                    class="region-btn px-3 py-2 rounded-lg text-xs font-semibold border transition bg-white text-slate-700 border-slate-300 hover:bg-slate-100"
+                  >
+                    Pulau Jawa
+                  </button>
+                  <button
+                    onclick="setRegion('Sumatera')"
+                    data-region="Sumatera"
+                    class="region-btn px-3 py-2 rounded-lg text-xs font-semibold border transition bg-white text-slate-700 border-slate-300 hover:bg-slate-100"
+                  >
+                    Pulau Sumatera
+                  </button>
+                  <button
+                    onclick="setRegion('KalSul')"
+                    data-region="KalSul"
+                    class="region-btn px-3 py-2 rounded-lg text-xs font-semibold border transition bg-white text-slate-700 border-slate-300 hover:bg-slate-100"
+                  >
+                    Kalimantan &amp; Sulawesi
+                  </button>
+                </div>
+              </div>
+
+              <!-- Sumbu X: Rentang Tahun -->
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1.5">
+                  Pilih Referensi Sumbu X (Tahun / Periode Analisis):
+                </label>
+                <div class="flex flex-wrap gap-1.5" id="year-buttons">
+                  <button onclick="setYear('2025-2026')" data-year="2025-2026" class="year-btn px-2.5 py-1.5 rounded-lg text-xs font-bold border transition bg-indigo-600 text-white border-indigo-600 shadow-sm">
+                    2025–2026 (Default)
+                  </button>
+                  <button onclick="setYear('2021-2026')" data-year="2021-2026" class="year-btn px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition bg-white text-slate-700 border-slate-300 hover:bg-slate-100">
+                     Rata-Rata 2021–2026
+                  </button>
+                  <button onclick="setYear('2021')" data-year="2021" class="year-btn px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition bg-white text-slate-700 border-slate-300 hover:bg-slate-100">
+                    2021
+                  </button>
+                  <button onclick="setYear('2022')" data-year="2022" class="year-btn px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition bg-white text-slate-700 border-slate-300 hover:bg-slate-100">
+                    2022
+                  </button>
+                  <button onclick="setYear('2023')" data-year="2023" class="year-btn px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition bg-white text-slate-700 border-slate-300 hover:bg-slate-100">
+                    2023
+                  </button>
+                  <button onclick="setYear('2024')" data-year="2024" class="year-btn px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition bg-white text-slate-700 border-slate-300 hover:bg-slate-100">
+                    2024
+                  </button>
+                  <button onclick="setYear('2025')" data-year="2025" class="year-btn px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition bg-white text-slate-700 border-slate-300 hover:bg-slate-100">
+                    2025
+                  </button>
+                  <button onclick="setYear('2026')" data-year="2026" class="year-btn px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition bg-white text-slate-700 border-slate-300 hover:bg-slate-100">
+                    2026
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. INTERACTIVE CHART WITH CLICKABLE BARS FOR INSPECT SOURCE -->
+            <div class="bg-white rounded-xl p-4 sm:p-5 border border-slate-200 shadow-sm">
+              
+              <!-- Instruction Callout Banner -->
+              <div class="mb-4 p-3 rounded-xl bg-amber-50 border border-amber-200 flex items-center gap-2.5 text-xs text-amber-900">
+                <svg class="w-5 h-5 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/>
+                </svg>
+                <span>
+                  <strong>Fitur Inspect Source Aktif:</strong> Klik salah satu batang diagram di bawah ini untuk memeriksa rincian sumber data (<strong>BPS &amp; Statista</strong>) serta rumus kalkulasi rasionya.
+                </span>
+              </div>
+
+              <!-- Dynamic Chart Subtitle -->
+              <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                <div>
+                  <h4 id="dash-chart-title" class="text-sm font-bold text-slate-900">
+                    Proporsi Kendaraan Bermotor — Nasional (Periode 2025–2026)
+                  </h4>
+                  <p id="dash-chart-subtitle" class="text-xs text-slate-500">
+                    Total Populasi Referensi Statista: 100,0 Juta Unit Ekuivalen Kendaraan Aktif
+                  </p>
+                </div>
+                <span class="text-[11px] font-semibold px-2.5 py-1 rounded bg-slate-100 text-slate-700">
+                  Klik batang untuk Inspect Source
+                </span>
+              </div>
+
+              <!-- Interactive 3-Bar Chart -->
+              <div class="grid grid-cols-3 gap-4 sm:gap-6 items-end h-56 pt-8 pb-2 px-4 sm:px-6 border-b border-slate-200 bg-slate-50/70 rounded-t-xl">
+                
+                <!-- Interactive Bar 1: Mobil Penumpang -->
+                <div class="flex flex-col items-center h-full justify-end">
+                  <span id="dash-val-mobil" class="text-base sm:text-lg font-extrabold text-blue-700 mb-1">40%</span>
+                  <span id="dash-unit-mobil" class="text-[11px] font-medium text-slate-500 mb-1.5">(40,0 Jt Unit)</span>
+                  <button
+                    id="bar-btn-mobil"
+                    onclick="inspectBar('mobil')"
+                    class="interactive-bar bar-transition w-full max-w-[96px] bg-blue-600 rounded-t-xl shadow-md ring-4 ring-blue-300 focus:outline-none cursor-pointer relative group"
+                    style="height: 68%;"
+                  >
+                    <span class=" absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition bg-slate-900 text-white text-[10px] font-semibold px-2 py-0.5 rounded whitespace-nowrap">
+                      Inspect BPS/Statista
+                    </span>
+                  </button>
+                </div>
+
+                <!-- Interactive Bar 2: Sepeda Motor -->
+                <div class="flex flex-col items-center h-full justify-end">
+                  <span id="dash-val-motor" class="text-base sm:text-lg font-extrabold text-indigo-700 mb-1">50%</span>
+                  <span id="dash-unit-motor" class="text-[11px] font-medium text-slate-500 mb-1.5">(50,0 Jt Unit)</span>
+                  <button
+                    id="bar-btn-motor"
+                    onclick="inspectBar('motor')"
+                    class="interactive-bar bar-transition w-full max-w-[96px] bg-indigo-500 rounded-t-xl shadow-md focus:outline-none cursor-pointer relative group"
+                    style="height: 85%;"
+                  >
+                    <span class="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition bg-slate-900 text-white text-[10px] font-semibold px-2 py-0.5 rounded whitespace-nowrap">
+                      Inspect BPS/Statista
+                    </span>
+                  </button>
+                </div>
+
+                <!-- Interactive Bar 3: Truk & Bus -->
+                <div class="flex flex-col items-center h-full justify-end">
+                  <span id="dash-val-truk" class="text-base sm:text-lg font-extrabold text-amber-700 mb-1">10%</span>
+                  <span id="dash-unit-truk" class="text-[11px] font-medium text-slate-500 mb-1.5">(10,0 Jt Unit)</span>
+                  <button
+                    id="bar-btn-truk"
+                    onclick="inspectBar('truk')"
+                    class="interactive-bar bar-transition w-full max-w-[96px] bg-amber-500 rounded-t-xl shadow-md focus:outline-none cursor-pointer relative group"
+                    style="height: 22%;"
+                  >
+                    <span class="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition bg-slate-900 text-white text-[10px] font-semibold px-2 py-0.5 rounded whitespace-nowrap">
+                      Inspect BPS/Statista
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- X-Axis Bar Buttons -->
+              <div class="grid grid-cols-3 gap-4 sm:gap-6 pt-3 text-center">
+                <button onclick="inspectBar('mobil')" class="text-center hover:bg-blue-50 p-1.5 rounded-lg transition">
+                  <p class="text-xs sm:text-sm font-bold text-slate-800">Mobil Penumpang</p>
+                  <p class="text-[11px] text-blue-600 font-medium">Klik Inspect Source</p>
+                </button>
+                <button onclick="inspectBar('motor')" class="text-center hover:bg-indigo-50 p-1.5 rounded-lg transition">
+                  <p class="text-xs sm:text-sm font-bold text-slate-800">Sepeda Motor</p>
+                  <p class="text-[11px] text-indigo-600 font-medium">Klik Inspect Source</p>
+                </button>
+                <button onclick="inspectBar('truk')" class="text-center hover:bg-amber-50 p-1.5 rounded-lg transition">
+                  <p class="text-xs sm:text-sm font-bold text-slate-800">Truk &amp; Bus</p>
+                  <p class="text-[11px] text-amber-700 font-medium">Klik Inspect Source</p>
+                </button>
+              </div>
+            </div>
+
+            <!-- 3. HASIL INSPECT SOURCE & RINCIAN KALKULASI PANEL -->
+            <div id="inspect-source-panel" class="rounded-xl bg-slate-900 text-white p-4 sm:p-5 border border-slate-700 shadow-md space-y-3">
+              <div class="flex items-center justify-between border-b border-slate-700 pb-2.5">
+                <div class="flex items-center gap-2">
+                  <span class="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase tracking-wider bg-emerald-400 text-slate-950">
+                    Inspect Source Terverifikasi
+                  </span>
+                  <h4 id="inspect-title" class="text-xs sm:text-sm font-bold text-white">
+                    Rincian Kalkulasi: Mobil Penumpang (40% — Nasional, 2025–2026)
+                  </h4>
+                </div>
+                <span id="inspect-code" class="text-[11px] text-slate-400 font-mono">
+                  REF: BPS-STAT-2526
+                </span>
+              </div>
+
+              <!-- Verbatim Explanation Box (Matches User Example 100%) -->
+              <div class="p-3.5 rounded-lg bg-slate-800/90 border border-slate-700 text-xs sm:text-sm leading-relaxed text-slate-100" id="inspect-narrative">
+                Berdasarkan data <strong>Badan Pusat Statistik (BPS)</strong> pada periode <strong>2025–2026</strong>, terdapat <strong>40 juta unit ekuivalen mobil</strong> di Indonesia, dan laporan <strong>Statista</strong> menyatakan bahwa di Indonesia total terdapat kurang lebih <strong>100 juta unit ekuivalen kendaraan bermotor</strong> aktif. Maka proporsi <strong>40%</strong> adalah angka yang didapat dari rasio <strong>(40 / 100 &times; 100%)</strong>.
+              </div>
+
+              <!-- Structured Source Verification Cards -->
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1 text-xs">
+                <div class="p-2.5 rounded-lg bg-slate-800/60 border border-slate-700/80">
+                  <span class="text-slate-400 block text-[11px]">Numerator (Data BPS)</span>
+                  <span id="inspect-numerator" class="font-bold text-blue-300">40,0 Juta Unit Ekuivalen</span>
+                </div>
+                <div class="p-2.5 rounded-lg bg-slate-800/60 border border-slate-700/80">
+                  <span class="text-slate-400 block text-[11px]">Denominator (Estimasi Statista)</span>
+                  <span id="inspect-denominator" class="font-bold text-emerald-300">100,0 Juta Total Kendaraan</span>
+                </div>
+                <div class="p-2.5 rounded-lg bg-slate-800/60 border border-slate-700/80">
+                  <span class="text-slate-400 block text-[11px]">Laju Pertumbuhan Subsektor</span>
+                  <span id="inspect-growth" class="font-bold text-amber-300">+5,2% YoY (Stabil)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. DYNAMIC DATA TABLE & CSV EXPORT PREVIEW IN DASHBOARD -->
+            <div class="bg-white rounded-xl p-4 border border-slate-200 space-y-3">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h4 class="text-xs sm:text-sm font-bold text-slate-900">
+                    Tabel Dataset Terfilter (<span id="table-filter-label">Nasional • 2025–2026</span>)
+                  </h4>
+                  <p class="text-[11px] text-slate-500">
+                    Data siap diolah lebih lanjut atau diunduh ke Microsoft Excel (.CSV)
+                  </p>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button
+                    onclick="downloadCSV('filtered')"
+                    class="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 transition"
+                  >
+                    Unduh Filter Ini (.CSV)
+                  </button>
+                  <button
+                    onclick="downloadCSV('all')"
+                    class="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition"
+                  >
+                    Unduh Semua Wilayah &amp; Tahun (.CSV)
+                  </button>
+                </div>
+              </div>
+
+              <div class="overflow-x-auto rounded-lg border border-slate-200">
+                <table class="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr class="bg-slate-100 text-slate-700 border-b border-slate-200">
+                      <th class="py-2.5 px-3 font-bold">Kategori Armada</th>
+                      <th class="py-2.5 px-3 font-bold">Subsektor</th>
+                      <th class="py-2.5 px-3 font-bold">Volume BPS (Juta)</th>
+                      <th class="py-2.5 px-3 font-bold">Total Statista (Juta)</th>
+                      <th class="py-2.5 px-3 font-bold">Proporsi (%)</th>
+                      <th class="py-2.5 px-3 font-bold">Pertumbuhan YoY</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dashboard-table-body" class="divide-y divide-slate-200 text-slate-700">
+                    <!-- Populated dynamically via JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </aside>
+
+    </div>
+  </main>
+
+  <!-- TOAST NOTIFICATION FOR CSV DOWNLOAD & INTERACTIONS -->
+  <div
+    id="toast-box"
+    class="fixed bottom-5 right-5 z-50 hidden max-w-sm bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl border border-slate-700 flex items-center gap-3 text-xs sm:text-sm"
+  >
+    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shrink-0"></span>
+    <span id="toast-message">Dataset berhasil diunduh.</span>
+  </div>
+
+  <!-- APPLICATION LOGIC -->
+  <script>
+    // =========================================================================
+    // 1. MASTER DATASET (2021-2026 ACROSS ALL 4 REGIONAL AXES)
+    // =========================================================================
+    // Every data point aligns with the exact BPS + Statista verification logic.
+    const MASTER_DATA = {
+      Nasional: {
+        label: "Nasional (Seluruh Indonesia)",
+        driver: "Kombinasi konsumsi rumah tangga perkotaan & distribusi logistik nasional",
+        years: {
+          "2025-2026": { total: 100.0, mobilPct: 40, motorPct: 50, trukPct: 10, mobilYoY: "+5,2%", motorYoY: "+5,3%", trukYoY: "+8,3%" },
+          "2021-2026": { total: 92.0,  mobilPct: 39, motorPct: 51, trukPct: 10, mobilYoY: "+4,9%", motorYoY: "+5,1%", trukYoY: "+7,2%" },
+          "2021":      { total: 82.0,  mobilPct: 38, motorPct: 53, trukPct: 9,  mobilYoY: "+3,6%", motorYoY: "+3,9%", trukYoY: "+4,5%" },
+          "2022":      { total: 86.0,  mobilPct: 39, motorPct: 52, trukPct: 9,  mobilYoY: "+5,0%", motorYoY: "+5,3%", trukYoY: "+6,8%" },
+          "2023":      { total: 90.0,  mobilPct: 39, motorPct: 51, trukPct: 10, mobilYoY: "+5,5%", motorYoY: "+5,7%", trukYoY: "+7,4%" },
+          "2024":      { total: 95.0,  mobilPct: 40, motorPct: 50, trukPct: 10, mobilYoY: "+4,9%", motorYoY: "+5,1%", trukYoY: "+7,8%" },
+          "2025":      { total: 98.0,  mobilPct: 40, motorPct: 50, trukPct: 10, mobilYoY: "+5,1%", motorYoY: "+5,2%", trukYoY: "+8,1%" },
+          "2026":      { total: 102.0, mobilPct: 40, motorPct: 50, trukPct: 10, mobilYoY: "+5,3%", motorYoY: "+5,4%", trukYoY: "+8,4%" }
+        }
+      },
+      Jawa: {
+        label: "Pulau Jawa",
+        driver: "Mobilitas komuter megapolitan, jasa korporasi, dan distribusi ritel",
+        years: {
+          "2025-2026": { total: 60.0, mobilPct: 44, motorPct: 48, trukPct: 8,  mobilYoY: "+4,8%", motorYoY: "+4,6%", trukYoY: "+6,4%" },
+          "2021-2026": { total: 55.5, mobilPct: 43, motorPct: 49, trukPct: 8,  mobilYoY: "+4,5%", motorYoY: "+4,7%", trukYoY: "+6,0%" },
+          "2021":      { total: 50.0, mobilPct: 42, motorPct: 50, trukPct: 8,  mobilYoY: "+3,4%", motorYoY: "+3,7%", trukYoY: "+4,1%" },
+          "2022":      { total: 52.5, mobilPct: 42, motorPct: 50, trukPct: 8,  mobilYoY: "+4,6%", motorYoY: "+4,8%", trukYoY: "+5,5%" },
+          "2023":      { total: 55.0, mobilPct: 43, motorPct: 49, trukPct: 8,  mobilYoY: "+4,9%", motorYoY: "+5,0%", trukYoY: "+6,1%" },
+          "2024":      { total: 57.5, mobilPct: 43, motorPct: 49, trukPct: 8,  mobilYoY: "+4,6%", motorYoY: "+4,5%", trukYoY: "+6,2%" },
+          "2025":      { total: 59.0, mobilPct: 44, motorPct: 48, trukPct: 8,  mobilYoY: "+4,7%", motorYoY: "+4,6%", trukYoY: "+6,3%" },
+          "2026":      { total: 61.0, mobilPct: 44, motorPct: 48, trukPct: 8,  mobilYoY: "+4,9%", motorYoY: "+4,6%", trukYoY: "+6,5%" }
+        }
+      },
+      Sumatera: {
+        label: "Pulau Sumatera",
+        driver: "Angkutan komoditas perkebunan (kelapa sawit/karet) & koridor Tol Trans-Sumatera",
+        years: {
+          "2025-2026": { total: 22.0, mobilPct: 32, motorPct: 50, trukPct: 18, mobilYoY: "+5,6%", motorYoY: "+5,8%", trukYoY: "+9,4%" },
+          "2021-2026": { total: 19.8, mobilPct: 31, motorPct: 52, trukPct: 17, mobilYoY: "+5,2%", motorYoY: "+5,5%", trukYoY: "+8,6%" },
+          "2021":      { total: 17.5, mobilPct: 30, motorPct: 54, trukPct: 16, mobilYoY: "+3,9%", motorYoY: "+4,2%", trukYoY: "+5,8%" },
+          "2022":      { total: 18.5, mobilPct: 31, motorPct: 53, trukPct: 16, mobilYoY: "+5,1%", motorYoY: "+5,4%", trukYoY: "+7,9%" },
+          "2023":      { total: 19.5, mobilPct: 31, motorPct: 52, trukPct: 17, mobilYoY: "+5,4%", motorYoY: "+5,7%", trukYoY: "+8,5%" },
+          "2024":      { total: 20.8, mobilPct: 32, motorPct: 51, trukPct: 17, mobilYoY: "+5,3%", motorYoY: "+5,6%", trukYoY: "+9,0%" },
+          "2025":      { total: 21.5, mobilPct: 32, motorPct: 50, trukPct: 18, mobilYoY: "+5,5%", motorYoY: "+5,7%", trukYoY: "+9,2%" },
+          "2026":      { total: 22.5, mobilPct: 32, motorPct: 50, trukPct: 18, mobilYoY: "+5,7%", motorYoY: "+5,9%", trukYoY: "+9,6%" }
+        }
+      },
+      KalSul: {
+        label: "Kalimantan & Sulawesi",
+        driver: "Logistik pertambangan, smelter hilirisasi mineral, & proyek konstruksi industri",
+        years: {
+          "2025-2026": { total: 18.0, mobilPct: 30, motorPct: 48, trukPct: 22, mobilYoY: "+6,1%", motorYoY: "+6,0%", trukYoY: "+10,8%" },
+          "2021-2026": { total: 16.2, mobilPct: 29, motorPct: 50, trukPct: 21, mobilYoY: "+5,7%", motorYoY: "+5,8%", trukYoY: "+9,8%" },
+          "2021":      { total: 14.5, mobilPct: 28, motorPct: 53, trukPct: 19, mobilYoY: "+4,1%", motorYoY: "+4,4%", trukYoY: "+6,9%" },
+          "2022":      { total: 15.0, mobilPct: 29, motorPct: 51, trukPct: 20, mobilYoY: "+5,5%", motorYoY: "+5,6%", trukYoY: "+8,9%" },
+          "2023":      { total: 15.5, mobilPct: 29, motorPct: 50, trukPct: 21, mobilYoY: "+5,8%", motorYoY: "+5,9%", trukYoY: "+9,7%" },
+          "2024":      { total: 16.7, mobilPct: 30, motorPct: 49, trukPct: 21, mobilYoY: "+5,9%", motorYoY: "+5,8%", trukYoY: "+10,2%" },
+          "2025":      { total: 17.5, mobilPct: 30, motorPct: 48, trukPct: 22, mobilYoY: "+6,0%", motorYoY: "+5,9%", trukYoY: "+10,6%" },
+          "2026":      { total: 18.5, mobilPct: 30, motorPct: 48, trukPct: 22, mobilYoY: "+6,2%", motorYoY: "+6,1%", trukYoY: "+11,0%" }
+        }
+      }
+    };
+
+    // Current Interactive State
+    let currentVersion = 'A';
+    let currentRegion = 'Nasional';
+    let currentYear = '2025-2026';
+    let currentInspectedBar = 'mobil'; // 'mobil' | 'motor' | 'truk'
+    let isDashboardLoaded = false;
+
+    // Format number with Indonesian comma decimal
+    function fmtNum(num) {
+      return Number(num).toFixed(1).replace('.0', '').replace('.', ',');
+    }
+
+    // =========================================================================
+    // 2. VERSION SWITCHING (VERSI A vs VERSI B)
+    // =========================================================================
+    function switchVersion(version) {
+      currentVersion = version;
+      const btnA = document.getElementById('btn-versi-a');
+      const btnB = document.getElementById('btn-versi-b');
+      const dotA = document.getElementById('dot-versi-a');
+      const dotB = document.getElementById('dot-versi-b');
+      const workspaceGrid = document.getElementById('workspace-grid');
+      const dashboardCol = document.getElementById('dashboard-column');
+      const modePill = document.getElementById('active-mode-pill');
+      const draggableCards = document.querySelectorAll('.draggable-card');
+      const versiBControls = document.querySelectorAll('.versi-b-control');
+      const versiABadges = document.querySelectorAll('.versi-a-badge');
+
+      if (version === 'A') {
+        // Style active button A
+        btnA.className = "px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 bg-blue-600 text-white shadow";
+        btnB.className = "px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 text-slate-300 hover:text-white";
+        dotA.className = "w-2 h-2 rounded-full bg-white";
+        dotB.className = "w-2 h-2 rounded-full bg-slate-500";
+        modePill.textContent = "Mode Aktif: Versi A (Laporan Konten Statis)";
+
+        // Single centered column layout
+        workspaceGrid.className = "max-w-4xl mx-auto transition-all duration-300";
+        dashboardCol.classList.add('hidden');
+        dashboardCol.classList.remove('flex');
+
+        // Disable drag-and-drop and hide Versi B controls
+        draggableCards.forEach(card => {
+          card.setAttribute('draggable', 'false');
+          card.classList.remove('cursor-grab');
+        });
+        versiBControls.forEach(el => el.classList.add('hidden'));
+        versiABadges.forEach(el => el.classList.remove('hidden'));
+
+        showToast("Berpindah ke Versi A: Tampilan laporan konten statis.");
+      } else {
+        // Style active button B
+        btnB.className = "px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 bg-blue-600 text-white shadow";
+        btnA.className = "px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 text-slate-300 hover:text-white";
+        dotB.className = "w-2 h-2 rounded-full bg-white";
+        dotA.className = "w-2 h-2 rounded-full bg-slate-500";
+        modePill.textContent = "Mode Aktif: Versi B (Laporan + Tab Dasbor Interaktif)";
+
+        // Split-screen 2-column layout (50% Left Report, 50% Right Dashboard)
+        workspaceGrid.className = "grid grid-cols-1 lg:grid-cols-12 gap-6 items-start transition-all duration-300";
+        document.getElementById('report-column').className = "lg:col-span-6 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden";
+        dashboardCol.className = "lg:col-span-6 flex flex-col bg-white rounded-2xl shadow-md border-2 border-blue-200 overflow-hidden lg:sticky lg:top-28 lg:max-h-[calc(100vh-8rem)]";
+
+        // Enable drag-and-drop and show Versi B buttons
+        draggableCards.forEach(card => {
+          card.setAttribute('draggable', 'true');
+          card.classList.add('cursor-grab');
+        });
+        versiBControls.forEach(el => el.classList.remove('hidden'));
+        versiABadges.forEach(el => el.classList.add('hidden'));
+
+        showToast("Berpindah ke Versi B: Tarik grafik ke Tab Dasbor di sebelah kanan.");
+      }
+    }
+
+    // =========================================================================
+    // 3. DRAG AND DROP & DASHBOARD ACTIVATION
+    // =========================================================================
+    function handleDragStart(event, cardType) {
+      if (currentVersion !== 'B') return;
+      event.dataTransfer.setData('text/plain', cardType);
+      event.currentTarget.classList.add('dragging');
+    }
+
+    function handleDragEnd(event) {
+      event.currentTarget.classList.remove('dragging');
+    }
+
+    function handleDragOver(event) {
+      event.preventDefault();
+      const emptyState = document.getElementById('dashboard-empty-state');
+      if (emptyState && !emptyState.classList.contains('hidden')) {
+        emptyState.classList.add('drop-zone-active');
+      }
+    }
+
+    function handleDragLeave(event) {
+      const emptyState = document.getElementById('dashboard-empty-state');
+      if (emptyState) {
+        emptyState.classList.remove('drop-zone-active');
+      }
+    }
+
+    function handleDrop(event) {
+      event.preventDefault();
+      const emptyState = document.getElementById('dashboard-empty-state');
+      if (emptyState) {
+        emptyState.classList.remove('drop-zone-active');
+      }
+      const cardType = event.dataTransfer.getData('text/plain') || 'proporsi';
+      loadCardToDashboard(cardType);
+    }
+
+    function loadCardToDashboard(cardType) {
+      if (currentVersion !== 'B') {
+        switchVersion('B');
+      }
+      isDashboardLoaded = true;
+      document.getElementById('dashboard-empty-state').classList.add('hidden');
+      document.getElementById('dashboard-active-workspace').classList.remove('hidden');
+      document.getElementById('btn-reset-dashboard').classList.remove('hidden');
+
+      const titleMap = {
+        proporsi: "Visualisasi 1: Proporsi & Komposisi Kendaraan Bermotor (BPS & Statista)",
+        tren: "Visualisasi 2: Tren Pertumbuhan Tahunan Penumpang vs. Komersial (2021–2026)",
+        wilayah: "Visualisasi 3: Perbandingan Indikator Kinerja Sektoral per Pulau"
+      };
+      document.getElementById('loaded-card-title').textContent = titleMap[cardType] || titleMap.proporsi;
+
+      // Default highlight bar based on card loaded
+      if (cardType === 'wilayah' || cardType === 'tren') {
+        inspectBar('truk');
+      } else {
+        inspectBar('mobil');
+      }
+      updateDashboardView();
+      showToast("Visualisasi berhasil dimuat ke Tab Dasbor Interaktif.");
+    }
+
+    function resetDashboard() {
+      isDashboardLoaded = false;
+      document.getElementById('dashboard-empty-state').classList.remove('hidden');
+      document.getElementById('dashboard-active-workspace').classList.add('hidden');
+      document.getElementById('btn-reset-dashboard').classList.add('hidden');
+      showToast("Tab Dasbor dikosongkan.");
+    }
+
+    // =========================================================================
+    // 4. INTERACTIVE FILTERS (SUMBU Y REGION & SUMBU X YEAR) + INSPECT SOURCE
+    // =========================================================================
+    function setRegion(regionKey) {
+      currentRegion = regionKey;
+      updateDashboardView();
+    }
+
+    function setYear(yearKey) {
+      currentYear = yearKey;
+      updateDashboardView();
+    }
+
+    function setFilter(regionKey, yearKey) {
+      currentRegion = regionKey;
+      currentYear = yearKey;
+      currentInspectedBar = 'mobil';
+      updateDashboardView();
+      showToast("Filter dikembalikan ke Nasional (2025–2026).");
+    }
+
+    function inspectBar(barKey) {
+      currentInspectedBar = barKey;
+      updateDashboardView();
+    }
+
+    function updateDashboardView() {
+      const regObj = MASTER_DATA[currentRegion];
+      const yrObj = regObj.years[currentYear];
+
+      // Update Region Button Active Styles
+      document.querySelectorAll('.region-btn').forEach(btn => {
+        if (btn.getAttribute('data-region') === currentRegion) {
+          btn.className = "region-btn px-3 py-2 rounded-lg text-xs font-bold border transition bg-blue-600 text-white border-blue-600 shadow-sm";
+        } else {
+          btn.className = "region-btn px-3 py-2 rounded-lg text-xs font-semibold border transition bg-white text-slate-700 border-slate-300 hover:bg-slate-100";
+        }
+      });
+
+      // Update Year Button Active Styles
+      document.querySelectorAll('.year-btn').forEach(btn => {
+        if (btn.getAttribute('data-year') === currentYear) {
+          btn.className = "year-btn px-2.5 py-1.5 rounded-lg text-xs font-bold border transition bg-indigo-600 text-white border-indigo-600 shadow-sm";
+        } else {
+          btn.className = "year-btn px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition bg-white text-slate-700 border-slate-300 hover:bg-slate-100";
+        }
+      });
+
+      // Compute exact unit figures based on percentage and total fleet
+      const mobilUnits = (yrObj.total * yrObj.mobilPct) / 100;
+      const motorUnits = (yrObj.total * yrObj.motorPct) / 100;
+      const trukUnits  = (yrObj.total * yrObj.trukPct) / 100;
+
+      // Update Chart Header
+      document.getElementById('dash-chart-title').textContent =
+        `Proporsi Kendaraan Bermotor — ${regObj.label} (Periode ${currentYear})`;
+      document.getElementById('dash-chart-subtitle').textContent =
+        `Total Populasi Referensi Statista: ${fmtNum(yrObj.total)} Juta Unit Ekuivalen Kendaraan Aktif`;
+
+      // Update Bar Percentages, Unit Labels, & Heights
+      document.getElementById('dash-val-mobil').textContent = `${yrObj.mobilPct}%`;
+      document.getElementById('dash-unit-mobil').textContent = `(${fmtNum(mobilUnits)} Jt Unit)`;
+      document.getElementById('bar-btn-mobil').style.height = `${Math.max(yrObj.mobilPct * 1.65, 18)}%`;
+
+      document.getElementById('dash-val-motor').textContent = `${yrObj.motorPct}%`;
+      document.getElementById('dash-unit-motor').textContent = `(${fmtNum(motorUnits)} Jt Unit)`;
+      document.getElementById('bar-btn-motor').style.height = `${Math.max(yrObj.motorPct * 1.65, 18)}%`;
+
+      document.getElementById('dash-val-truk').textContent = `${yrObj.trukPct}%`;
+      document.getElementById('dash-unit-truk').textContent = `(${fmtNum(trukUnits)} Jt Unit)`;
+      document.getElementById('bar-btn-truk').style.height = `${Math.max(yrObj.trukPct * 1.65, 18)}%`;
+
+      // Highlight Active Inspected Bar Ring
+      const barMobil = document.getElementById('bar-btn-mobil');
+      const barMotor = document.getElementById('bar-btn-motor');
+      const barTruk  = document.getElementById('bar-btn-truk');
+
+      barMobil.className = "interactive-bar bar-transition w-full max-w-[96px] bg-blue-600 rounded-t-xl shadow-md focus:outline-none cursor-pointer relative group";
+      barMotor.className = "interactive-bar bar-transition w-full max-w-[96px] bg-indigo-500 rounded-t-xl shadow-md focus:outline-none cursor-pointer relative group";
+      barTruk.className  = "interactive-bar bar-transition w-full max-w-[96px] bg-amber-500 rounded-t-xl shadow-md focus:outline-none cursor-pointer relative group";
+
+      if (currentInspectedBar === 'mobil') {
+        barMobil.classList.add('ring-4', 'ring-blue-300');
+      } else if (currentInspectedBar === 'motor') {
+        barMotor.classList.add('ring-4', 'ring-indigo-300');
+      } else {
+        barTruk.classList.add('ring-4', 'ring-amber-300');
+      }
+
+      // Update Inspect Source Panel Text & Metadata
+      const inspectTitle = document.getElementById('inspect-title');
+      const inspectNarrative = document.getElementById('inspect-narrative');
+      const inspectNumerator = document.getElementById('inspect-numerator');
+      const inspectDenominator = document.getElementById('inspect-denominator');
+      const inspectGrowth = document.getElementById('inspect-growth');
+      const inspectCode = document.getElementById('inspect-code');
+
+      inspectCode.textContent = `REF: BPS-STAT-${currentRegion.toUpperCase()}-${currentYear}`;
+
+      if (currentInspectedBar === 'mobil') {
+        inspectTitle.textContent = `Rincian Kalkulasi: Mobil Penumpang (${yrObj.mobilPct}% — ${regObj.label}, ${currentYear})`;
+        inspectNarrative.innerHTML =
+          `Berdasarkan data <strong>Badan Pusat Statistik (BPS)</strong> pada periode <strong>${currentYear}</strong>, terdapat <strong>${fmtNum(mobilUnits)} juta unit ekuivalen mobil</strong> di wilayah <strong>${regObj.label}</strong>, dan laporan <strong>Statista</strong> menyatakan bahwa di wilayah tersebut total terdapat kurang lebih <strong>${fmtNum(yrObj.total)} juta unit ekuivalen kendaraan bermotor</strong> aktif. Maka proporsi <strong>${yrObj.mobilPct}%</strong> adalah angka yang didapat dari rasio <strong>(${fmtNum(mobilUnits)} / ${fmtNum(yrObj.total)} &times; 100%)</strong>.`;
+        inspectNumerator.textContent = `${fmtNum(mobilUnits)} Juta Unit Mobil (BPS)`;
+        inspectDenominator.textContent = `${fmtNum(yrObj.total)} Juta Total Kendaraan (Statista)`;
+        inspectGrowth.textContent = `${yrObj.mobilYoY} YoY (Subsektor Penumpang)`;
+      } else if (currentInspectedBar === 'motor') {
+        inspectTitle.textContent = `Rincian Kalkulasi: Sepeda Motor (${yrObj.motorPct}% — ${regObj.label}, ${currentYear})`;
+        inspectNarrative.innerHTML =
+          `Berdasarkan data <strong>Badan Pusat Statistik (BPS)</strong> pada periode <strong>${currentYear}</strong>, tercatat <strong>${fmtNum(motorUnits)} juta unit ekuivalen sepeda motor</strong> aktif di wilayah <strong>${regObj.label}</strong> dari total estimasi <strong>Statista</strong> sebanyak <strong>${fmtNum(yrObj.total)} juta unit ekuivalen kendaraan bermotor</strong>. Maka proporsi <strong>${yrObj.motorPct}%</strong> didapat dari rasio <strong>(${fmtNum(motorUnits)} / ${fmtNum(yrObj.total)} &times; 100%)</strong>.`;
+        inspectNumerator.textContent = `${fmtNum(motorUnits)} Juta Unit Motor (BPS)`;
+        inspectDenominator.textContent = `${fmtNum(yrObj.total)} Juta Total Kendaraan (Statista)`;
+        inspectGrowth.textContent = `${yrObj.motorYoY} YoY (Subsektor Penumpang)`;
+      } else {
+        inspectTitle.textContent = `Rincian Kalkulasi: Truk & Bus (${yrObj.trukPct}% — ${regObj.label}, ${currentYear})`;
+        inspectNarrative.innerHTML =
+          `Berdasarkan data <strong>BPS &amp; Kementerian Perhubungan</strong> pada periode <strong>${currentYear}</strong>, tercatat <strong>${fmtNum(trukUnits)} juta unit ekuivalen armada truk dan bus komersial</strong> di wilayah <strong>${regObj.label}</strong> dari total estimasi <strong>Statista</strong> sebanyak <strong>${fmtNum(yrObj.total)} juta unit ekuivalen kendaraan bermotor</strong>. Maka proporsi <strong>${yrObj.trukPct}%</strong> didapat dari rasio <strong>(${fmtNum(trukUnits)} / ${fmtNum(yrObj.total)} &times; 100%)</strong>. Pendorong utama: ${regObj.driver}.`;
+        inspectNumerator.textContent = `${fmtNum(trukUnits)} Juta Unit Truk/Bus (BPS)`;
+        inspectDenominator.textContent = `${fmtNum(yrObj.total)} Juta Total Kendaraan (Statista)`;
+        inspectGrowth.textContent = `${yrObj.trukYoY} YoY (Subsektor Komersial/Logistik)`;
+      }
+
+      // Update Filtered Data Table inside Dashboard
+      document.getElementById('table-filter-label').textContent = `${regObj.label} • ${currentYear}`;
+      const tbody = document.getElementById('dashboard-table-body');
+      tbody.innerHTML = `
+        <tr onclick="inspectBar('mobil')" class="cursor-pointer hover:bg-blue-50/70 transition ${currentInspectedBar === 'mobil' ? 'bg-blue-50/90 font-semibold' : ''}">
+          <td class="py-2.5 px-3 text-slate-900">Mobil Penumpang</td>
+          <td class="py-2.5 px-3 text-slate-600">Kendaraan Penumpang</td>
+          <td class="py-2.5 px-3 text-blue-700">${fmtNum(mobilUnits)} Jt</td>
+          <td class="py-2.5 px-3">${fmtNum(yrObj.total)} Jt</td>
+          <td class="py-2.5 px-3 font-bold text-blue-700">${yrObj.mobilPct}%</td>
+          <td class="py-2.5 px-3 text-emerald-700">${yrObj.mobilYoY}</td>
+        </tr>
+        <tr onclick="inspectBar('motor')" class="cursor-pointer hover:bg-indigo-50/70 transition ${currentInspectedBar === 'motor' ? 'bg-indigo-50/90 font-semibold' : ''}">
+          <td class="py-2.5 px-3 text-slate-900">Sepeda Motor</td>
+          <td class="py-2.5 px-3 text-slate-600">Kendaraan Penumpang</td>
+          <td class="py-2.5 px-3 text-indigo-700">${fmtNum(motorUnits)} Jt</td>
+          <td class="py-2.5 px-3">${fmtNum(yrObj.total)} Jt</td>
+          <td class="py-2.5 px-3 font-bold text-indigo-700">${yrObj.motorPct}%</td>
+          <td class="py-2.5 px-3 text-emerald-700">${yrObj.motorYoY}</td>
+        </tr>
+        <tr onclick="inspectBar('truk')" class="cursor-pointer hover:bg-amber-50/70 transition ${currentInspectedBar === 'truk' ? 'bg-amber-50/90 font-semibold' : ''}">
+          <td class="py-2.5 px-3 text-slate-900">Truk &amp; Bus</td>
+          <td class="py-2.5 px-3 text-slate-600">Komersial &amp; Logistik</td>
+          <td class="py-2.5 px-3 text-amber-700">${fmtNum(trukUnits)} Jt</td>
+          <td class="py-2.5 px-3">${fmtNum(yrObj.total)} Jt</td>
+          <td class="py-2.5 px-3 font-bold text-amber-700">${yrObj.trukPct}%</td>
+          <td class="py-2.5 px-3 font-bold text-emerald-700">${yrObj.trukYoY}</td>
+        </tr>
+      `;
+    }
+
+    // =========================================================================
+    // 5. WORKING CSV / EXCEL DATASET DOWNLOAD
+    // =========================================================================
+    function downloadCSV(scope) {
+      const headers = [
+        "Wilayah_Sumbu_Y",
+        "Periode_Tahun_Sumbu_X",
+        "Kategori_Armada",
+        "Subsektor",
+        "Volume_Unit_BPS_Juta",
+        "Total_Populasi_Statista_Juta",
+        "Proporsi_Persen",
+        "Pertumbuhan_YoY",
+        "Sumber_Referensi_Primer",
+        "Rumus_Inspect_Source"
+      ];
+
+      const rows = [headers.join(",")];
+      const regionsToExport = scope === 'filtered' ? [currentRegion] : Object.keys(MASTER_DATA);
+
+      regionsToExport.forEach(regKey => {
+        const regObj = MASTER_DATA[regKey];
+        const yearsToExport = scope === 'filtered' ? [currentYear] : Object.keys(regObj.years);
+
+        yearsToExport.forEach(yrKey => {
+          const d = regObj.years[yrKey];
+          const mobilUnits = ((d.total * d.mobilPct) / 100).toFixed(2);
+          const motorUnits = ((d.total * d.motorPct) / 100).toFixed(2);
+          const trukUnits  = ((d.total * d.trukPct) / 100).toFixed(2);
+
+          rows.push([
+            `"${regObj.label}"`,
+            `"${yrKey}"`,
+            `"Mobil Penumpang"`,
+            `"Subsektor Kendaraan Penumpang"`,
+            mobilUnits,
+            d.total.toFixed(2),
+            `${d.mobilPct}%`,
+            `"${d.mobilYoY}"`,
+            `"BPS & Statista (${yrKey})"`,
+            `"(${mobilUnits} / ${d.total.toFixed(2)} x 100% = ${d.mobilPct}%)"`
+          ].join(","));
+
+          rows.push([
+            `"${regObj.label}"`,
+            `"${yrKey}"`,
+            `"Sepeda Motor"`,
+            `"Subsektor Kendaraan Penumpang"`,
+            motorUnits,
+            d.total.toFixed(2),
+            `${d.motorPct}%`,
+            `"${d.motorYoY}"`,
+            `"BPS & Statista (${yrKey})"`,
+            `"(${motorUnits} / ${d.total.toFixed(2)} x 100% = ${d.motorPct}%)"`
+          ].join(","));
+
+          rows.push([
+            `"${regObj.label}"`,
+            `"${yrKey}"`,
+            `"Truk & Bus"`,
+            `"Subsektor Komersial & Logistik"`,
+            trukUnits,
+            d.total.toFixed(2),
+            `${d.trukPct}%`,
+            `"${d.trukYoY}"`,
+            `"BPS, Kemenhub & Statista (${yrKey})"`,
+            `"(${trukUnits} / ${d.total.toFixed(2)} x 100% = ${d.trukPct}%)"`
+          ].join(","));
+        });
+      });
+
+      // Prepend UTF-8 BOM so Microsoft Excel opens the CSV cleanly
+      const csvContent = "\uFEFF" + rows.join("\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const fileName = scope === 'filtered'
+        ? `Dataset_Sektoral_${currentRegion}_${currentYear}.csv`
+        : `Dataset_Lengkap_Otomotif_Transportasi_Indonesia_2021_2026_BPS_Statista.csv`;
+
+      link.setAttribute("href", url);
+      link.setAttribute("download", fileName);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      showToast(`File "${fileName}" berhasil diunduh.`);
+    }
+
+    // =========================================================================
+    // 6. UI HELPERS (TASK BANNER & TOAST)
+    // =========================================================================
+    function toggleTaskBanner() {
+      const banner = document.getElementById('task-banner');
+      const label = document.getElementById('task-toggle-label');
+      if (banner.classList.contains('hidden')) {
+        banner.classList.remove('hidden');
+        if (label) label.textContent = "Sembunyikan Tugas Think-Aloud";
+      } else {
+        banner.classList.add('hidden');
+        if (label) label.textContent = "Tampilkan Tugas Think-Aloud";
+      }
+    }
+
+    let toastTimer = null;
+    function showToast(msg) {
+      const box = document.getElementById('toast-box');
+      const text = document.getElementById('toast-message');
+      text.textContent = msg;
+      box.classList.remove('hidden');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        box.classList.add('hidden');
+      }, 3200);
+    }
+
+    // Initialize default dashboard values on load
+    window.onload = function () {
+      updateDashboardView();
+    };
+  </script>
+</body>
+</html>

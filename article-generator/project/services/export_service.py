@@ -871,6 +871,7 @@ def export_pdf(article) -> io.BytesIO:
         return inner.strip()
     
     elements = []
+    temp_files_to_clean = []
     
     # Header branding kicker
     elements.append(Paragraph("<font size=8 color='#93602A'><b>INPARTNER ARTICLE GENERATOR — EDITORIAL REPORT</b></font>", meta_style))
@@ -891,10 +892,11 @@ def export_pdf(article) -> io.BytesIO:
     if article.hero_image_url:
         hero_local = process_image_for_pdf(article.hero_image_url)
         if hero_local:
+            temp_files_to_clean.append(hero_local)
             hero_block = []
             try:
-                pil_img = Image.open(hero_local)
-                w, h = pil_img.size
+                with Image.open(hero_local) as pil_img:
+                    w, h = pil_img.size
                 target_w = 505
                 target_h = min(300, int((target_w / w) * h))
                 hero_block.append(RLImage(hero_local, width=target_w, height=target_h))
@@ -957,6 +959,7 @@ def export_pdf(article) -> io.BytesIO:
                 src = img_el.get('src')
                 temp_path = process_image_for_pdf(src)
                 if temp_path:
+                    temp_files_to_clean.append(temp_path)
                     img_block = []
                     width_setting = node.get('data-width') or img_el.get('data-width') or ''
                     target_w = 505
@@ -968,8 +971,8 @@ def export_pdf(article) -> io.BytesIO:
                         target_w = 420
 
                     try:
-                        pil_i = Image.open(temp_path)
-                        w, h = pil_i.size
+                        with Image.open(temp_path) as pil_i:
+                            w, h = pil_i.size
                         target_h = int((target_w / w) * h)
                         if target_h > 360:
                             target_h = 360
@@ -1071,7 +1074,19 @@ def export_pdf(article) -> io.BytesIO:
             src_block.append(Spacer(1, 8))
             elements.append(KeepTogether(src_block))
             
-    doc.build(elements, canvasmaker=NumberedCanvas)
+    try:
+        doc.build(elements, canvasmaker=NumberedCanvas)
+    finally:
+        try:
+            soup.decompose()
+        except Exception:
+            pass
+        for tpath in temp_files_to_clean:
+            try:
+                if tpath and os.path.exists(tpath):
+                    os.remove(tpath)
+            except Exception:
+                pass
     buffer.seek(0)
     return buffer
 

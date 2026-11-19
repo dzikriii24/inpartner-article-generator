@@ -37,14 +37,24 @@ class CatalogController extends Controller
         }
 
         $lang = $request->input('lang', 'id');
-        $isPreview = $request->boolean('preview');
+        $wantsPreview = $request->boolean('preview');
+        $isPreview = $wantsPreview && auth('sanctum')->user()?->isAdmin();
         $sections = [];
         $siteSettings = [];
+        $builderPayload = [];
 
         try {
-            $q = \App\Models\CmsSection::with('translations')->orderBy('sort_order');
-            if (!$isPreview) $q->active()->published();
-            $sections = $q->get()->map(fn ($s) => $s->localized($lang, $isPreview));
+            $builderService = app(\App\Services\Cms\CmsBuilderService::class);
+            $page = $builderService->getOrBootstrapHomepage();
+            $tree = $isPreview ? ($page->draft_tree ?: $page->published_tree) : ($page->published_tree ?: $builderService->defaultTree());
+            $localized = $builderService->localizeTree($tree, $lang, true);
+            $sections = $localized['sections'];
+            $builderPayload = [
+                'header' => $localized['header'],
+                'footer' => $localized['footer'],
+                'theme' => $localized['theme'],
+                'seo' => $localized['seo'],
+            ];
 
             $siteSettings = \App\Models\SiteSetting::where('is_public', true)->get()->mapWithKeys(function ($item) {
                 $decoded = json_decode($item->value, true);
@@ -55,7 +65,7 @@ class CatalogController extends Controller
             // fallback if table does not exist yet
         }
 
-        return response()->json([
+        return response()->json(array_merge([
             'sections' => $sections,
             'site_settings' => $siteSettings,
             'banners' => Banner::where('is_active', true)->orderBy('sort_order')->get()->map(fn ($b) => Present::banner($b)),
@@ -76,7 +86,7 @@ class CatalogController extends Controller
                 'categories' => Category::count(),
                 'authors' => Author::count(),
             ],
-        ]);
+        ], $builderPayload));
     }
 
     public function products(Request $request)

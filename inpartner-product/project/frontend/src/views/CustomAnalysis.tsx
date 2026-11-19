@@ -32,8 +32,11 @@ import {
 import api from '@/services/api';
 import { Button } from '@/components/lightswind/button';
 import { Card } from '@/components/lightswind/card';
+import { useLanguage } from '@/context/LanguageContext';
 
 export const CustomAnalysis: React.FC = () => {
+  const { t } = useLanguage();
+
   // Inquiry Form State
   const [formData, setFormData] = useState({
     name: '',
@@ -274,10 +277,10 @@ export const CustomAnalysis: React.FC = () => {
       {/* 1. BREADCRUMBS */}
       <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs text-slate-500">
         <Link to="/" className="hover:text-[#1976D2] transition-colors font-medium">
-          Beranda
+          {t('nav.home', 'Beranda')}
         </Link>
         <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-        <span className="text-slate-500 font-medium">Layanan Riset Eksklusif</span>
+        <span className="text-slate-500 font-medium">{t('nav.custom_analysis', 'Research With Us')}</span>
         <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
         <span className="text-slate-900 font-semibold truncate">
           Custom Analysis & Strategic Due Diligence

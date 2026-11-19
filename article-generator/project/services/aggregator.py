@@ -1,12 +1,11 @@
 import os
-import requests
-import feedparser
+import gc
 from datetime import datetime
-import hashlib
-from bs4 import BeautifulSoup
+import feedparser
 from sqlalchemy.orm import Session
 from models import Source, Topic, NewsContent
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from services.research_engine import get_http_session, extract_article_content_clean, MAX_STORED_CONTENT_CHARS
 
 RSS_FEEDS = {
     "Macro Economics": [
@@ -32,12 +31,13 @@ RSS_FEEDS = {
 
 FETCH_PROGRESS = {
     "is_fetching": False,
-    "step": "idle", # "rss", "extracting", "clustering", "done", "failed"
+    "step": "idle",  # "rss", "extracting", "clustering", "done", "failed"
     "message": "Idle",
     "fetched_count": 0,
     "clustered_count": 0,
     "error": None
 }
+
 
 def update_fetch_progress(step: str, message: str, is_fetching: bool = True, error: str = None):
     FETCH_PROGRESS["step"] = step
@@ -46,72 +46,76 @@ def update_fetch_progress(step: str, message: str, is_fetching: bool = True, err
     if error:
         FETCH_PROGRESS["error"] = error
 
+
 def extract_article_content(url: str) -> str:
-    try:
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
-        }
-        resp = requests.get(url, headers=headers, timeout=6)
-        if resp.status_code == 200:
-            soup = BeautifulSoup(resp.content, 'html.parser')
-            for element in soup(["script", "style", "nav", "footer", "header", "aside"]):
-                element.decompose()
-            
-            paragraphs = soup.find_all('p')
-            text_content = "\n".join([p.get_text().strip() for p in paragraphs if len(p.get_text().strip()) > 20])
-            text_content = "".join(c for c in text_content if ord(c) <= 0xFFFF)
-            return text_content
-    except Exception as e:
-        print(f"Extraction failed for {url}: {e}")
-    return ""
+    res = extract_article_content_clean(url)
+    return res.get("text", "")
+
 
 def collect_rss_news(db: Session):
     update_fetch_progress("rss", "Discovering RSS feeds & GNews API headlines...")
     pending_items = []
-    
+    session = get_http_session()
+
     for category, feeds in RSS_FEEDS.items():
         for feed_url in feeds:
+            resp = None
             try:
-                parsed = feedparser.parse(feed_url)
-                for entry in parsed.entries[:15]: # Top 15 fresh entries per feed
-                    url = entry.link
-                    title = entry.title
-                    
+                resp = session.get(feed_url, timeout=6)
+                if resp.status_code != 200:
+                    continue
+                parsed = feedparser.parse(resp.content)
+                for entry in parsed.entries[:8]:  # Top 8 fresh entries per feed
+                    url = getattr(entry, "link", None)
+                    title = getattr(entry, "title", None)
+                    if not url or not title:
+                        continue
+
                     existing = db.query(Source).filter(Source.url == url).first()
                     if existing:
                         continue
-                        
+
                     published_at = datetime.utcnow()
-                    description = entry.get('summary', '')
-                    publisher = parsed.feed.get('title', 'RSS Source')
-                    
+                    description = (entry.get('summary', '') or '')[:1000]
+                    publisher = (parsed.feed.get('title', 'RSS Source') or 'RSS Source')[:100]
+
                     pending_items.append({
                         "url": url,
-                        "title": title,
+                        "title": title[:490],
                         "publisher": publisher,
                         "published_at": published_at,
                         "description": description,
                         "source_type": "rss"
                     })
+                    if len(pending_items) >= 24:
+                        break
             except Exception as e:
                 print(f"Error fetching RSS {feed_url}: {e}")
+            finally:
+                if resp is not None:
+                    try:
+                        resp.close()
+                    except Exception:
+                        pass
+            if len(pending_items) >= 24:
+                break
 
     if not pending_items:
         return 0
 
-    update_fetch_progress("extracting", f"Extracting full body text for {len(pending_items)} new stories concurrently...")
-    
-    # Concurrent extraction with ThreadPoolExecutor
+    update_fetch_progress("extracting", f"Extracting full body text for {len(pending_items)} new stories...")
+
+    # Bounded concurrent extraction (max_workers=2 for shared hosting stability)
     collected_sources = []
-    with ThreadPoolExecutor(max_workers=6) as executor:
+    with ThreadPoolExecutor(max_workers=2) as executor:
         future_to_item = {executor.submit(extract_article_content, item["url"]): item for item in pending_items}
         for future in as_completed(future_to_item):
             item = future_to_item[future]
             try:
-                full_text = future.result()
+                full_text = future.result(timeout=8)
             except Exception:
                 full_text = ""
-                
+
             source = Source(
                 url=item["url"],
                 title=item["title"],
@@ -123,11 +127,12 @@ def collect_rss_news(db: Session):
             )
             db.add(source)
             db.flush()
-            
+
+            body = (full_text if full_text else item["description"])[:MAX_STORED_CONTENT_CHARS]
             news_content = NewsContent(
                 source_id=source.id,
-                full_content=full_text if full_text else item["description"],
-                cleaned_content=full_text if full_text else item["description"],
+                full_content=body,
+                cleaned_content=body,
                 extracted_at=datetime.utcnow()
             )
             db.add(news_content)
@@ -135,62 +140,77 @@ def collect_rss_news(db: Session):
 
     if collected_sources:
         db.commit()
-        
+
     FETCH_PROGRESS["fetched_count"] = len(collected_sources)
     return len(collected_sources)
+
 
 def collect_gnews(db: Session):
     api_key = os.getenv("GNEWS_API_KEY")
     if not api_key:
         return 0
-        
-    categories = ['business', 'technology', 'science', 'nation', 'world']
+
+    categories = ['business', 'technology', 'nation']
     collected_count = 0
-    
+    session = get_http_session()
+
     for category in categories:
         url = f"https://gnews.io/api/v4/top-headlines?category={category}&lang=id&country=id&apikey={api_key}"
+        resp = None
         try:
-            response = requests.get(url, timeout=8)
-            if response.status_code == 200:
-                articles = response.json().get('articles', [])
-                for article in articles[:10]:
-                    url = article.get('url')
-                    existing = db.query(Source).filter(Source.url == url).first()
+            resp = session.get(url, timeout=7)
+            if resp.status_code == 200:
+                articles = resp.json().get('articles', [])
+                for article in articles[:5]:
+                    art_url = article.get('url')
+                    if not art_url:
+                        continue
+                    existing = db.query(Source).filter(Source.url == art_url).first()
                     if existing:
                         continue
-                    
+
+                    desc = (article.get('description') or '')[:1000]
                     source = Source(
-                        url=url,
-                        title=article.get('title'),
-                        publisher=article.get('source', {}).get('name', 'GNews'),
+                        url=art_url,
+                        title=(article.get('title') or 'News')[:490],
+                        publisher=(article.get('source', {}).get('name', 'GNews') or 'GNews')[:100],
                         published_at=datetime.utcnow(),
-                        description=article.get('description', ''),
+                        description=desc,
                         source_type="gnews",
                         reliability=2
                     )
                     db.add(source)
                     db.flush()
-                    
-                    full_text = extract_article_content(url)
+
+                    full_text = extract_article_content(art_url)
+                    body = (full_text if full_text else desc)[:MAX_STORED_CONTENT_CHARS]
                     news_content = NewsContent(
                         source_id=source.id,
-                        full_content=full_text if full_text else article.get('description', ''),
-                        cleaned_content=full_text if full_text else article.get('description', ''),
+                        full_content=body,
+                        cleaned_content=body,
                         extracted_at=datetime.utcnow()
                     )
                     db.add(news_content)
                     collected_count += 1
-                    
+
             if collected_count > 0:
                 db.commit()
         except Exception as e:
             print(f"Error fetching GNews category {category}: {e}")
-        
+        finally:
+            if resp is not None:
+                try:
+                    resp.close()
+                except Exception:
+                    pass
+
     return collected_count
+
 
 def run_aggregation(db: Session):
     print("Starting Aggregation...")
     rss_count = collect_rss_news(db)
     gnews_count = collect_gnews(db)
+    gc.collect()
     print(f"Aggregation complete. RSS: {rss_count}, GNews: {gnews_count}")
     return rss_count + gnews_count

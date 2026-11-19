@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/services/api';
+import { HomepageVisualBuilder } from '@/components/cms-builder/HomepageVisualBuilder';
 import {
   ResponsiveContainer,
   BarChart,
@@ -825,9 +826,38 @@ export const Admin: React.FC = () => {
     try {
       await api.put('/admin/cms/settings', { settings: settingsForm });
       showToast('success', 'Pengaturan website berhasil disimpan!');
+      window.dispatchEvent(new CustomEvent('inpartner:cms-published'));
       fetchSiteSettings();
     } catch {
       showToast('error', 'Gagal menyimpan pengaturan website.');
+    }
+  };
+
+  const handleSaveBanner = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (editingBanner) {
+        await api.put(`/admin/banners/${editingBanner.id}`, bannerForm);
+        showToast('success', 'Banner berhasil diperbarui.');
+      } else {
+        await api.post('/admin/banners', bannerForm);
+        showToast('success', 'Banner promosi baru dibuat.');
+      }
+      setBannerModalOpen(false);
+      fetchBanners();
+    } catch (err: any) {
+      showToast('error', err.response?.data?.message || 'Gagal menyimpan banner.');
+    }
+  };
+
+  const handleDeleteBanner = async (id: number) => {
+    if (!confirm('Hapus banner promosi ini?')) return;
+    try {
+      await api.delete(`/admin/banners/${id}`);
+      showToast('success', 'Banner dihapus.');
+      fetchBanners();
+    } catch {
+      showToast('error', 'Gagal menghapus banner.');
     }
   };
 
@@ -1052,7 +1082,7 @@ export const Admin: React.FC = () => {
     {
       label: 'Storefront CMS',
       items: [
-        { id: 'cms_homepage', label: 'Homepage CMS', icon: LayoutGrid, count: cmsSections.length },
+        { id: 'cms_homepage', label: 'Visual Website Builder', icon: LayoutGrid, count: cmsSections.length || undefined },
         { id: 'site_settings', label: 'Global Site Settings', icon: Globe }
       ]
     },
@@ -1136,9 +1166,11 @@ export const Admin: React.FC = () => {
         {/* Brand Header following guideline.md */}
         <div className="h-16 flex items-center justify-between px-5 border-b border-slate-200 bg-white">
           <Link to="/admin" className="flex items-center gap-2.5 overflow-hidden group">
-            <div className="w-9 h-9 rounded-xl bg-[#1976D2] group-hover:bg-[#1562AF] flex items-center justify-center text-white font-wordmark font-extrabold text-sm shadow-xs shrink-0 transition-colors">
-              IN
-            </div>
+            <img
+              src="/inpartner_logo.jpeg"
+              alt="Inpartner"
+              className="w-9 h-9 rounded-xl object-contain shrink-0 border border-slate-100 shadow-2xs"
+            />
             {!sidebarCollapsed && (
               <div className="leading-tight">
                 <span className="font-wordmark font-extrabold text-[#1976D2] text-base tracking-tight block">INPARTNER</span>
@@ -1245,7 +1277,7 @@ export const Admin: React.FC = () => {
       {/* ============================================================== */}
       {/* MAIN CONTENT AREA */}
       {/* ============================================================== */}
-      <main className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'md:ml-20' : 'md:ml-72'} flex flex-col min-h-screen`}>
+      <main className={`flex-1 min-w-0 transition-all duration-300 ${sidebarCollapsed ? 'md:ml-20' : 'md:ml-72'} flex flex-col min-h-screen`}>
         {/* Top Navbar */}
         <header className="sticky top-0 z-30 h-16 bg-[#FFFFFF]/90 backdrop-blur-md border-b border-slate-200 px-6 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -1284,7 +1316,13 @@ export const Admin: React.FC = () => {
         </header>
 
         {/* Tab Content Container */}
-        <div className="p-6 md:p-8 flex-1 max-w-7xl w-full mx-auto space-y-6">
+        <div
+          className={
+            activeTab === 'cms_homepage'
+              ? 'p-3 md:p-4 flex-1 w-full min-w-0'
+              : 'p-6 md:p-8 flex-1 max-w-7xl w-full min-w-0 mx-auto space-y-6'
+          }
+        >
 
           {/* ========================================================== */}
           {/* TAB 1: OVERVIEW */}
@@ -2260,183 +2298,193 @@ export const Admin: React.FC = () => {
           )}
 
           {/* ========================================================== */}
-          {/* TAB 11: HOMEPAGE CMS & SECTION MANAGER */}
+          {/* TAB 11: VISUAL WEBSITE BUILDER (HOMEPAGE CMS) */}
           {/* ========================================================== */}
           {activeTab === 'cms_homepage' && (
+            <HomepageVisualBuilder onToast={showToast} />
+          )}
+
+          {/* ========================================================== */}
+          {/* TAB: PROMO BANNERS */}
+          {/* ========================================================== */}
+          {activeTab === 'banners' && (
             <div className="space-y-6 animate-in fade-in duration-200">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center justify-between gap-4">
                 <div>
-                  <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
-                    <LayoutGrid className="w-5 h-5 text-[#1976D2]" />
-                    <span>Homepage CMS & Section Manager</span>
-                  </h2>
+                  <h2 className="text-lg font-black text-slate-900">Promo Banners Manager</h2>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Kelola urutan section beranda, sembunyikan/tampilkan, sunting konten draf multilingual, dan publikasikan ke storefront.
+                    Kelola aset banner promosi yang dapat disisipkan ke section Promotional Banner pada Visual Website Builder.
                   </p>
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <a
-                    href="/?preview=cms"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs shadow-xs transition-all"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5 text-[#1976D2]" /> Preview Draf
-                  </a>
-                  <button
-                    onClick={handlePublishAllCms}
-                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-all"
-                  >
-                    <CheckCircle className="w-3.5 h-3.5" /> Publikasikan Semua
-                  </button>
-                  <button
-                    onClick={() => {
-                      setEditingSection(null);
-                      setSectionForm({
-                        title: '',
-                        subtitle: '',
-                        type: 'hero',
-                        eyebrow: '',
-                        cta_primary_label: '',
-                        cta_primary_url: '',
-                        cta_secondary_label: '',
-                        cta_secondary_url: '',
-                        badge_text: '',
-                        is_active: true,
-                        en_title: '',
-                        en_subtitle: '',
-                        en_eyebrow: '',
-                        en_cta_primary: '',
-                        en_cta_secondary: '',
-                        ko_title: '',
-                        ko_subtitle: '',
-                        ko_eyebrow: '',
-                        ko_cta_primary: '',
-                        ko_cta_secondary: '',
-                      });
-                      setSectionFormLang('id');
-                      setCmsSectionModalOpen(true);
-                    }}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#1976D2] hover:bg-[#1562AF] text-white font-bold text-xs shadow-sm transition-all"
-                  >
-                    <Plus className="w-4 h-4" /> Tambah Section
-                  </button>
-                </div>
+                <button
+                  onClick={() => {
+                    setEditingBanner(null);
+                    setBannerForm({
+                      eyebrow: 'Sorotan Riset',
+                      title: '',
+                      subtitle: '',
+                      image_url: '',
+                      cta_label: 'Jelajahi Sekarang',
+                      cta_url: '/products',
+                      theme: 'indigo',
+                      sort_order: banners.length + 1,
+                      is_active: true,
+                    });
+                    setBannerModalOpen(true);
+                  }}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#1976D2] hover:bg-[#1562AF] text-white font-bold text-xs shadow-xs"
+                >
+                  <Plus className="w-4 h-4" /> Tambah Banner
+                </button>
               </div>
 
-              {/* Sections Table / Cards */}
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-                <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/60">
-                  <span className="text-xs font-bold text-slate-700">
-                    Total {cmsSections.length} Section Terdaftar (Disusun Sesuai Hierarki Tampilan Beranda)
-                  </span>
-                  <span className="text-[11px] text-slate-400">
-                    Gunakan tombol panah untuk mengubah urutan (reorder)
-                  </span>
-                </div>
-
-                <div className="divide-y divide-slate-100">
-                  {cmsSections.length === 0 ? (
-                    <div className="py-12 text-center text-slate-400 text-xs">
-                      Belum ada section CMS. Klik tombol "Tambah Section" di atas.
-                    </div>
-                  ) : (
-                    cmsSections.map((sec, idx) => (
-                      <div
-                        key={sec.id}
-                        className={`p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors ${
-                          !sec.is_active ? 'bg-slate-50/50 opacity-75' : 'hover:bg-slate-50/80'
-                        }`}
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          {/* Reorder controls */}
-                          <div className="flex flex-col items-center gap-1">
-                            <button
-                              disabled={idx === 0}
-                              onClick={() => handleReorderSection(idx, 'up')}
-                              className="p-1 rounded hover:bg-slate-200 text-slate-500 disabled:opacity-30 disabled:pointer-events-none"
-                              title="Pindahkan ke atas"
-                            >
-                              <ChevronUp className="w-3.5 h-3.5" />
-                            </button>
-                            <span className="text-[10px] font-mono font-black text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
-                              #{idx + 1}
-                            </span>
-                            <button
-                              disabled={idx === cmsSections.length - 1}
-                              onClick={() => handleReorderSection(idx, 'down')}
-                              className="p-1 rounded hover:bg-slate-200 text-slate-500 disabled:opacity-30 disabled:pointer-events-none"
-                              title="Pindahkan ke bawah"
-                            >
-                              <ArrowDown className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-
-                          <div className="min-w-0">
-                            <div className="flex flex-wrap items-center gap-2 mb-1">
-                              <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-blue-50 text-[#1562AF] border border-[#B2D1F0]">
-                                {sec.type}
-                              </span>
-                              <h4 className="font-bold text-slate-900 text-sm truncate">
-                                {sec.title || sec.name || `Section #${sec.id}`}
-                              </h4>
-                              {sec.status === 'draft' ? (
-                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                                  Draf Tersimpan
-                                </span>
-                              ) : (
-                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                  Live / Aktif
-                                </span>
-                              )}
-                              {!sec.is_active && (
-                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">
-                                  Disembunyikan
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-xs text-slate-500 line-clamp-1 max-w-xl">
-                              {sec.subtitle || 'Tidak ada deskripsi subjudul.'}
-                            </p>
-                            <div className="flex items-center gap-2 mt-1.5 text-[10px] text-slate-400">
-                              <span>Bahasa tersedia:</span>
-                              <span className="font-bold text-slate-700 bg-slate-100 px-1.5 py-0.2 rounded">ID</span>
-                              {sec.translations?.en && (
-                                <span className="font-bold text-blue-700 bg-blue-50 px-1.5 py-0.2 rounded">EN</span>
-                              )}
-                              {sec.translations?.ko && (
-                                <span className="font-bold text-purple-700 bg-purple-50 px-1.5 py-0.2 rounded">KO</span>
-                              )}
-                            </div>
-                          </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {banners.length === 0 ? (
+                  <div className="col-span-2 p-10 rounded-2xl border border-slate-200 bg-white text-center text-xs text-slate-400">
+                    Belum ada promo banner terdaftar.
+                  </div>
+                ) : (
+                  banners.map((b) => (
+                    <div key={b.id} className="p-5 rounded-2xl border border-slate-200 bg-white shadow-xs space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#1976D2]">
+                            {b.eyebrow || 'Banner'}
+                          </span>
+                          <h4 className="text-sm font-bold text-slate-900 mt-0.5">{b.title}</h4>
                         </div>
-
-                        {/* Actions */}
-                        <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            b.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'
+                          }`}
+                        >
+                          {b.is_active ? 'Aktif' : 'Nonaktif'}
+                        </span>
+                      </div>
+                      {b.subtitle && <p className="text-xs text-slate-500 line-clamp-2">{b.subtitle}</p>}
+                      <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+                        <span className="text-slate-400 font-mono text-[11px]">{b.cta_url}</span>
+                        <div className="flex items-center gap-2">
                           <button
-                            onClick={() => handleToggleSectionActive(sec.id)}
-                            className={`p-2 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-all ${
-                              sec.is_active
-                                ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                                : 'border-slate-200 bg-slate-100 text-slate-600 hover:bg-slate-200'
-                            }`}
-                            title={sec.is_active ? 'Sembunyikan dari homepage' : 'Tampilkan di homepage'}
+                            onClick={() => {
+                              setEditingBanner(b);
+                              setBannerForm({
+                                eyebrow: b.eyebrow || '',
+                                title: b.title || '',
+                                subtitle: b.subtitle || '',
+                                image_url: b.image_url || '',
+                                cta_label: b.cta_label || '',
+                                cta_url: b.cta_url || '/products',
+                                theme: b.theme || 'indigo',
+                                sort_order: b.sort_order || 0,
+                                is_active: Boolean(b.is_active),
+                              });
+                              setBannerModalOpen(true);
+                            }}
+                            className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50"
                           >
-                            {sec.is_active ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                            <span>{sec.is_active ? 'Aktif' : 'Nonaktif'}</span>
+                            Edit
                           </button>
                           <button
-                            onClick={() => handleOpenEditSection(sec)}
-                            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs"
+                            onClick={() => handleDeleteBanner(b.id)}
+                            className="px-3 py-1.5 rounded-lg border border-rose-200 text-rose-600 font-semibold hover:bg-rose-50"
                           >
-                            <Edit3 className="w-3.5 h-3.5 text-[#1976D2]" /> Edit Konten
+                            Hapus
                           </button>
                         </div>
                       </div>
-                    ))
-                  )}
-                </div>
+                    </div>
+                  ))
+                )}
               </div>
+
+              {bannerModalOpen && (
+                <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+                  <div className="w-full max-w-lg bg-white rounded-3xl border border-slate-200 shadow-2xl p-6 text-xs">
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                      <h3 className="font-bold text-slate-900 text-sm">
+                        {editingBanner ? 'Edit Promo Banner' : 'Tambah Promo Banner Baru'}
+                      </h3>
+                      <button onClick={() => setBannerModalOpen(false)} className="p-1 text-slate-400">
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <form onSubmit={handleSaveBanner} className="space-y-3 mt-4">
+                      <div>
+                        <label className="font-bold text-slate-700 block mb-1">Eyebrow</label>
+                        <input
+                          type="text"
+                          value={bannerForm.eyebrow}
+                          onChange={(e) => setBannerForm({ ...bannerForm, eyebrow: e.target.value })}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-200"
+                        />
+                      </div>
+                      <div>
+                        <label className="font-bold text-slate-700 block mb-1">Judul Banner *</label>
+                        <input
+                          type="text"
+                          required
+                          value={bannerForm.title}
+                          onChange={(e) => setBannerForm({ ...bannerForm, title: e.target.value })}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-200"
+                        />
+                      </div>
+                      <div>
+                        <label className="font-bold text-slate-700 block mb-1">Subjudul</label>
+                        <textarea
+                          rows={2}
+                          value={bannerForm.subtitle}
+                          onChange={(e) => setBannerForm({ ...bannerForm, subtitle: e.target.value })}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-200"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="font-bold text-slate-700 block mb-1">Label CTA</label>
+                          <input
+                            type="text"
+                            value={bannerForm.cta_label}
+                            onChange={(e) => setBannerForm({ ...bannerForm, cta_label: e.target.value })}
+                            className="w-full px-3 py-2 rounded-xl border border-slate-200"
+                          />
+                        </div>
+                        <div>
+                          <label className="font-bold text-slate-700 block mb-1">URL CTA</label>
+                          <input
+                            type="text"
+                            value={bannerForm.cta_url}
+                            onChange={(e) => setBannerForm({ ...bannerForm, cta_url: e.target.value })}
+                            className="w-full px-3 py-2 rounded-xl border border-slate-200"
+                          />
+                        </div>
+                      </div>
+                      <label className="flex items-center gap-2 cursor-pointer pt-1">
+                        <input
+                          type="checkbox"
+                          checked={bannerForm.is_active}
+                          onChange={(e) => setBannerForm({ ...bannerForm, is_active: e.target.checked })}
+                        />
+                        <span className="font-bold text-slate-700">Banner Aktif</span>
+                      </label>
+                      <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                        <button
+                          type="button"
+                          onClick={() => setBannerModalOpen(false)}
+                          className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 font-semibold"
+                        >
+                          Batal
+                        </button>
+                        <button
+                          type="submit"
+                          className="px-4 py-2 rounded-xl bg-[#1976D2] text-white font-bold"
+                        >
+                          Simpan Banner
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

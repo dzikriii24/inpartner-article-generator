@@ -15,7 +15,9 @@ class CmsSection extends Model
         return [
             'content' => 'array',
             'settings' => 'array',
+            'children' => 'array',
             'draft_content' => 'array',
+            'draft_payload' => 'array',
             'sort_order' => 'integer',
             'is_active' => 'boolean',
             'is_published' => 'boolean',

@@ -425,11 +425,11 @@ export const Library: React.FC = () => {
       <nav aria-label="Breadcrumb" className="flex items-center justify-between text-xs text-slate-500">
         <div className="flex items-center gap-2">
           <Link to="/" className="hover:text-[#1976D2] transition-colors font-medium">
-            Beranda
+            {t('nav.home', 'Beranda')}
           </Link>
           <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
           <span className="text-slate-900 font-semibold truncate">
-            Library Pembaca Saya
+            {t('library.title', 'Library Pembaca Saya')}
           </span>
         </div>
 
@@ -437,7 +437,7 @@ export const Library: React.FC = () => {
           to="/products"
           className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-[#1976D2] hover:text-[#0C3B69] hover:underline"
         >
-          <span>Jelajahi Riset Baru</span>
+          <span>{t('home.explore_catalog', 'Jelajahi Riset Baru')}</span>
           <ArrowRight className="w-3.5 h-3.5" />
         </Link>
       </nav>
@@ -445,12 +445,11 @@ export const Library: React.FC = () => {
       {/* 2. HEADER & MAIN VIEW SWITCHER */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-200 pb-5">
         <div className="space-y-1">
-          
           <h1 className="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight">
-            Library Pembaca Saya
+            {t('library.title', 'Library Pembaca Saya')}
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 font-supporting">
-            Akses permanen, riwayat aktivitas, dan progres membaca publikasi riset terverifikasi Anda.
+            {t('library.subtitle', 'Akses permanen, riwayat aktivitas, dan progres membaca publikasi riset terverifikasi Anda.')}
           </p>
         </div>
 
@@ -466,7 +465,7 @@ export const Library: React.FC = () => {
             }`}
           >
             <Layers className="w-4 h-4 text-[#1976D2]" />
-            <span>Koleksi Dokumen ({items.length})</span>
+            <span>{t('library.filter_all', 'Koleksi Dokumen')} ({items.length})</span>
           </button>
           <button
             type="button"
@@ -478,7 +477,7 @@ export const Library: React.FC = () => {
             }`}
           >
             <History className="w-4 h-4 text-[#1976D2]" />
-            <span>Riwayat Membaca ({totalHistoryCount})</span>
+            <span>{t('nav.orders', 'Riwayat Membaca')} ({totalHistoryCount})</span>
           </button>
         </div>
       </div>
@@ -488,7 +487,7 @@ export const Library: React.FC = () => {
         <div className="py-24 text-center space-y-4">
           <RefreshCw className="w-8 h-8 mx-auto animate-spin text-[#1976D2]" />
           <p className="text-xs font-semibold text-slate-500 font-supporting">
-            Menyiapkan Workspace Library Personal...
+            {t('common.loading', 'Menyiapkan Workspace Library Personal...')}
           </p>
         </div>
       ) : items.length === 0 ? (
@@ -499,16 +498,16 @@ export const Library: React.FC = () => {
           </div>
           <div className="space-y-1.5">
             <h3 className="text-lg sm:text-xl font-bold text-slate-900">
-              Library Pembaca Anda Masih Kosong
+              {t('library.empty_title', 'Library Pembaca Anda Masih Kosong')}
             </h3>
             <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto font-supporting leading-relaxed">
-              Seluruh laporan riset sektoral, publikasi tematik, dan berkas dataset yang Anda beli atau klaim gratis akan tersimpan permanen di sini.
+              {t('library.empty_desc', 'Seluruh laporan riset sektoral, publikasi tematik, dan berkas dataset yang Anda beli atau klaim gratis akan tersimpan permanen di sini.')}
             </p>
           </div>
           <div className="pt-3">
             <Link to="/products">
               <Button className="bg-[#1976D2] hover:bg-[#1562AF] active:bg-[#0C3B69] text-white font-semibold text-xs sm:text-sm rounded-xl px-6 py-3 shadow-xs cursor-pointer gap-2">
-                <span>Jelajahi Katalog Publikasi</span>
+                <span>{t('home.explore_catalog', 'Jelajahi Katalog Publikasi')}</span>
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>

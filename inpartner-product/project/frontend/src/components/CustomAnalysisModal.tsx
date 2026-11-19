@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Send, CheckCircle2, ShieldCheck, Sparkles } from 'lucide-react';
 import api from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface CustomAnalysisModalProps {
   isOpen: boolean;
@@ -10,6 +11,7 @@ interface CustomAnalysisModalProps {
 
 export const CustomAnalysisModal: React.FC<CustomAnalysisModalProps> = ({ isOpen, onClose }) => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [form, setForm] = useState({
     name: user?.name || '',
     email: user?.email || '',
@@ -59,9 +61,9 @@ export const CustomAnalysisModal: React.FC<CustomAnalysisModalProps> = ({ isOpen
             <div className="w-16 h-16 bg-[#D1E4F6] text-[#1976D2] rounded-2xl flex items-center justify-center mx-auto border border-[#B2D1F0]">
               <CheckCircle2 className="w-8 h-8" />
             </div>
-            <h3 className="text-2xl font-bold text-slate-900">Permintaan Riset Diterima</h3>
+            <h3 className="text-2xl font-bold text-slate-900">{t('custom.success_title', 'Permintaan Riset Diterima')}</h3>
             <p className="text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
-              Tim Research Lab & Senior Partner Inpartner akan meninjau lingkup studi Anda dan menghubungi dalam 1x24 jam kerja melalui email <strong>{form.email}</strong>.
+              {t('custom.success_desc', 'Tim Research Lab & Senior Partner Inpartner akan meninjau lingkup studi Anda dan menghubungi dalam 1x24 jam kerja')} (<strong>{form.email}</strong>).
             </p>
             <div className="pt-4">
               <button
@@ -71,7 +73,7 @@ export const CustomAnalysisModal: React.FC<CustomAnalysisModalProps> = ({ isOpen
                 }}
                 className="px-6 py-2.5 rounded-xl bg-[#1976D2] hover:bg-[#1562AF] active:bg-[#0C3B69] text-white font-semibold text-xs shadow-xs transition cursor-pointer"
               >
-                Tutup Jendela
+                {t('custom.close', 'Tutup Jendela')}
               </button>
             </div>
           </div>
@@ -80,11 +82,11 @@ export const CustomAnalysisModal: React.FC<CustomAnalysisModalProps> = ({ isOpen
             {/* Header */}
             <div className="space-y-1 mb-6">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#D1E4F6] text-[#0C3B69] border border-[#B2D1F0] text-[11px] font-semibold mb-2">
-                <Sparkles className="w-3.5 h-3.5 text-[#1976D2]" /> Bespoke Research & Custom Data Request
+                <Sparkles className="w-3.5 h-3.5 text-[#1976D2]" /> {t('custom.modal_badge', 'Bespoke Research & Custom Data Request')}
               </div>
-              <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Ajukan Riset Kustom B2B</h2>
+              <h2 className="text-2xl font-bold text-slate-900 tracking-tight">{t('custom.modal_title', 'Ajukan Riset Kustom B2B')}</h2>
               <p className="text-xs text-slate-600">
-                Analisis sektoral mendalam, validasi fakta lapangan domestik, dan sintesis regulasi khusus untuk kebutuhan Corporate Strategy, Corsec, dan Direksi.
+                {t('custom.modal_desc', 'Analisis sektoral mendalam, validasi fakta lapangan domestik, dan sintesis regulasi khusus untuk kebutuhan Corporate Strategy, Corsec, dan Direksi.')}
               </p>
             </div>
 
@@ -97,7 +99,7 @@ export const CustomAnalysisModal: React.FC<CustomAnalysisModalProps> = ({ isOpen
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Nama Lengkap *</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">{t('custom.field_name', 'Nama Lengkap *')}</label>
                   <input
                     type="text"
                     required
@@ -109,7 +111,7 @@ export const CustomAnalysisModal: React.FC<CustomAnalysisModalProps> = ({ isOpen
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Email Korporat / Profesional *</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">{t('custom.field_email', 'Email Korporat / Profesional *')}</label>
                   <input
                     type="email"
                     required
@@ -123,7 +125,7 @@ export const CustomAnalysisModal: React.FC<CustomAnalysisModalProps> = ({ isOpen
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Nama Perusahaan / Organisasi</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">{t('custom.field_company', 'Nama Perusahaan / Organisasi')}</label>
                   <input
                     type="text"
                     value={form.company}
@@ -134,7 +136,7 @@ export const CustomAnalysisModal: React.FC<CustomAnalysisModalProps> = ({ isOpen
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Nomor WhatsApp / Kontak</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">{t('custom.field_phone', 'Nomor WhatsApp / Kontak')}</label>
                   <input
                     type="text"
                     value={form.phone}
@@ -147,7 +149,7 @@ export const CustomAnalysisModal: React.FC<CustomAnalysisModalProps> = ({ isOpen
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Sektor Industri *</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">{t('custom.field_sector', 'Sektor Industri *')}</label>
                   <select
                     value={form.sector}
                     onChange={(e) => setForm({ ...form, sector: e.target.value })}
@@ -164,7 +166,7 @@ export const CustomAnalysisModal: React.FC<CustomAnalysisModalProps> = ({ isOpen
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Target Timeline</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">{t('custom.field_timeline', 'Target Timeline')}</label>
                   <select
                     value={form.timeline}
                     onChange={(e) => setForm({ ...form, timeline: e.target.value })}
@@ -179,7 +181,7 @@ export const CustomAnalysisModal: React.FC<CustomAnalysisModalProps> = ({ isOpen
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Judul / Topik Studi Khusus *</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">{t('custom.field_topic', 'Judul / Topik Studi Khusus *')}</label>
                 <input
                   type="text"
                   required
@@ -191,7 +193,7 @@ export const CustomAnalysisModal: React.FC<CustomAnalysisModalProps> = ({ isOpen
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Lingkup & Spesifikasi Kebutuhan Data *</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">{t('custom.field_scope', 'Lingkup & Spesifikasi Kebutuhan Data *')}</label>
                 <textarea
                   required
                   rows={4}
@@ -205,7 +207,7 @@ export const CustomAnalysisModal: React.FC<CustomAnalysisModalProps> = ({ isOpen
               <div className="p-3.5 rounded-2xl bg-[#D1E4F6]/30 border border-[#B2D1F0] flex items-start gap-3 text-xs text-[#0C3B69]">
                 <ShieldCheck className="w-5 h-5 text-[#1976D2] shrink-0 mt-0.5" />
                 <p className="leading-relaxed">
-                  Semua permintaan dilindungi oleh Non-Disclosure Agreement (NDA) standar Inpartner Intelligence. Data perusahaan Anda tidak akan dipublikasikan ke publik.
+                  {t('custom.nda_note', 'Semua permintaan dilindungi oleh Non-Disclosure Agreement (NDA) standar Inpartner Intelligence. Data perusahaan Anda tidak akan dipublikasikan ke publik.')}
                 </p>
               </div>
 
@@ -215,7 +217,7 @@ export const CustomAnalysisModal: React.FC<CustomAnalysisModalProps> = ({ isOpen
                   onClick={onClose}
                   className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold transition cursor-pointer"
                 >
-                  Batal
+                  {t('custom.cancel', 'Batal')}
                 </button>
 
                 <button
@@ -223,7 +225,7 @@ export const CustomAnalysisModal: React.FC<CustomAnalysisModalProps> = ({ isOpen
                   disabled={loading}
                   className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#1976D2] hover:bg-[#1562AF] active:bg-[#0C3B69] text-white font-semibold text-xs shadow-xs transition cursor-pointer disabled:opacity-50"
                 >
-                  {loading ? 'Mengirimkan...' : 'Kirim Permintaan'}
+                  {loading ? t('custom.submitting', 'Mengirimkan...') : t('custom.submit', 'Kirim Permintaan')}
                   <Send className="w-3.5 h-3.5" />
                 </button>
               </div>

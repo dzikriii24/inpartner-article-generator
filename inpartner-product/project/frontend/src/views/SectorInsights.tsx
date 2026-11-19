@@ -223,10 +223,10 @@ export const SectorInsights: React.FC = () => {
       {/* 1. Breadcrumbs */}
       <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs text-slate-500">
         <Link to="/" className="hover:text-[#1976D2] transition-colors font-medium">
-          Beranda
+          {t('nav.home', 'Beranda')}
         </Link>
         <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-        <span className="text-slate-500 font-medium">Riset & Insight</span>
+        <span className="text-slate-500 font-medium">{t('nav.research_insights', 'Reports & Insights')}</span>
         <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
         <span className="text-slate-900 font-semibold truncate">
           Sector Insights & Industry Analysis

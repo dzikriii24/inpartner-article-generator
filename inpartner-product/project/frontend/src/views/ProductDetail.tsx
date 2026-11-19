@@ -170,14 +170,14 @@ export const ProductDetail: React.FC = () => {
       {/* ================= 1. BREADCRUMBS & TOP BAR ================= */}
       <nav className="flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500 border-b border-slate-100 pb-4">
         <div className="flex items-center gap-2 flex-wrap">
-          <Link to="/" className="hover:text-[#1976D2] transition-colors font-medium">Beranda</Link>
+          <Link to="/" className="hover:text-[#1976D2] transition-colors font-medium">{t('nav.home', 'Beranda')}</Link>
           <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-          <Link to="/products" className="hover:text-[#1976D2] transition-colors font-medium">Katalog</Link>
+          <Link to="/sector-insights" className="hover:text-[#1976D2] transition-colors font-medium">{t('nav.research_insights', 'Reports & Insights')}</Link>
           {product.category && (
             <>
               <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
               <Link
-                to={`/products?category=${product.category.slug}`}
+                to={`/sector-insights?category=${product.category.slug}`}
                 className="hover:text-[#1976D2] transition-colors font-medium"
               >
                 {product.category.name}
@@ -200,7 +200,7 @@ export const ProductDetail: React.FC = () => {
             }`}
           >
             <Heart className={`w-3.5 h-3.5 ${wishlisted ? 'fill-rose-600' : ''}`} />
-            <span>{wishlisted ? 'Tersimpan' : 'Simpan Riset'}</span>
+            <span>{wishlisted ? t('product.remove_wishlist', 'Tersimpan') : t('product.add_wishlist', 'Simpan Riset')}</span>
           </button>
         </div>
       </nav>

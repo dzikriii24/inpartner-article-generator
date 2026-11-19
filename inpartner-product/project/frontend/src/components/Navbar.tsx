@@ -26,13 +26,32 @@ import { Locale } from '@/i18n/translations';
 import { Button } from '@/components/lightswind/button';
 import { Badge } from '@/components/lightswind/badge';
 import CustomAnalysisModal from '@/components/CustomAnalysisModal';
+import { useSiteConfig } from '@/context/SiteConfigContext';
+import { useCmsViewport } from '@/components/cms-renderer/CmsViewportContext';
+import { getCmsIcon } from '@/components/cms-renderer/cmsIcons';
+import type { CmsHeaderConfig } from '@/types/cms/builder';
 import api from '@/services/api';
 
-export const Navbar: React.FC = () => {
+interface NavbarProps {
+  overrideHeader?: CmsHeaderConfig;
+  builderMode?: boolean;
+  builderSelected?: boolean;
+  onBuilderSelect?: () => void;
+}
+
+export const Navbar: React.FC<NavbarProps> = ({
+  overrideHeader,
+  builderMode = false,
+  builderSelected = false,
+  onBuilderSelect,
+}) => {
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
   const { itemCount } = useCart();
   const { wishlistCount } = useWishlist();
   const { locale, setLocale, t } = useLanguage();
+  const { header: siteHeader } = useSiteConfig();
+  const { viewport } = useCmsViewport();
+  const headerCfg = overrideHeader || siteHeader;
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -151,126 +170,160 @@ export const Navbar: React.FC = () => {
   const isResearchActive =
     location.pathname === '/thematic-research' || location.pathname === '/sector-insights';
 
+  const isMobileViewport = viewport === 'mobile';
+  const isTabletOrSmaller = viewport === 'mobile' || viewport === 'tablet';
+  const showDesktopNavCls = viewport ? (isMobileViewport ? 'hidden' : 'flex') : 'hidden md:flex';
+  const showDesktopSearchCls = viewport ? (isTabletOrSmaller ? 'hidden' : 'block') : 'hidden lg:block';
+  const showMobileOnlyCls = viewport ? (isMobileViewport ? 'flex' : 'hidden') : 'md:hidden';
+  const showMobileSearchToggleCls = viewport ? (isTabletOrSmaller ? 'block' : 'hidden') : 'lg:hidden';
+
   return (
     <>
-      <div className="sticky top-4 z-40 w-full px-4 sm:px-6">
-        <header className="max-w-7xl mx-auto rounded-2xl bg-white/95 backdrop-blur-md border border-slate-200 shadow-xs px-4 sm:px-6 py-2.5 flex items-center justify-between gap-3 sm:gap-4 transition-all">
-          
+      <div
+        onClick={(e) => {
+          if (builderMode && onBuilderSelect) {
+            e.stopPropagation();
+            onBuilderSelect();
+          }
+        }}
+        className={`${headerCfg.sticky !== false && !builderMode ? 'sticky top-4 z-40' : 'relative z-20'} w-full px-4 sm:px-6 ${
+          builderMode
+            ? `cursor-pointer transition-all ${
+                builderSelected ? 'ring-2 ring-[#1976D2] ring-offset-2 rounded-2xl' : 'hover:ring-1 hover:ring-[#B2D1F0] rounded-2xl'
+              }`
+            : ''
+        }`}
+      >
+        <header
+          style={{ backgroundColor: headerCfg.background_color || '#FFFFFF' }}
+          className={`max-w-7xl mx-auto rounded-2xl ${
+            headerCfg.blur !== false ? 'backdrop-blur-md bg-opacity-95' : ''
+          } border border-slate-200 shadow-xs px-4 sm:px-6 py-2.5 flex items-center justify-between gap-3 sm:gap-4 transition-all`}
+        >
           {/* Left Section: Brand Logo & Primary Navigation */}
           <div className="flex items-center gap-3 xl:gap-6 shrink-0">
             {/* Brand Logo */}
-            <Link to="/" className="flex items-center gap-2.5 group shrink-0">
+            <Link
+              to="/"
+              onClick={(e) => {
+                if (builderMode) e.preventDefault();
+              }}
+              className="flex items-center gap-2.5 group shrink-0"
+            >
               <img
-                src="/logo.png"
-                alt="Inpartner"
+                src={headerCfg.logo_url || '/inpartner_logo.jpeg'}
+                alt={headerCfg.brand_name || 'Inpartner'}
                 className="w-8 h-8 rounded-lg object-contain shadow-2xs group-hover:scale-105 transition-transform"
               />
               <div className="leading-none">
                 <span className="font-wordmark font-extrabold text-[#1976D2] text-lg sm:text-xl tracking-tight block">
-                  INPARTNER
+                  {headerCfg.brand_name || 'INPARTNER'}
                 </span>
                 <span className="text-[9px] uppercase font-bold tracking-wider text-slate-400 block font-supporting mt-0.5">
-                  {t('nav.tagline', 'Digital Products')}
+                  {headerCfg.tagline || t('nav.tagline', 'Research')}
                 </span>
               </div>
             </Link>
 
             {/* Desktop Navigation Links */}
-            <nav className="hidden md:flex items-center gap-1 text-xs">
-              {/* Katalog */}
-              <Link to="/products" className={activeLinkClass('/products')}>
-                {t('nav.catalog', 'Katalog')}
-              </Link>
+            <nav className={`${showDesktopNavCls} items-center gap-1 text-xs`}>
+              {(headerCfg.nav_items || []).map((nav) => {
+                if (nav.type === 'dropdown' && (nav.children?.length || 0) > 0) {
+                  return (
+                    <div key={nav.id} ref={researchNavRef} className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setResearchDropdownOpen(!researchDropdownOpen)}
+                        className={`flex items-center gap-1 px-3 py-1.5 rounded-xl transition-colors cursor-pointer text-xs ${
+                          isResearchActive
+                            ? 'text-[#1976D2] font-semibold bg-[#D1E4F6]/40 border border-[#B2D1F0]'
+                            : researchDropdownOpen
+                            ? 'text-slate-900 bg-slate-100/80 font-medium'
+                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 font-medium'
+                        }`}
+                      >
+                        <span>{nav.label}</span>
+                        <ChevronDown
+                          className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${
+                            researchDropdownOpen ? 'rotate-180 text-[#1976D2]' : ''
+                          }`}
+                        />
+                      </button>
 
-              {/* Riset & Insight Dropdown */}
-              <div ref={researchNavRef} className="relative">
-                <button
-                  type="button"
-                  onClick={() => setResearchDropdownOpen(!researchDropdownOpen)}
-                  className={`flex items-center gap-1 px-3 py-1.5 rounded-xl transition-colors cursor-pointer text-xs ${
-                    isResearchActive
-                      ? 'text-[#1976D2] font-semibold bg-[#D1E4F6]/40 border border-[#B2D1F0]'
-                      : researchDropdownOpen
-                      ? 'text-slate-900 bg-slate-100/80 font-medium'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 font-medium'
-                  }`}
-                >
-                  <span>{t('nav.research_insights', 'Riset & Insight')}</span>
-                  <ChevronDown
-                    className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${
-                      researchDropdownOpen ? 'rotate-180 text-[#1976D2]' : ''
-                    }`}
-                  />
-                </button>
-
-                {researchDropdownOpen && (
-                  <div className="absolute left-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50 animate-in fade-in slide-in-from-top-1">
-                    <div className="px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100">
-                      {t('nav.research_insights', 'Koleksi Publikasi')}
+                      {researchDropdownOpen && (
+                        <div className="absolute left-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50 animate-in fade-in slide-in-from-top-1">
+                          <div className="px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100">
+                            {nav.label}
+                          </div>
+                          {nav.children?.map((child) => {
+                            const ChildIcon = getCmsIcon(child.icon, BookOpen);
+                            return (
+                              <Link
+                                key={child.id}
+                                to={child.url || '/products'}
+                                onClick={(e) => {
+                                  if (builderMode) e.preventDefault();
+                                  setResearchDropdownOpen(false);
+                                }}
+                                className={`flex items-start gap-2.5 px-3.5 py-2.5 transition-colors ${
+                                  location.pathname === child.url
+                                    ? 'bg-[#D1E4F6]/40 text-[#0C3B69]'
+                                    : 'hover:bg-slate-50 text-slate-700'
+                                }`}
+                              >
+                                <ChildIcon className="w-4 h-4 text-[#1976D2] mt-0.5 shrink-0" />
+                                <div>
+                                  <div className="text-xs font-semibold text-slate-900">{child.label}</div>
+                                  {child.description && (
+                                    <div className="text-[11px] text-slate-500 font-supporting leading-snug">
+                                      {child.description}
+                                    </div>
+                                  )}
+                                </div>
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
-                    <Link
-                      to="/thematic-research"
-                      onClick={() => setResearchDropdownOpen(false)}
-                      className={`flex items-start gap-2.5 px-3.5 py-2.5 transition-colors ${
-                        location.pathname === '/thematic-research'
-                          ? 'bg-[#D1E4F6]/40 text-[#0C3B69]'
-                          : 'hover:bg-slate-50 text-slate-700'
-                      }`}
-                    >
-                      <BookOpen className="w-4 h-4 text-[#1976D2] mt-0.5 shrink-0" />
-                      <div>
-                        <div className="text-xs font-semibold text-slate-900">
-                          {t('nav.thematic', 'Riset Tematik')}
-                        </div>
-                        <div className="text-[11px] text-slate-500 font-supporting leading-snug">
-                          {t('nav.thematic_desc', 'Tren industri & isu makro masa depan')}
-                        </div>
-                      </div>
-                    </Link>
+                  );
+                }
 
-                    <Link
-                      to="/sector-insights"
-                      onClick={() => setResearchDropdownOpen(false)}
-                      className={`flex items-start gap-2.5 px-3.5 py-2.5 transition-colors ${
-                        location.pathname === '/sector-insights'
-                          ? 'bg-[#D1E4F6]/40 text-[#0C3B69]'
-                          : 'hover:bg-slate-50 text-slate-700'
-                      }`}
-                    >
-                      <BarChart3 className="w-4 h-4 text-[#1976D2] mt-0.5 shrink-0" />
-                      <div>
-                        <div className="text-xs font-semibold text-slate-900">
-                          {t('nav.insight', 'Kajian Sektor')}
-                        </div>
-                        <div className="text-[11px] text-slate-500 font-supporting leading-snug">
-                          {t('nav.sector_desc', 'Analisis mendalam performa sektor riil')}
-                        </div>
-                      </div>
-                    </Link>
-                  </div>
-                )}
-              </div>
-
-              {/* Custom Analysis */}
-              <Link
-                to="/custom-analysis"
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-colors text-xs ${
-                  location.pathname === '/custom-analysis'
-                    ? 'text-[#1976D2] font-semibold bg-[#D1E4F6]/40 border border-[#B2D1F0]'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 font-medium'
-                }`}
-              >
-                <Sparkles
-                  className={`w-3.5 h-3.5 ${
-                    location.pathname === '/custom-analysis' ? 'text-[#1976D2]' : 'text-slate-400'
-                  }`}
-                />
-                <span>{t('nav.custom_analysis', 'Custom Analysis')}</span>
-              </Link>
+                const NavIcon = nav.icon ? getCmsIcon(nav.icon, Sparkles) : null;
+                return (
+                  <Link
+                    key={nav.id}
+                    to={nav.url || '/'}
+                    onClick={(e) => {
+                      if (builderMode) e.preventDefault();
+                    }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-colors text-xs ${
+                      location.pathname === nav.url
+                        ? 'text-[#1976D2] font-semibold bg-[#D1E4F6]/40 border border-[#B2D1F0]'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 font-medium'
+                    }`}
+                  >
+                    {NavIcon && (
+                      <NavIcon
+                        className={`w-3.5 h-3.5 ${
+                          location.pathname === nav.url ? 'text-[#1976D2]' : 'text-slate-400'
+                        }`}
+                      />
+                    )}
+                    <span>{nav.label}</span>
+                  </Link>
+                );
+              })}
 
               {/* Library (for authenticated users) */}
               {isAuthenticated && (
-                <Link to="/library" className={activeLinkClass('/library')}>
+                <Link
+                  to="/library"
+                  onClick={(e) => {
+                    if (builderMode) e.preventDefault();
+                  }}
+                  className={activeLinkClass('/library')}
+                >
                   {t('nav.library', 'Library')}
                 </Link>
               )}
@@ -280,25 +333,26 @@ export const Navbar: React.FC = () => {
           {/* Right Section: Compact Search Bar & Utility Actions */}
           <div className="flex items-center gap-2 sm:gap-2.5">
             {/* Desktop Search Bar in Navbar */}
-            <div
-              ref={searchContainerRef}
-              className="hidden lg:block relative w-48 xl:w-60 2xl:w-72 shrink-0 transition-all duration-200 focus-within:w-64 xl:focus-within:w-80"
-            >
-              <form onSubmit={handleSearchSubmit} className="relative group">
-                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none transition-colors text-slate-400 group-focus-within:text-[#1976D2]">
-                  <Search className="w-3.5 h-3.5" />
-                </div>
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    setSearchOpen(true);
-                  }}
-                  onFocus={() => setSearchOpen(true)}
-                  placeholder={t('nav.search_placeholder', 'Cari riset atau produk...')}
-                  className="w-full bg-slate-50/90 hover:bg-slate-100/90 focus:bg-white text-xs text-slate-900 placeholder:text-slate-400 pl-10 pr-11 py-2 rounded-xl border border-slate-200/90 focus:outline-none focus:border-[#1976D2] focus:ring-2 focus:ring-[#D1E4F6]/50 shadow-2xs transition-all duration-200"
-                />
+            {headerCfg.show_search !== false && (
+              <div
+                ref={searchContainerRef}
+                className={`${showDesktopSearchCls} relative w-48 xl:w-60 2xl:w-72 shrink-0 transition-all duration-200 focus-within:w-64 xl:focus-within:w-80`}
+              >
+                <form onSubmit={handleSearchSubmit} className="relative group">
+                  <div className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none transition-colors text-slate-400 group-focus-within:text-[#1976D2]">
+                    <Search className="w-3.5 h-3.5" />
+                  </div>
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setSearchOpen(true);
+                    }}
+                    onFocus={() => setSearchOpen(true)}
+                    placeholder={headerCfg.search_placeholder || t('nav.search_placeholder', 'Search Reports')}
+                    className="w-full bg-slate-50/90 hover:bg-slate-100/90 focus:bg-white text-xs text-slate-900 placeholder:text-slate-400 pl-10 pr-11 py-2 rounded-xl border border-slate-200/90 focus:outline-none focus:border-[#1976D2] focus:ring-2 focus:ring-[#D1E4F6]/50 shadow-2xs transition-all duration-200"
+                  />
                 {searchQuery ? (
                   <button
                     type="button"
@@ -447,19 +501,23 @@ export const Navbar: React.FC = () => {
                   ) : null}
                 </div>
               )}
-            </div>
+              </div>
+            )}
 
             {/* Mobile Search Toggle Button */}
-            <button
-              onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
-              className="lg:hidden p-2 rounded-xl text-slate-600 hover:text-[#1976D2] hover:bg-slate-100 transition-colors cursor-pointer"
-              aria-label="Cari Dokumen"
-            >
-              <Search className="w-4 h-4" />
-            </button>
+            {headerCfg.show_search !== false && (
+              <button
+                onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
+                className={`${showMobileSearchToggleCls} p-2 rounded-xl text-slate-600 hover:text-[#1976D2] hover:bg-slate-100 transition-colors cursor-pointer`}
+                aria-label="Cari Dokumen"
+              >
+                <Search className="w-4 h-4" />
+              </button>
+            )}
 
             {/* Language Switcher Dropdown */}
-            <div ref={langContainerRef} className="relative">
+            {headerCfg.show_language_switcher !== false && (
+              <div ref={langContainerRef} className="relative">
               <button
                 type="button"
                 onClick={() => setLangMenuOpen(!langMenuOpen)}
@@ -501,38 +559,49 @@ export const Navbar: React.FC = () => {
                   ))}
                 </div>
               )}
-            </div>
+              </div>
+            )}
 
             {/* Wishlist button */}
-            <Link
-              to="/wishlist"
-              className="relative p-2 rounded-xl text-slate-600 hover:text-[#1976D2] hover:bg-[#D1E4F6]/30 transition-colors"
-              title={t('nav.wishlist', 'Wishlist')}
-            >
-              <Heart className="w-4 h-4" />
-              {wishlistCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-[#DC2626] text-white text-[9px] font-bold w-4 h-4 p-0 flex items-center justify-center rounded-full border border-white">
-                  {wishlistCount}
-                </span>
-              )}
-            </Link>
+            {headerCfg.show_wishlist !== false && (
+              <Link
+                to="/wishlist"
+                onClick={(e) => {
+                  if (builderMode) e.preventDefault();
+                }}
+                className="relative p-2 rounded-xl text-slate-600 hover:text-[#1976D2] hover:bg-[#D1E4F6]/30 transition-colors"
+                title={t('nav.wishlist', 'Wishlist')}
+              >
+                <Heart className="w-4 h-4" />
+                {wishlistCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-[#DC2626] text-white text-[9px] font-bold w-4 h-4 p-0 flex items-center justify-center rounded-full border border-white">
+                    {wishlistCount}
+                  </span>
+                )}
+              </Link>
+            )}
 
             {/* Cart button */}
-            <Link
-              to="/cart"
-              className="relative p-2 rounded-xl text-slate-600 hover:text-[#1976D2] hover:bg-[#D1E4F6]/30 transition-colors"
-              title={t('nav.cart', 'Keranjang')}
-            >
-              <ShoppingBag className="w-4 h-4" />
-              {itemCount > 0 && (
-                <Badge className="absolute -top-1 -right-1 bg-[#1976D2] text-white border-white text-[9px] w-4 h-4 p-0 flex items-center justify-center rounded-full font-bold">
-                  {itemCount}
-                </Badge>
-              )}
-            </Link>
+            {headerCfg.show_cart !== false && (
+              <Link
+                to="/cart"
+                onClick={(e) => {
+                  if (builderMode) e.preventDefault();
+                }}
+                className="relative p-2 rounded-xl text-slate-600 hover:text-[#1976D2] hover:bg-[#D1E4F6]/30 transition-colors"
+                title={t('nav.cart', 'Keranjang')}
+              >
+                <ShoppingBag className="w-4 h-4" />
+                {itemCount > 0 && (
+                  <Badge className="absolute -top-1 -right-1 bg-[#1976D2] text-white border-white text-[9px] w-4 h-4 p-0 flex items-center justify-center rounded-full font-bold">
+                    {itemCount}
+                  </Badge>
+                )}
+              </Link>
+            )}
 
             {/* User Profile / Auth buttons */}
-            {isAuthenticated ? (
+            {isAuthenticated && !builderMode ? (
               <div ref={userMenuRef} className="relative">
                 <button
                   onClick={() => setDropdownOpen(!dropdownOpen)}
@@ -594,7 +663,7 @@ export const Navbar: React.FC = () => {
                       onClick={() => setDropdownOpen(false)}
                       className="w-full flex items-center gap-2.5 px-4 py-2 hover:bg-slate-50 text-slate-700 hover:text-[#1976D2] text-left font-medium cursor-pointer"
                     >
-                      <Sparkles className="w-4 h-4 text-[#1976D2]" /> {t('nav.custom_analysis', 'Custom Analysis')}
+                      <Sparkles className="w-4 h-4 text-[#1976D2]" /> {t('nav.custom_analysis', 'Research With Us')}
                     </Link>
 
                     <Link
@@ -622,21 +691,21 @@ export const Navbar: React.FC = () => {
               </div>
             ) : (
               <div className="flex items-center gap-1.5">
-                <Link to="/login">
+                <Link to="/login" onClick={(e) => { if (builderMode) e.preventDefault(); }}>
                   <Button
                     variant="ghost"
                     size="sm"
                     className="text-xs text-slate-700 hover:text-slate-900 font-semibold px-2.5 sm:px-3 rounded-xl hover:bg-slate-100"
                   >
-                    {t('nav.login', 'Masuk')}
+                    {headerCfg.login_label || t('nav.login', 'Masuk')}
                   </Button>
                 </Link>
-                <Link to="/register">
+                <Link to="/register" onClick={(e) => { if (builderMode) e.preventDefault(); }}>
                   <Button
                     size="sm"
                     className="text-xs bg-[#1976D2] hover:bg-[#1562AF] text-white font-semibold rounded-xl px-3 sm:px-4 py-1.5 shadow-2xs"
                   >
-                    {t('nav.register', 'Daftar')}
+                    {headerCfg.register_label || t('nav.register', 'Daftar')}
                   </Button>
                 </Link>
               </div>
@@ -645,7 +714,7 @@ export const Navbar: React.FC = () => {
             {/* Mobile menu toggle */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-1.5 rounded-xl text-slate-600 hover:bg-slate-100 cursor-pointer"
+              className={`${showMobileOnlyCls} p-1.5 rounded-xl text-slate-600 hover:bg-slate-100 cursor-pointer`}
               aria-label="Toggle menu"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -655,7 +724,7 @@ export const Navbar: React.FC = () => {
 
         {/* Mobile Search Overlay Drawer */}
         {mobileSearchOpen && (
-          <div className="lg:hidden mt-2 max-w-7xl mx-auto rounded-2xl bg-white border border-slate-200 p-3 shadow-lg animate-in fade-in slide-from-top-1">
+          <div className={`${viewport ? '' : 'lg:hidden'} mt-2 max-w-7xl mx-auto rounded-2xl bg-white border border-slate-200 p-3 shadow-lg animate-in fade-in slide-from-top-1`}>
             <form onSubmit={handleSearchSubmit} className="relative">
               <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
@@ -663,7 +732,7 @@ export const Navbar: React.FC = () => {
                 autoFocus
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={t('search.input_placeholder', 'Ketik kata kunci riset, topik, atau penulis...')}
+                placeholder={headerCfg.search_placeholder || t('nav.search_placeholder', 'Search Reports')}
                 className="w-full bg-slate-50 text-xs text-slate-900 placeholder-slate-400 pl-9.5 pr-8 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-[#1976D2] focus:ring-2 focus:ring-[#D1E4F6]"
               />
               {searchQuery && (
@@ -705,64 +774,55 @@ export const Navbar: React.FC = () => {
 
         {/* Mobile Navigation Drawer */}
         {mobileMenuOpen && (
-          <div className="md:hidden mt-2 max-w-7xl mx-auto rounded-2xl bg-white border border-slate-200 p-4 space-y-3 shadow-lg">
+          <div className={`${viewport ? '' : 'md:hidden'} mt-2 max-w-7xl mx-auto rounded-2xl bg-white border border-slate-200 p-4 space-y-3 shadow-lg`}>
             <nav className="flex flex-col gap-1 text-sm font-medium">
-              <Link
-                to="/products"
-                onClick={() => setMobileMenuOpen(false)}
-                className={`px-3 py-2 rounded-xl transition-colors ${
-                  location.pathname === '/products'
-                    ? 'bg-[#D1E4F6]/40 text-[#1976D2] font-semibold'
-                    : 'text-slate-700 hover:bg-slate-50'
-                }`}
-              >
-                {t('nav.catalog', 'Katalog')}
-              </Link>
-
-              {/* Research group */}
-              <div className="pt-2 pb-1 border-t border-slate-100">
-                <span className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
-                  {t('nav.research_insights', 'Riset & Insight')}
-                </span>
-                <Link
-                  to="/thematic-research"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`px-3 py-2 rounded-xl flex items-center gap-2 transition-colors ${
-                    location.pathname === '/thematic-research'
-                      ? 'bg-[#D1E4F6]/40 text-[#1976D2] font-semibold'
-                      : 'text-slate-700 hover:bg-slate-50'
-                  }`}
-                >
-                  <BookOpen className="w-4 h-4 text-[#1976D2]" />
-                  <span>{t('nav.thematic', 'Riset Tematik')}</span>
-                </Link>
-                <Link
-                  to="/sector-insights"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`px-3 py-2 rounded-xl flex items-center gap-2 transition-colors ${
-                    location.pathname === '/sector-insights'
-                      ? 'bg-[#D1E4F6]/40 text-[#1976D2] font-semibold'
-                      : 'text-slate-700 hover:bg-slate-50'
-                  }`}
-                >
-                  <BarChart3 className="w-4 h-4 text-[#1976D2]" />
-                  <span>{t('nav.insight', 'Kajian Sektor')}</span>
-                </Link>
-              </div>
-
-              {/* Custom Analysis */}
-              <Link
-                to="/custom-analysis"
-                onClick={() => setMobileMenuOpen(false)}
-                className={`w-full text-left px-3 py-2 rounded-xl flex items-center gap-2 transition-colors ${
-                  location.pathname === '/custom-analysis'
-                    ? 'bg-[#D1E4F6]/40 text-[#1976D2] font-semibold'
-                    : 'text-slate-700 hover:bg-slate-50'
-                }`}
-              >
-                <Sparkles className="w-4 h-4 text-[#1976D2]" />
-                <span>{t('nav.custom_analysis', 'Custom Analysis')}</span>
-              </Link>
+              {(headerCfg.nav_items || []).map((nav) =>
+                nav.type === 'dropdown' && (nav.children?.length || 0) > 0 ? (
+                  <div key={nav.id} className="pb-1">
+                    <span className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+                      {nav.label}
+                    </span>
+                    {nav.children?.map((child) => {
+                      const ChildIcon = getCmsIcon(child.icon, BookOpen);
+                      return (
+                        <Link
+                          key={child.id}
+                          to={child.url || '/products'}
+                          onClick={(e) => {
+                            if (builderMode) e.preventDefault();
+                            setMobileMenuOpen(false);
+                          }}
+                          className={`px-3 py-2 rounded-xl flex items-center gap-2 transition-colors ${
+                            location.pathname === child.url
+                              ? 'bg-[#D1E4F6]/40 text-[#1976D2] font-semibold'
+                              : 'text-slate-700 hover:bg-slate-50'
+                          }`}
+                        >
+                          <ChildIcon className="w-4 h-4 text-[#1976D2]" />
+                          <span>{child.label}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <Link
+                    key={nav.id}
+                    to={nav.url || '/'}
+                    onClick={(e) => {
+                      if (builderMode) e.preventDefault();
+                      setMobileMenuOpen(false);
+                    }}
+                    className={`w-full text-left px-3 py-2 rounded-xl flex items-center gap-2 transition-colors ${
+                      location.pathname === nav.url
+                        ? 'bg-[#D1E4F6]/40 text-[#1976D2] font-semibold'
+                        : 'text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    <Sparkles className="w-4 h-4 text-[#1976D2]" />
+                    <span>{nav.label}</span>
+                  </Link>
+                )
+              )}
 
               {/* Wishlist */}
               <Link

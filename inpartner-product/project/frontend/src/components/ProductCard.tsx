@@ -97,7 +97,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, 
               ? 'bg-rose-50 text-rose-600 border border-rose-200'
               : 'bg-white/90 text-slate-400 hover:text-rose-600 hover:bg-white border border-slate-200'
           }`}
-          title={wishlisted ? 'Hapus dari Wishlist' : 'Simpan ke Wishlist'}
+          title={wishlisted ? t('product.remove_wishlist', 'Hapus dari Wishlist') : t('product.add_wishlist', 'Simpan ke Wishlist')}
         >
           <Heart className={`w-3.5 h-3.5 ${wishlisted ? 'fill-rose-600' : ''}`} />
         </button>
@@ -149,12 +149,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, 
           ) : product.sales_count > 0 ? (
             <div className="flex items-center gap-1 text-[10px] text-slate-500 font-supporting">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              <span>{product.sales_count} Pembaca</span>
+              <span>{product.sales_count} {t('product.readers', 'Pembaca')}</span>
             </div>
           ) : (
             <div className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-500">
-              <ShieldCheck className="w-3 h-3 text-[#1976D2]" />
-              <span>Terverifikasi</span>
+              <ShieldCheck className="w-3.5 h-3.5 text-[#1976D2]" />
+              <span>{t('product.verified', 'Terverifikasi')}</span>
             </div>
           )}
 

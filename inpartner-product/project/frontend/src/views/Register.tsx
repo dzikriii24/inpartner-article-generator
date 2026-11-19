@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { Button } from '@/components/lightswind/button';
 import { Card } from '@/components/lightswind/card';
 
@@ -13,6 +14,7 @@ export const Register: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
 
   const { register } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirect = searchParams.get('redirect') || '/';
@@ -44,12 +46,14 @@ export const Register: React.FC = () => {
     <div className="min-h-[80vh] flex items-center justify-center py-12 px-4">
       <Card className="w-full max-w-md p-8 bg-white border border-slate-200 shadow-xs rounded-2xl space-y-6">
         <div className="text-center space-y-2">
-          <span className="w-10 h-10 rounded-xl bg-[#1976D2] text-white inline-flex items-center justify-center text-xs font-wordmark font-extrabold shadow-xs mb-1">
-            IN
-          </span>
+          <img
+            src="/inpartner_logo.jpeg"
+            alt="Inpartner"
+            className="w-12 h-12 rounded-xl object-contain mx-auto mb-1 border border-slate-100 shadow-2xs"
+          />
           <span className="font-wordmark font-extrabold text-[#1976D2] text-sm block">INPARTNER</span>
-          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Buat Akun Inpartner</h1>
-          <p className="text-xs text-slate-500 font-supporting">Dapatkan akses penuh ke publikasi riset industri dan library pribadi Anda.</p>
+          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">{t('auth.register_title', 'Buat Akun Inpartner')}</h1>
+          <p className="text-xs text-slate-500 font-supporting">{t('auth.register_subtitle', 'Dapatkan akses penuh ke publikasi riset industri dan library pribadi Anda.')}</p>
         </div>
 
         {error && (
@@ -60,7 +64,7 @@ export const Register: React.FC = () => {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Nama Lengkap</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">{t('auth.fullname', 'Nama Lengkap')}</label>
             <input
               type="text"
               value={name}
@@ -72,7 +76,7 @@ export const Register: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Email Profesional</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">{t('auth.email', 'Email Profesional')}</label>
             <input
               type="email"
               value={email}
@@ -84,7 +88,7 @@ export const Register: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Password</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">{t('auth.password', 'Password')}</label>
             <input
               type="password"
               value={password}
@@ -97,7 +101,7 @@ export const Register: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Konfirmasi Password</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">{t('auth.confirm_password', 'Konfirmasi Password')}</label>
             <input
               type="password"
               value={passwordConfirmation}
@@ -113,14 +117,14 @@ export const Register: React.FC = () => {
             disabled={submitting}
             className="w-full bg-[#1976D2] hover:bg-[#1562AF] active:bg-[#0C3B69] text-white font-semibold rounded-xl text-xs py-2.5 shadow-xs cursor-pointer disabled:opacity-50"
           >
-            {submitting ? 'Mendaftarkan Akun...' : 'Daftar Sekarang'}
+            {submitting ? t('auth.registering', 'Mendaftarkan Akun...') : t('auth.register_btn', 'Daftar Sekarang')}
           </Button>
         </form>
 
         <div className="pt-2 text-center text-xs text-slate-500 border-t border-slate-100">
-          Sudah memiliki akun?{' '}
+          {t('auth.have_account', 'Sudah memiliki akun?')}{' '}
           <Link to={`/login?redirect=${encodeURIComponent(redirect)}`} className="text-[#1976D2] font-semibold hover:underline">
-            Masuk di sini &rarr;
+            {t('nav.login', 'Masuk di sini')} &rarr;
           </Link>
         </div>
       </Card>

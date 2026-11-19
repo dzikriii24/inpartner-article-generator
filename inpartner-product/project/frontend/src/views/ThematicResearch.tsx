@@ -222,9 +222,9 @@ export const ThematicResearch: React.FC = () => {
       {/* ================= 1. BREADCRUMBS ================= */}
       <nav className="flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500 border-b border-slate-100 pb-4">
         <div className="flex items-center gap-2 flex-wrap">
-          <Link to="/" className="hover:text-[#1976D2] transition-colors font-medium">Beranda</Link>
+          <Link to="/" className="hover:text-[#1976D2] transition-colors font-medium">{t('nav.home', 'Beranda')}</Link>
           <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-          <Link to="/products" className="hover:text-[#1976D2] transition-colors font-medium">Katalog Riset</Link>
+          <span className="text-slate-500 font-medium">{t('nav.research_insights', 'Reports & Insights')}</span>
           <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
           <span className="text-slate-900 font-semibold">Thematic Research Hub</span>
         </div>

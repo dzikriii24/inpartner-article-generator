@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/lightswind/button';
 import { Card } from '@/components/lightswind/card';
+import { useLanguage } from '@/context/LanguageContext';
 import api from '@/services/api';
 
 export const ForgotPassword: React.FC = () => {
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [msg, setMsg] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -27,12 +29,14 @@ export const ForgotPassword: React.FC = () => {
     <div className="min-h-[80vh] flex items-center justify-center py-12 px-4">
       <Card className="w-full max-w-md p-8 bg-white border border-slate-200 shadow-xs rounded-2xl space-y-6">
         <div className="text-center space-y-2">
-          <span className="w-10 h-10 rounded-xl bg-[#1976D2] text-white inline-flex items-center justify-center text-xs font-wordmark font-extrabold shadow-xs mb-1">
-            IN
-          </span>
+          <img
+            src="/inpartner_logo.jpeg"
+            alt="Inpartner"
+            className="w-12 h-12 rounded-xl object-contain mx-auto mb-1 border border-slate-100 shadow-2xs"
+          />
           <span className="font-wordmark font-extrabold text-[#1976D2] text-sm block">INPARTNER</span>
-          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Lupa Password</h1>
-          <p className="text-xs text-slate-500 font-supporting">Masukkan email terdaftar untuk menerima petunjuk pemulihan password.</p>
+          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">{t('auth.reset_password_title', 'Lupa Password')}</h1>
+          <p className="text-xs text-slate-500 font-supporting">{t('auth.reset_password_desc', 'Masukkan email terdaftar untuk menerima petunjuk pemulihan password.')}</p>
         </div>
 
         {msg && (

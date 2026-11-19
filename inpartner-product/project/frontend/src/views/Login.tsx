@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { Button } from '@/components/lightswind/button';
 import { Card } from '@/components/lightswind/card';
 import { ArrowRight } from 'lucide-react';
@@ -12,6 +13,7 @@ export const Login: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
 
   const { login } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirect = searchParams.get('redirect') || '/';
@@ -34,12 +36,14 @@ export const Login: React.FC = () => {
     <div className="min-h-[80vh] flex items-center justify-center py-12 px-4">
       <Card className="w-full max-w-md p-8 bg-white border border-slate-200 shadow-xs rounded-2xl space-y-6">
         <div className="text-center space-y-2">
-          <span className="w-10 h-10 rounded-xl bg-[#1976D2] text-white inline-flex items-center justify-center text-xs font-wordmark font-extrabold shadow-xs mb-1">
-            IN
-          </span>
+          <img
+            src="/inpartner_logo.jpeg"
+            alt="Inpartner"
+            className="w-12 h-12 rounded-xl object-contain mx-auto mb-1 border border-slate-100 shadow-2xs"
+          />
           <span className="font-wordmark font-extrabold text-[#1976D2] text-sm block">INPARTNER</span>
-          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Selamat Datang Kembali</h1>
-          <p className="text-xs text-slate-500 font-supporting">Masuk ke akun Inpartner untuk mengakses dokumen riset & library Anda.</p>
+          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">{t('auth.welcome_back', 'Selamat Datang Kembali')}</h1>
+          <p className="text-xs text-slate-500 font-supporting">{t('auth.login_subtitle', 'Masuk ke akun Inpartner untuk mengakses dokumen riset & library Anda.')}</p>
         </div>
 
         {error && (
@@ -50,7 +54,7 @@ export const Login: React.FC = () => {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Email</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">{t('auth.email', 'Email')}</label>
             <input
               type="email"
               value={email}
@@ -63,9 +67,9 @@ export const Login: React.FC = () => {
 
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className="block text-xs font-semibold text-slate-700">Password</label>
+              <label className="block text-xs font-semibold text-slate-700">{t('auth.password', 'Password')}</label>
               <Link to="/forgot-password" className="text-[11px] text-[#1976D2] hover:underline">
-                Lupa Password?
+                {t('auth.forgot_password', 'Lupa Password?')}
               </Link>
             </div>
             <input
@@ -83,14 +87,14 @@ export const Login: React.FC = () => {
             disabled={submitting}
             className="w-full bg-[#1976D2] hover:bg-[#1562AF] active:bg-[#0C3B69] text-white font-semibold rounded-xl text-xs py-2.5 shadow-xs cursor-pointer disabled:opacity-50"
           >
-            {submitting ? 'Memproses Masuk...' : 'Masuk Sekarang'}
+            {submitting ? t('auth.logging_in', 'Memproses Masuk...') : t('auth.login_btn', 'Masuk Sekarang')}
           </Button>
         </form>
 
         <div className="pt-2 text-center text-xs text-slate-500 border-t border-slate-100">
-          Belum memiliki akun?{' '}
+          {t('auth.no_account', 'Belum memiliki akun?')}{' '}
           <Link to={`/register?redirect=${encodeURIComponent(redirect)}`} className="text-[#1976D2] font-semibold hover:underline">
-            Daftar Akun Baru &rarr;
+            {t('auth.register_now', 'Daftar Akun Baru')} &rarr;
           </Link>
         </div>
       </Card>

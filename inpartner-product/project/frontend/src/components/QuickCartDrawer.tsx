@@ -40,7 +40,9 @@ export const QuickCartDrawer: React.FC = () => {
           )}
         </div>
         <span className="text-xs font-bold hidden sm:inline-block">
-          {itemCount > 0 ? `${itemCount} Riset di Keranjang` : 'Keranjang'}
+          {itemCount > 0 
+            ? (t('cart.items_in_cart', `${itemCount} Riset di Keranjang`)).replace('{count}', String(itemCount)) 
+            : t('nav.cart', 'Keranjang')}
         </span>
       </button>
 
@@ -66,10 +68,10 @@ export const QuickCartDrawer: React.FC = () => {
             </div>
             <div>
               <h2 className="text-sm font-black text-slate-900">
-                Keranjang Belanja
+                {t('cart.title', 'Keranjang Belanja')}
               </h2>
               <p className="text-[11px] text-slate-500 font-supporting">
-                {itemCount} dokumen riset dipilih
+                {(t('cart.drawer_items_selected', `${itemCount} dokumen riset dipilih`)).replace('{count}', String(itemCount))}
               </p>
             </div>
           </div>
@@ -90,9 +92,9 @@ export const QuickCartDrawer: React.FC = () => {
                 <ShoppingBag className="w-7 h-7" />
               </div>
               <div className="max-w-xs mx-auto">
-                <h3 className="font-bold text-slate-900 text-sm">Keranjang Anda Masih Kosong</h3>
+                <h3 className="font-bold text-slate-900 text-sm">{t('cart.empty_title', 'Keranjang Anda Masih Kosong')}</h3>
                 <p className="text-xs text-slate-500 mt-1 font-supporting">
-                  Pilih riset tematik, data series, atau kajian sektor dari katalog kami untuk melengkapi analisis Anda.
+                  {t('cart.empty_desc', 'Pilih riset tematik, data series, atau kajian sektor dari katalog kami untuk melengkapi analisis Anda.')}
                 </p>
               </div>
               <button
@@ -102,7 +104,7 @@ export const QuickCartDrawer: React.FC = () => {
                 }}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#1976D2] hover:bg-[#1562AF] text-white font-bold text-xs shadow-xs transition-colors cursor-pointer"
               >
-                <span>Jelajahi Katalog Riset</span>
+                <span>{t('home.explore_catalog', 'Jelajahi Katalog Riset')}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -169,7 +171,7 @@ export const QuickCartDrawer: React.FC = () => {
         {items.length > 0 && (
           <div className="p-5 border-t border-slate-200 bg-slate-50/70 space-y-3">
             <div className="flex items-center justify-between text-xs">
-              <span className="text-slate-500 font-medium">Subtotal Pembelian</span>
+              <span className="text-slate-500 font-medium">{t('cart.subtotal', 'Subtotal')}</span>
               <span className="text-base font-black text-slate-900">{formatPrice(subtotal)}</span>
             </div>
 
@@ -182,7 +184,7 @@ export const QuickCartDrawer: React.FC = () => {
                 className="w-full py-3 px-4 rounded-xl bg-[#1976D2] hover:bg-[#1562AF] active:bg-[#0C3B69] text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 <CreditCard className="w-4 h-4" />
-                <span>Lanjut ke Pembayaran</span>
+                <span>{t('cart.checkout_btn', 'Lanjut ke Pembayaran')}</span>
                 <ArrowRight className="w-4 h-4 ml-auto" />
               </button>
 
@@ -193,13 +195,13 @@ export const QuickCartDrawer: React.FC = () => {
                 }}
                 className="w-full py-2.5 px-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs shadow-xs transition-colors flex items-center justify-center cursor-pointer"
               >
-                <span>Lihat Keranjang Lengkap</span>
+                <span>{t('cart.view_full_cart', 'Lihat Keranjang Lengkap')}</span>
               </button>
             </div>
 
             <div className="flex items-center justify-center gap-2 text-[10px] text-slate-400 font-supporting pt-1">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Akses Reader Instan & Invoice Pajak Resmi</span>
+              <span>{t('cart.guarantee_note', 'Akses Reader Instan & Invoice Pajak Resmi')}</span>
             </div>
           </div>
         )}

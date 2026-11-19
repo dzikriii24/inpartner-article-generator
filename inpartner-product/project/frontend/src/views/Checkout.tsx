@@ -3,13 +3,14 @@ import { useNavigate, Link } from 'react-router-dom';
 import { ShieldCheck, Zap, AlertCircle, BookOpen, Building2, CreditCard, ArrowLeft } from 'lucide-react';
 import api from '@/services/api';
 import { useCart } from '@/context/CartContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { Button } from '@/components/lightswind/button';
 import { Card } from '@/components/lightswind/card';
 import BookCover from '@/components/BookCover';
-import { formatRupiah } from '@/utils/format';
 
 export const Checkout: React.FC = () => {
   const { items, subtotal, clearCart } = useCart();
+  const { t, formatPrice } = useLanguage();
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -77,14 +78,14 @@ export const Checkout: React.FC = () => {
           <CreditCard className="w-8 h-8" />
         </div>
         <div className="space-y-2">
-          <h2 className="text-xl font-black text-slate-900 tracking-tight">Tidak Ada Dokumen untuk Di-checkout</h2>
+          <h2 className="text-xl font-black text-slate-900 tracking-tight">{t('checkout.empty_title', 'Tidak Ada Dokumen untuk Di-checkout')}</h2>
           <p className="text-xs text-slate-500 font-supporting max-w-sm mx-auto">
-            Keranjang belanja Anda kosong. Silakan pilih publikasi riset atau analisis sektor dari katalog Inpartner.
+            {t('checkout.empty_desc', 'Keranjang belanja Anda kosong. Silakan pilih publikasi riset atau analisis sektor dari katalog Inpartner.')}
           </p>
         </div>
         <Link to="/products">
           <Button className="bg-[#1976D2] hover:bg-[#1562AF] text-white font-bold text-xs rounded-xl px-6 py-2.5 shadow-xs">
-            Jelajahi Katalog Riset
+            {t('checkout.browse_catalog', 'Jelajahi Katalog Riset')}
           </Button>
         </Link>
       </div>
@@ -95,12 +96,12 @@ export const Checkout: React.FC = () => {
     <div className="max-w-4xl mx-auto space-y-8 py-8 sm:py-12">
       <div className="border-b border-slate-200 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Konfirmasi Checkout</h1>
-          <p className="text-xs text-slate-500 mt-1 font-supporting">Periksa pesanan dokumen riset Anda sebelum memproses pembayaran resmi.</p>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">{t('checkout.page_title', 'Konfirmasi Checkout')}</h1>
+          <p className="text-xs text-slate-500 mt-1 font-supporting">{t('checkout.page_subtitle', 'Periksa pesanan dokumen riset Anda sebelum memproses pembayaran resmi.')}</p>
         </div>
         <Link to="/cart" className="inline-flex items-center gap-1.5 text-xs font-bold text-[#1976D2] hover:text-[#1562AF]">
           <ArrowLeft className="w-4 h-4" />
-          <span>Kembali ke Keranjang</span>
+          <span>{t('checkout.back_to_cart', 'Kembali ke Keranjang')}</span>
         </Link>
       </div>
 
@@ -114,7 +115,7 @@ export const Checkout: React.FC = () => {
                 <Link to="/library">
                   <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-xs">
                     <BookOpen className="w-3.5 h-3.5" />
-                    <span>Buka Koleksi Library Saya</span>
+                    <span>{t('library.title', 'Buka Koleksi Library Saya')}</span>
                   </Button>
                 </Link>
               </div>
@@ -128,7 +129,7 @@ export const Checkout: React.FC = () => {
         <div className="md:col-span-7 space-y-6">
           <Card className="p-6 bg-white border border-slate-200 shadow-xs rounded-3xl space-y-4">
             <h3 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-3 flex items-center justify-between">
-              <span>Daftar Riset Terpilih</span>
+              <span>{t('checkout.selected_research', 'Daftar Riset Terpilih')}</span>
               <span className="text-xs text-[#1976D2] font-semibold bg-blue-50 px-2 py-0.5 rounded-full">
                 {items.length} item
               </span>
@@ -154,7 +155,7 @@ export const Checkout: React.FC = () => {
                       </p>
                     </div>
                     <div className="text-xs font-black text-slate-900 shrink-0">
-                      {formatRupiah(price)}
+                      {formatPrice(price)}
                     </div>
                   </div>
                 );
@@ -166,11 +167,11 @@ export const Checkout: React.FC = () => {
           <Card className="p-6 bg-white border border-slate-200 shadow-xs rounded-3xl space-y-4">
             <h3 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
               <Building2 className="w-4 h-4 text-[#1976D2]" />
-              <span>Detail Faktur Pajak Korporasi (Opsional)</span>
+              <span>{t('checkout.corp_invoice', 'Detail Faktur Pajak Korporasi (Opsional)')}</span>
             </h3>
             <div className="space-y-3 text-xs">
               <div>
-                <label className="block text-slate-700 font-semibold mb-1">Nama Perusahaan / Institusi</label>
+                <label className="block text-slate-700 font-semibold mb-1">{t('checkout.company_name', 'Nama Perusahaan / Institusi')}</label>
                 <input
                   type="text"
                   value={corporateName}
@@ -182,7 +183,7 @@ export const Checkout: React.FC = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-700 font-semibold mb-1">Nomor Pokok Wajib Pajak (NPWP)</label>
+                  <label className="block text-slate-700 font-semibold mb-1">{t('checkout.npwp', 'Nomor Pokok Wajib Pajak (NPWP)')}</label>
                   <input
                     type="text"
                     value={taxId}
@@ -192,7 +193,7 @@ export const Checkout: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-700 font-semibold mb-1">Nomor Kontak WhatsApp / HP</label>
+                  <label className="block text-slate-700 font-semibold mb-1">{t('checkout.phone', 'Nomor Kontak WhatsApp / HP')}</label>
                   <input
                     type="tel"
                     value={phone}
@@ -203,7 +204,7 @@ export const Checkout: React.FC = () => {
                 </div>
               </div>
               <p className="text-[10px] text-slate-400 font-supporting">
-                Faktur resmi dan bukti pembayaran terkirim otomatis ke email akun Anda setelah transaksi selesai.
+                {t('checkout.invoice_note', 'Faktur resmi dan bukti pembayaran terkirim otomatis ke email akun Anda setelah transaksi selesai.')}
               </p>
             </div>
           </Card>
@@ -212,23 +213,23 @@ export const Checkout: React.FC = () => {
         {/* Right Column: Billing summary & Proceed */}
         <div className="md:col-span-5 space-y-4">
           <Card className="p-6 bg-white border border-slate-200 shadow-xs rounded-3xl space-y-6">
-            <h3 className="text-base font-bold text-slate-900 border-b border-slate-100 pb-3">Ringkasan Tagihan</h3>
+            <h3 className="text-base font-bold text-slate-900 border-b border-slate-100 pb-3">{t('checkout.billing_summary', 'Ringkasan Tagihan')}</h3>
             <div className="space-y-3 text-xs">
               <div className="flex justify-between text-slate-600">
-                <span>Subtotal Harga</span>
-                <span className="font-bold text-slate-900">{formatRupiah(subtotal)}</span>
+                <span>{t('checkout.subtotal', 'Subtotal Harga')}</span>
+                <span className="font-bold text-slate-900">{formatPrice(subtotal)}</span>
               </div>
               <div className="flex justify-between text-slate-600">
-                <span>Biaya Transaksi</span>
-                <span className="font-bold text-emerald-600">Rp 0 (Gratis)</span>
+                <span>{t('checkout.tx_fee', 'Biaya Transaksi')}</span>
+                <span className="font-bold text-emerald-600">Rp 0 ({t('checkout.free', 'Gratis')})</span>
               </div>
               <div className="flex justify-between text-slate-600">
-                <span>PPN 11% (Termasuk)</span>
-                <span className="font-semibold text-slate-500">Rp {Math.round(subtotal * 0.11 / 1.11).toLocaleString('id-ID')}</span>
+                <span>{t('checkout.vat', 'PPN 11% (Termasuk)')}</span>
+                <span className="font-semibold text-slate-500">{formatPrice(Math.round(subtotal * 0.11 / 1.11))}</span>
               </div>
               <div className="border-t border-slate-200 pt-3 flex justify-between items-baseline">
-                <span className="text-sm font-extrabold text-slate-900">Total Pembayaran</span>
-                <span className="text-xl font-black text-[#1976D2]">{formatRupiah(subtotal)}</span>
+                <span className="text-sm font-extrabold text-slate-900">{t('checkout.total', 'Total Pembayaran')}</span>
+                <span className="text-xl font-black text-[#1976D2]">{formatPrice(subtotal)}</span>
               </div>
             </div>
 
@@ -239,15 +240,15 @@ export const Checkout: React.FC = () => {
               className="w-full bg-[#1976D2] hover:bg-[#1562AF] active:bg-[#0C3B69] text-white font-bold rounded-xl text-xs py-3.5 gap-2 shadow-md cursor-pointer disabled:opacity-50 transition-all"
             >
               <Zap className="w-4 h-4" />
-              {submitting ? 'Memproses Pesanan...' : 'Bayar Sekarang'}
+              {submitting ? t('checkout.processing', 'Memproses Pesanan...') : t('checkout.pay_now', 'Bayar Sekarang')}
             </Button>
 
             <div className="space-y-2 pt-1 border-t border-slate-100">
               <p className="text-[11px] text-slate-500 text-center flex items-center justify-center gap-1.5 font-medium">
-                <ShieldCheck className="w-4 h-4 text-emerald-600" /> Transaksi Terenkripsi & Akses Reader Instan
+                <ShieldCheck className="w-4 h-4 text-emerald-600" /> {t('checkout.secure_badge', 'Transaksi Terenkripsi & Akses Reader Instan')}
               </p>
               <p className="text-[10px] text-slate-400 text-center font-supporting">
-                Setelah pembayaran selesai, dokumen otomatis masuk ke Library Anda dan siap dibaca online maupun diunduh format aslinya.
+                {t('checkout.secure_desc', 'Setelah pembayaran selesai, dokumen otomatis masuk ke Library Anda dan siap dibaca online maupun diunduh format aslinya.')}
               </p>
             </div>
           </Card>

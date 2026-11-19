@@ -18,10 +18,10 @@ export const Cart: React.FC = () => {
       <div className="border-b border-slate-200 pb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Keranjang Pembelian
+            {t('cart.title', 'Keranjang Belanja')}
           </h1>
           <p className="text-xs text-slate-500 mt-1 font-supporting">
-            {itemCount} dokumen riset & publikasi terpilih siap untuk diproses ke akun Anda.
+            {(t('cart.drawer_items_selected', `${itemCount} dokumen riset dipilih`)).replace('{count}', String(itemCount))}
           </p>
         </div>
         {items.length > 0 && (
@@ -30,7 +30,7 @@ export const Cart: React.FC = () => {
             className="text-xs font-semibold text-rose-600 hover:text-rose-700 hover:underline flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
           >
             <Trash2 className="w-3.5 h-3.5" />
-            <span>Kosongkan Semua</span>
+            <span>{t('cart.clear_all', 'Kosongkan Semua')}</span>
           </button>
         )}
       </div>
@@ -42,15 +42,15 @@ export const Cart: React.FC = () => {
             <ShoppingBag className="w-8 h-8" />
           </div>
           <div className="space-y-1.5">
-            <h3 className="text-xl font-bold text-slate-900">Keranjang Belanja Anda Kosong</h3>
+            <h3 className="text-xl font-bold text-slate-900">{t('cart.empty_title', 'Keranjang Belanja Kosong')}</h3>
             <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto font-supporting leading-relaxed">
-              Belum ada publikasi riset yang ditambahkan. Jelajahi laporan analitik industri, datasets Excel, dan paper strategis kami untuk melengkapi keputusan bisnis Anda.
+              {t('cart.empty_desc', 'Belum ada publikasi riset yang ditambahkan. Jelajahi laporan analitik industri, datasets Excel, dan paper strategis kami untuk melengkapi keputusan bisnis Anda.')}
             </p>
           </div>
           <div className="pt-3 flex flex-wrap justify-center gap-3">
             <Link to="/products">
               <Button className="bg-[#1976D2] hover:bg-[#1562AF] active:bg-[#0C3B69] text-white font-bold text-xs rounded-xl px-6 py-3 shadow-md gap-2">
-                <BookOpen className="w-4 h-4" /> Jelajahi Seluruh Katalog
+                <BookOpen className="w-4 h-4" /> {t('home.explore_catalog', 'Jelajahi Seluruh Katalog')}
               </Button>
             </Link>
             <Link to="/thematic-research">
@@ -159,7 +159,7 @@ export const Cart: React.FC = () => {
           <div className="lg:col-span-4 space-y-4">
             <Card className="p-6 bg-white border border-slate-200 shadow-xs rounded-3xl space-y-6">
               <h3 className="text-base font-bold text-slate-900 border-b border-slate-100 pb-3 flex items-center justify-between">
-                <span>Ringkasan Pesanan</span>
+                <span>{t('cart.summary', 'Ringkasan Pesanan')}</span>
                 <span className="text-xs font-semibold text-[#1976D2] bg-blue-50 px-2 py-0.5 rounded-full">
                   {itemCount} item
                 </span>
@@ -167,19 +167,19 @@ export const Cart: React.FC = () => {
 
               <div className="space-y-3 text-xs">
                 <div className="flex justify-between text-slate-600">
-                  <span>Subtotal Riset</span>
+                  <span>{t('cart.subtotal', 'Subtotal Riset')}</span>
                   <span className="font-bold text-slate-900">{formatPrice(subtotal)}</span>
                 </div>
                 <div className="flex justify-between text-slate-600">
-                  <span>Biaya Akses Platform</span>
-                  <span className="font-bold text-emerald-600">Gratis (Rp 0)</span>
+                  <span>{t('cart.platform_fee', 'Biaya Akses Platform')}</span>
+                  <span className="font-bold text-emerald-600">{t('cart.free_fee', 'Gratis (Rp 0)')}</span>
                 </div>
                 <div className="flex justify-between text-slate-600">
-                  <span>Faktur Pajak & PPN (11%)</span>
-                  <span className="font-medium text-slate-500">Termasuk di harga</span>
+                  <span>{t('cart.tax_included', 'Faktur Pajak & PPN (11%)')}</span>
+                  <span className="font-medium text-slate-500">{t('cart.tax_desc', 'Termasuk di harga')}</span>
                 </div>
                 <div className="border-t border-slate-200 pt-3 flex justify-between items-baseline">
-                  <span className="font-extrabold text-slate-900 text-sm">Total Pembayaran</span>
+                  <span className="font-extrabold text-slate-900 text-sm">{t('cart.total', 'Total Pembayaran')}</span>
                   <span className="text-xl font-black text-[#1976D2]">{formatPrice(subtotal)}</span>
                 </div>
               </div>
@@ -191,13 +191,13 @@ export const Cart: React.FC = () => {
                   className="w-full bg-[#1976D2] hover:bg-[#1562AF] active:bg-[#0C3B69] text-white font-bold rounded-xl text-xs py-3.5 gap-2 shadow-md cursor-pointer transition-all"
                 >
                   <CreditCard className="w-4 h-4" />
-                  <span>Lanjut ke Pembayaran</span>
+                  <span>{t('cart.checkout_btn', 'Lanjut ke Pembayaran')}</span>
                   <ArrowRight className="w-4 h-4 ml-auto" />
                 </Button>
 
                 <p className="text-[10px] text-slate-400 text-center flex items-center justify-center gap-1.5 font-medium pt-1">
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Transaksi Aman & Akses Reader Instan</span>
+                  <span>{t('cart.guarantee_note', 'Transaksi Aman & Akses Reader Instan')}</span>
                 </p>
               </div>
             </Card>

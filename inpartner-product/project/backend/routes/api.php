@@ -25,6 +25,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/home', [CatalogController::class, 'home']);
 Route::get('/cms/homepage', [CmsController::class, 'homepage']);
 Route::get('/cms/settings', [CmsController::class, 'settings']);
+Route::post('/cms/newsletter', [CmsController::class, 'subscribeNewsletter']);
 Route::get('/search/suggestions', [CmsController::class, 'suggestions']);
 Route::get('/products', [CatalogController::class, 'products']);
 Route::get('/products/{slug}', [CatalogController::class, 'product']);
@@ -132,7 +133,24 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::middleware('admin')->prefix('admin')->group(function () {
         Route::get('/dashboard', Admin\DashboardController::class);
 
-        // CMS Storefront & Homepage Sections Management
+        // CMS Storefront & Homepage Visual Builder Management
+        Route::get('/cms/builder', [CmsController::class, 'adminBuilderState']);
+        Route::put('/cms/builder/draft', [CmsController::class, 'adminSaveDraft']);
+        Route::post('/cms/builder/validate', [CmsController::class, 'adminValidateBuilder']);
+        Route::post('/cms/builder/publish', [CmsController::class, 'adminPublishBuilder']);
+        Route::post('/cms/builder/reset', [CmsController::class, 'adminResetBuilder']);
+        Route::get('/cms/builder/revisions', [CmsController::class, 'adminRevisions']);
+        Route::post('/cms/builder/revisions/{id}/restore', [CmsController::class, 'adminRestoreRevision'])->whereNumber('id');
+
+        Route::get('/cms/templates', [CmsController::class, 'adminTemplates']);
+        Route::post('/cms/templates', [CmsController::class, 'adminSaveTemplate']);
+        Route::delete('/cms/templates/{id}', [CmsController::class, 'adminDeleteTemplate'])->whereNumber('id');
+
+        Route::get('/cms/media', [CmsController::class, 'adminMediaIndex']);
+        Route::post('/cms/media', [CmsController::class, 'adminMediaUpload']);
+        Route::patch('/cms/media/{id}', [CmsController::class, 'adminMediaUpdate'])->whereNumber('id');
+        Route::delete('/cms/media/{id}', [CmsController::class, 'adminMediaDelete'])->whereNumber('id');
+
         Route::get('/cms/sections', [CmsController::class, 'adminSections']);
         Route::post('/cms/sections', [CmsController::class, 'adminSaveSection']);
         Route::put('/cms/sections/{id}', [CmsController::class, 'adminSaveSection'])->whereNumber('id');
